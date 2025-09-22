@@ -43,13 +43,17 @@ export const CreateRoomModal = ({ onCreateRoom }: CreateRoomModalProps) => {
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogTrigger asChild>
-				<Button variant="hero" size="lg" className="flex items-center gap-2">
-					<Plus className="w-5 h-5" />
+				<Button
+					variant="default"
+					size="lg"
+					className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white border border-blue-700 shadow-md transition-all duration-200 rounded-lg font-medium"
+				>
+					<Plus className="w-5 h-5 text-white" />
 					Criar Nova Sala
 				</Button>
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-[425px] bg-gradient-card border-border">
+			<DialogContent className="sm:max-w-[425px] bg-accent border-border">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-foreground">
 						<Users className="w-5 h-5" />
@@ -109,14 +113,14 @@ export const CreateRoomModal = ({ onCreateRoom }: CreateRoomModalProps) => {
 							type="button"
 							variant="outline"
 							onClick={() => setIsOpen(false)}
-							className="flex-1"
+							className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black border-none font-medium transition-colors"
 						>
 							Cancelar
 						</Button>
 						<Button
 							type="submit"
 							variant="secondary"
-							className="flex-1"
+							className="flex-1 bg-green-300 hover:bg-green-400 text-black border-none font-medium transition-colors"
 							disabled={!roomName.trim()}
 						>
 							Criar Sala
