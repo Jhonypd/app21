@@ -5,6 +5,7 @@ interface VotingDeckProps {
 	selectedValue?: string;
 	onVoteSelect: (value: string) => void;
 	isDisabled?: boolean;
+	isAnimatedMode?: boolean;
 }
 
 // Fibonacci sequence commonly used in Planning Poker
@@ -14,13 +15,15 @@ export const VotingDeck = ({
 	selectedValue,
 	onVoteSelect,
 	isDisabled = false,
+	isAnimatedMode = false,
 }: VotingDeckProps) => {
 	return (
 		<Card className="bg-gradient-card border-border shadow-card">
 			<CardHeader className="pb-4">
 				<CardTitle className="text-lg text-foreground">Escolha sua estimativa</CardTitle>
 				<p className="text-sm text-muted-foreground">
-					Clique em um card para votar. Use `&quot;` se não souber estimar.
+					Clique em um card para votar. Use "?" `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;` se não
+					souber estimar.
 				</p>
 			</CardHeader>
 
@@ -31,6 +34,7 @@ export const VotingDeck = ({
 							key={value}
 							value={value}
 							isSelected={selectedValue === value}
+							isAnimatedMode={isAnimatedMode}
 							onClick={() => !isDisabled && onVoteSelect(value)}
 							className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
 						/>

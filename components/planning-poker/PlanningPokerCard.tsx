@@ -5,6 +5,7 @@ interface PlanningPokerCardProps {
 	value: string;
 	isSelected?: boolean;
 	isRevealed?: boolean;
+	isAnimatedMode?: boolean;
 	onClick?: () => void;
 	className?: string;
 }
@@ -13,6 +14,7 @@ export const PlanningPokerCard = ({
 	value,
 	isSelected = false,
 	isRevealed = false,
+	isAnimatedMode = false,
 	onClick,
 	className,
 }: PlanningPokerCardProps) => {
@@ -25,6 +27,8 @@ export const PlanningPokerCard = ({
 				isSelected && "border-primary bg-gradient-primary shadow-glow scale-105",
 				!isSelected && "border-border hover:border-primary/50 hover:scale-105",
 				isRevealed && "animate-pulse",
+				isAnimatedMode && "hover:animate-bounce hover:shadow-glow",
+				isAnimatedMode && isSelected && "animate-scale-in shadow-glow",
 				className
 			)}
 			onClick={onClick}
@@ -33,7 +37,8 @@ export const PlanningPokerCard = ({
 				className={cn(
 					"text-2xl sm:text-3xl font-bold transition-colors duration-300",
 					isSelected ? "text-primary-foreground" : "text-foreground",
-					"group-hover:scale-110 transition-transform duration-300"
+					"group-hover:scale-110 transition-transform duration-300",
+					isAnimatedMode && "group-hover:animate-pulse"
 				)}
 			>
 				{value}
@@ -49,7 +54,12 @@ export const PlanningPokerCard = ({
 
 			{/* Selection indicator */}
 			{isSelected && (
-				<div className="absolute -top-2 -right-2 w-4 h-4 bg-secondary rounded-full border-2 border-background animate-bounce" />
+				<div
+					className={cn(
+						"absolute -top-2 -right-2 w-4 h-4 bg-secondary rounded-full border-2 border-background",
+						isAnimatedMode ? "animate-bounce" : "animate-pulse"
+					)}
+				/>
 			)}
 		</Card>
 	);

@@ -1,13 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreateRoomModal } from "@/components/planning-poker/CreateRoomModal";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, Users, Target, ArrowLeft } from "lucide-react";
+import { JoinRoomModal } from "@/components/planning-poker/JoinRoomModal";
 import { RoomHeader } from "@/components/planning-poker/RoomHeader";
 import { EstimationTable } from "@/components/planning-poker/EstimationTable";
 import { VotingDeck } from "@/components/planning-poker/VotingDeck";
-import { JoinRoomModal } from "@/components/planning-poker/JoinRoomModal";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import { Zap, Users, Target, ArrowLeft, LogOut, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ResultsSummary } from "@/components/planning-poker/ResultsSumary";
 import { toast } from "sonner";
 
 // Mock data structure for demonstration
@@ -34,6 +37,15 @@ const Index = () => {
 		isAdmin: boolean;
 	} | null>(null);
 	const [selectedVote, setSelectedVote] = useState<string>();
+	const [isAnimatedMode, setIsAnimatedMode] = useState(false);
+	const { user, loading, signOut, isAuthenticated } = useAuth();
+	const navigate = useRouter();
+
+	useEffect(() => {
+		if (!loading && !isAuthenticated) {
+			navigate.replace("/auth");
+		}
+	}, [loading, isAuthenticated, navigate]);
 
 	const handleCreateRoom = (roomData: {
 		name: string;
@@ -155,6 +167,30 @@ const Index = () => {
 		setSelectedVote(undefined);
 	};
 
+	const handleSignOut = async () => {
+		const { error } = await signOut();
+		if (!error) {
+			toast("Logout realizado", {
+				description: "Até a próxima!",
+			});
+			navigate.replace("/auth");
+		}
+	};
+
+	if (loading) {
+		return (
+			<div className="min-h-screen bg-background flex items-center justify-center">
+				<div className="p-4 bg-gradient-hero rounded-2xl shadow-glow animate-pulse">
+					<Zap className="w-12 h-12 text-primary-foreground" />
+				</div>
+			</div>
+		);
+	}
+
+	if (!isAuthenticated) {
+		return null; // Will redirect to auth
+	}
+
 	if (currentRoom && currentUser) {
 		return (
 			<div className="min-h-screen bg-background p-4 space-y-6">
@@ -171,7 +207,9 @@ const Index = () => {
 						roomName={currentRoom.name}
 						isAdmin={currentUser.isAdmin}
 						participantCount={currentRoom.participants.length}
+						isAnimatedMode={isAnimatedMode}
 						onCopyRoomId={handleCopyRoomId}
+						onToggleAnimatedMode={setIsAnimatedMode}
 					/>
 
 					<EstimationTable
@@ -183,10 +221,18 @@ const Index = () => {
 						onResetVotes={handleResetVotes}
 					/>
 
+					{currentRoom.areVotesRevealed && (
+						<ResultsSummary
+							participants={currentRoom.participants}
+							isAnimatedMode={isAnimatedMode}
+						/>
+					)}
+
 					<VotingDeck
 						selectedValue={selectedVote}
 						onVoteSelect={handleVoteSelect}
 						isDisabled={currentRoom.areVotesRevealed}
+						isAnimatedMode={isAnimatedMode}
 					/>
 				</div>
 			</div>
@@ -194,8 +240,25 @@ const Index = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex items-center justify-center p-4 ">
+		<div className="min-h-screen bg-background flex items-center justify-center p-4">
 			<div className="max-w-4xl mx-auto text-center space-y-8">
+				{/* User Info and Logout */}
+				<div className="flex justify-between items-center mb-8">
+					<div className="flex items-center gap-3">
+						<div className="p-2 bg-gradient-primary rounded-lg">
+							<User className="w-5 h-5 text-primary-foreground" />
+						</div>
+						<div className="text-left">
+							<p className="text-sm text-muted-foreground">Logado como</p>
+							<p className="font-medium text-foreground">{user?.email}</p>
+						</div>
+					</div>
+					<Button variant="outline" onClick={handleSignOut} className="flex items-center gap-2">
+						<LogOut className="w-4 h-4" />
+						Sair
+					</Button>
+				</div>
+
 				{/* Hero Section */}
 				<div className="space-y-6">
 					<div className="flex items-center justify-center mb-8">

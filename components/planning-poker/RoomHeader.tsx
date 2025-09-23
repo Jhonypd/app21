@@ -1,15 +1,19 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Copy, Settings, Crown } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Users, Copy, Settings, Crown, Sparkles, Timer } from "lucide-react";
 
 interface RoomHeaderProps {
 	roomId: string;
 	roomName: string;
 	isAdmin: boolean;
 	participantCount: number;
+	isAnimatedMode: boolean;
 	onCopyRoomId: () => void;
 	onSettings?: () => void;
+	onToggleAnimatedMode: (enabled: boolean) => void;
 }
 
 export const RoomHeader = ({
@@ -17,8 +21,10 @@ export const RoomHeader = ({
 	roomName,
 	isAdmin,
 	participantCount,
+	isAnimatedMode,
 	onCopyRoomId,
 	onSettings,
+	onToggleAnimatedMode,
 }: RoomHeaderProps) => {
 	return (
 		<Card className="bg-gradient-card border-border p-6 shadow-card">
@@ -49,7 +55,25 @@ export const RoomHeader = ({
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex flex-col sm:flex-row items-center gap-3">
+					{/* Mode Toggle */}
+					<div className="flex items-center gap-2 bg-muted/30 px-3 py-2 rounded-lg">
+						<Timer className="w-4 h-4 text-muted-foreground" />
+						<Label htmlFor="animated-mode" className="text-sm cursor-pointer">
+							Modo Animado
+						</Label>
+						<Switch
+							id="animated-mode"
+							checked={isAnimatedMode}
+							onCheckedChange={onToggleAnimatedMode}
+						/>
+						<Sparkles
+							className={`w-4 h-4 transition-colors ${
+								isAnimatedMode ? "text-primary animate-pulse" : "text-muted-foreground"
+							}`}
+						/>
+					</div>
+
 					<Button
 						variant="outline"
 						size="sm"
