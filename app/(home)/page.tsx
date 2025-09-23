@@ -180,7 +180,7 @@ const Index = () => {
 	if (loading) {
 		return (
 			<div className="min-h-screen bg-background flex items-center justify-center">
-				<div className="p-4 bg-gradient-hero rounded-2xl shadow-glow animate-pulse">
+				<div className="p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-glow animate-pulse">
 					<Zap className="w-12 h-12 text-primary-foreground" />
 				</div>
 			</div>
@@ -245,8 +245,8 @@ const Index = () => {
 				{/* User Info and Logout */}
 				<div className="flex justify-between items-center mb-8">
 					<div className="flex items-center gap-3">
-						<div className="p-2 bg-gradient-primary rounded-lg">
-							<User className="w-5 h-5 text-primary-foreground" />
+						<div className="p-2 bg-linear-to-r/srgb from-indigo-500 to-teal-400 rounded-lg">
+							<User className="w-5 h-5 text-accent" />
 						</div>
 						<div className="text-left">
 							<p className="text-sm text-muted-foreground">Logado como</p>
@@ -262,14 +262,17 @@ const Index = () => {
 				{/* Hero Section */}
 				<div className="space-y-6">
 					<div className="flex items-center justify-center mb-8">
-						<div className="p-4 bg-gradient-hero rounded-2xl shadow-glow">
+						<div className="p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-glow">
 							<Zap className="w-12 h-12 text-primary-foreground" />
 						</div>
 					</div>
 
 					<h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4">
 						Planning Poker
-						<span className="bg-gradient-hero bg-clip-text text-transparent"> Ágil</span>
+						<span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+							{" "}
+							Ágil
+						</span>
 					</h1>
 
 					<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -288,8 +291,8 @@ const Index = () => {
 				<div className="grid md:grid-cols-3 gap-6 mt-16">
 					<Card className="bg-gradient-card border-border shadow-card p-6">
 						<CardHeader className="pb-4">
-							<div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
-								<Users className="w-6 h-6 text-primary-foreground" />
+							<div className="w-12 h-12 bg-gradient-to-r from-blue-800 to-indigo-900 rounded-lg flex items-center justify-center mb-4">
+								<Users className="w-6 h-6 text-accent" />
 							</div>
 							<CardTitle className="text-lg text-foreground">Colaboração em Tempo Real</CardTitle>
 						</CardHeader>
@@ -302,8 +305,8 @@ const Index = () => {
 
 					<Card className="bg-gradient-card border-border shadow-card p-6">
 						<CardHeader className="pb-4">
-							<div className="w-12 h-12 bg-gradient-secondary rounded-lg flex items-center justify-center mb-4">
-								<Target className="w-6 h-6 text-secondary-foreground" />
+							<div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg flex items-center justify-center mb-4">
+								<Target className="w-6 h-6 text-accent" />
 							</div>
 							<CardTitle className="text-lg text-foreground">Metodologia Scrum</CardTitle>
 						</CardHeader>
@@ -317,8 +320,8 @@ const Index = () => {
 
 					<Card className="bg-gradient-card border-border shadow-card p-6">
 						<CardHeader className="pb-4">
-							<div className="w-12 h-12 bg-gradient-accent rounded-lg flex items-center justify-center mb-4">
-								<Zap className="w-6 h-6 text-accent-foreground" />
+							<div className="w-12 h-12 bg-gradient-to-r from-violet-800 to-purple-700 rounded-lg flex items-center justify-center mb-4">
+								<Zap className="w-6 h-6 text-accent" />
 							</div>
 							<CardTitle className="text-lg text-foreground">Simples e Rápido</CardTitle>
 						</CardHeader>

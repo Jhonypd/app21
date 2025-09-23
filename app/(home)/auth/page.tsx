@@ -9,9 +9,13 @@ import { Zap, Mail, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { FcGoogle } from "react-icons/fc";
+import { Separator } from "@/components/ui/separator";
+import { GiCardRandom } from "react-icons/gi";
 
 const Auth = () => {
 	const [email, setEmail] = useState("");
+	const [name, setName] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [session, setSession] = useState(null);
@@ -107,15 +111,18 @@ const Auth = () => {
 	return (
 		<div className="min-h-screen bg-background flex items-center justify-center p-4">
 			<div className="max-w-md w-full space-y-8">
-				<div className="text-center space-y-4">
+				<div className="text-center space-y-4 flex flex-col">
 					<div className="flex items-center justify-center">
-						<div className="p-4 bg-gradient-hero rounded-2xl shadow-glow">
-							<Zap className="w-12 h-12 text-primary-foreground" />
+						<div className="p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-glow">
+							{/* <Zap className="w-12 h-12 text-muted" /> */}
+							<GiCardRandom className="w-12 h-12 text-muted" />
 						</div>
 					</div>
-					<h1 className="text-3xl font-bold text-foreground">
+					<h1 className="text-3xl font-bold text-foreground text-center">
 						Planning Poker
-						<span className="bg-gradient-hero bg-clip-text text-transparent"> Ágil</span>
+						<span className="ml-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+							Ágil
+						</span>
 					</h1>
 					<p className="text-muted-foreground">Faça login ou crie sua conta para começar</p>
 				</div>
@@ -126,10 +133,25 @@ const Auth = () => {
 					</CardHeader>
 					<CardContent>
 						<Tabs defaultValue="login" className="w-full">
-							<TabsList className="grid w-full grid-cols-2">
-								<TabsTrigger value="login">Login</TabsTrigger>
-								<TabsTrigger value="signup">Cadastro</TabsTrigger>
+							<TabsList className="grid w-full h-fit grid-cols-2 items-center bg-background border p-2">
+								<TabsTrigger value="login" className="data-[state=active]:bg-primary">
+									Login
+								</TabsTrigger>
+								<TabsTrigger value="signup" className="data-[state=active]:bg-primary">
+									Cadastro
+								</TabsTrigger>
 							</TabsList>
+							<div className="w-full">
+								<Button type="button" variant={"outline"} className="w-full cursor-pointer">
+									<FcGoogle />
+								</Button>
+							</div>
+
+							<div className="flex flex-row justify-between items-center gap-2 w-full text-primary-foreground font-semibold">
+								<Separator className="max-w-36" />
+								<span>ou</span>
+								<Separator className="max-w-36" />
+							</div>
 
 							<TabsContent value="login" className="space-y-4">
 								<form onSubmit={handleSignIn} className="space-y-4">
@@ -147,6 +169,7 @@ const Auth = () => {
 											required
 										/>
 									</div>
+
 									<div className="space-y-2">
 										<Label htmlFor="password" className="flex items-center gap-2">
 											<Lock className="w-4 h-4" />
@@ -161,7 +184,11 @@ const Auth = () => {
 											required
 										/>
 									</div>
-									<Button type="submit" className="w-full" disabled={loading} variant="hero">
+									<Button
+										type="submit"
+										className="w-full cursor-pointer"
+										disabled={loading || !email || !password}
+									>
 										{loading ? "Entrando..." : "Entrar"}
 									</Button>
 								</form>
@@ -183,6 +210,20 @@ const Auth = () => {
 											required
 										/>
 									</div>
+									{/* <div className="space-y-2">
+										<Label htmlFor="name" className="flex items-center gap-2">
+											<Mail className="w-4 h-4" />
+											Nome
+										</Label>
+										<Input
+											id="name"
+											type="text"
+											placeholder="Seu nome"
+											value={name}
+											onChange={(e) => setName(e.target.value)}
+											required
+										/>
+									</div> */}
 									<div className="space-y-2">
 										<Label htmlFor="signup-password" className="flex items-center gap-2">
 											<Lock className="w-4 h-4" />
@@ -198,7 +239,11 @@ const Auth = () => {
 											minLength={6}
 										/>
 									</div>
-									<Button type="submit" className="w-full" disabled={loading} variant="secondary">
+									<Button
+										type="submit"
+										className="w-full cursor-pointer"
+										disabled={loading || !email || !password}
+									>
 										{loading ? "Criando conta..." : "Criar conta"}
 									</Button>
 								</form>

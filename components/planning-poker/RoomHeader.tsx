@@ -33,7 +33,10 @@ export const RoomHeader = ({
 					<div className="flex items-center gap-2">
 						<h1 className="text-2xl font-bold text-foreground">{roomName}</h1>
 						{isAdmin && (
-							<Badge variant="secondary" className="bg-gradient-accent text-accent-foreground">
+							<Badge
+								variant="secondary"
+								className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-accent-foreground"
+							>
 								<Crown className="w-3 h-3 mr-1" />
 								Admin
 							</Badge>

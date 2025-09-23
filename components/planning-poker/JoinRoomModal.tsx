@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn, Users } from "lucide-react";
+import { CustomButton } from "../ui/custom-button";
 
 interface JoinRoomModalProps {
 	onJoinRoom: (roomData: { roomId: string; userName: string; password?: string }) => void;
@@ -44,13 +45,14 @@ export const JoinRoomModal = ({ onJoinRoom }: JoinRoomModalProps) => {
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="lg" className="flex items-center gap-2">
-					<LogIn className="w-5 h-5" />
-					Entrar em Sala
-				</Button>
+				<CustomButton
+					icon={<LogIn className="w-5 h-5" />}
+					text="Entrar na sala"
+					variant="primary"
+				/>
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-[425px] bg-gradient-card border-border">
+			<DialogContent className="sm:max-w-[425px] bg-accent border-border">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-foreground">
 						<Users className="w-5 h-5" />
@@ -112,18 +114,19 @@ export const JoinRoomModal = ({ onJoinRoom }: JoinRoomModalProps) => {
 							type="button"
 							variant="outline"
 							onClick={() => setIsOpen(false)}
-							className="flex-1"
+							className="flex-1 uppercase"
 						>
 							Cancelar
 						</Button>
-						<Button
+						{/* <Button
 							type="submit"
-							variant="secondary"
-							className="flex-1"
+							variant="default"
+							className="flex-1 uppercase"
 							disabled={!roomId.trim() || !userName.trim()}
 						>
 							Entrar na Sala
-						</Button>
+						</Button> */}
+						<CustomButton text="Entrar na Sala" variant="primary" />
 					</div>
 				</form>
 			</DialogContent>

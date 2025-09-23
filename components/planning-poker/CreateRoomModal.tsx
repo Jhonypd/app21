@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Users } from "lucide-react";
+import { CustomButton } from "../ui/custom-button";
 
 interface CreateRoomModalProps {
 	onCreateRoom: (roomData: { name: string; hasPassword: boolean; password?: string }) => void;
@@ -43,13 +44,10 @@ export const CreateRoomModal = ({ onCreateRoom }: CreateRoomModalProps) => {
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogTrigger asChild>
-				<Button variant="hero" size="lg" className="flex items-center gap-2">
-					<Plus className="w-5 h-5" />
-					Criar Nova Sala
-				</Button>
+				<CustomButton text="Nova sala" variant="primary" icon={<Plus />} />
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-[425px] bg-gradient-card border-border">
+			<DialogContent className="sm:max-w-[425px] bg-muted border-border">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-foreground">
 						<Users className="w-5 h-5" />
@@ -109,14 +107,14 @@ export const CreateRoomModal = ({ onCreateRoom }: CreateRoomModalProps) => {
 							type="button"
 							variant="outline"
 							onClick={() => setIsOpen(false)}
-							className="flex-1"
+							className="flex-1 uppercase font-semibold cursor-pointer"
 						>
 							Cancelar
 						</Button>
 						<Button
 							type="submit"
-							variant="secondary"
-							className="flex-1"
+							variant="default"
+							className="flex-1 uppercase font-semibold cursor-pointer "
 							disabled={!roomName.trim()}
 						>
 							Criar Sala
