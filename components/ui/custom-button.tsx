@@ -101,7 +101,7 @@ export const CustomButton = forwardRef<HTMLButtonElement, CustomButtonProps>(
 		].join(" ");
 
 		const baseStyles = [
-			"font-medium transition-all duration-300 ease-in-out uppercase",
+			"font-medium transition-all duration-300 ease-in-out uppercase min-w-48",
 			"inline-flex items-center justify-center gap-2",
 			"focus:outline-none focus:ring-2 focus:ring-offset-2",
 			"transform hover:scale-[1.02] active:scale-[0.98]",

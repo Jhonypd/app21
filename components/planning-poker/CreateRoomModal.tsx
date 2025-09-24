@@ -47,7 +47,7 @@ export const CreateRoomModal = ({ onCreateRoom }: CreateRoomModalProps) => {
 				<CustomButton text="Nova sala" variant="primary" icon={<Plus />} />
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-[425px] bg-muted border-border">
+			<DialogContent className="sm:max-w-[425px] max-w-11/12 bg-muted border-border rounded-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-foreground">
 						<Users className="w-5 h-5" />
@@ -102,23 +102,20 @@ export const CreateRoomModal = ({ onCreateRoom }: CreateRoomModalProps) => {
 						</div>
 					)}
 
-					<div className="flex gap-3 pt-4">
-						<Button
+					<div className="flex gap-3 pt-4 w-full">
+						<CustomButton
+							text="Cancelar"
+							variant="secondary"
 							type="button"
-							variant="outline"
-							onClick={() => setIsOpen(false)}
-							className="flex-1 uppercase font-semibold cursor-pointer"
-						>
-							Cancelar
-						</Button>
-						<Button
-							type="submit"
-							variant="default"
-							className="flex-1 uppercase font-semibold cursor-pointer "
 							disabled={!roomName.trim()}
-						>
-							Criar Sala
-						</Button>
+							onClick={() => setIsOpen(false)}
+						/>
+						<CustomButton
+							text="Criar Sala"
+							variant="primary"
+							type="submit"
+							disabled={!roomName.trim()}
+						/>
 					</div>
 				</form>
 			</DialogContent>
