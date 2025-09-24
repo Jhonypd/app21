@@ -114,7 +114,6 @@ const Auth = () => {
 				<div className="text-center space-y-4 flex flex-col">
 					<div className="flex items-center justify-center">
 						<div className="p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-glow">
-							{/* <Zap className="w-12 h-12 text-muted" /> */}
 							<GiCardRandom className="w-12 h-12 text-muted" />
 						</div>
 					</div>

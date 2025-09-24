@@ -12,6 +12,8 @@ import { Zap, Users, Target, ArrowLeft, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ResultsSummary } from "@/components/planning-poker/ResultsSumary";
 import { toast } from "sonner";
+import { GiCardRandom } from "react-icons/gi";
+import { TbCardsFilled } from "react-icons/tb";
 
 // Mock data structure for demonstration
 interface Room {
@@ -263,7 +265,7 @@ const Index = () => {
 				<div className="space-y-6">
 					<div className="flex items-center justify-center mb-8">
 						<div className="p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-glow">
-							<Zap className="w-12 h-12 text-primary-foreground" />
+							<GiCardRandom className="w-12 h-12 text-muted" />
 						</div>
 					</div>
 
@@ -318,10 +320,10 @@ const Index = () => {
 						</CardContent>
 					</Card>
 
-					<Card className="bg-gradient-card border-border shadow-card p-6">
+					<Card className="bg-gradient-card border-border shadow-card p-4	">
 						<CardHeader className="pb-4">
 							<div className="w-12 h-12 bg-gradient-to-r from-violet-800 to-purple-700 rounded-lg flex items-center justify-center mb-4">
-								<Zap className="w-6 h-6 text-accent" />
+								<TbCardsFilled className="w-6 h-6 text-accent" />
 							</div>
 							<CardTitle className="text-lg text-foreground">Simples e Rápido</CardTitle>
 						</CardHeader>
