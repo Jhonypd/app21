@@ -15,20 +15,23 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { Zap, Mail, Lock } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { FcGoogle } from 'react-icons/fc';
 import { Separator } from '@/components/ui/separator';
 import { GiCardRandom } from 'react-icons/gi';
+import type { Session } from '@supabase/supabase-js';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(
+    null,
+  );
   const navigate = useRouter();
 
   useEffect(() => {
@@ -39,25 +42,19 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
-    // Check for existing session
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
-        if (session) {
-          navigate.replace('/');
-        }
+        if (session) navigate.replace('/');
         setSession(session);
       });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setSession(session);
-        if (session) {
-          navigate.replace('/');
-        }
+        if (session) navigate.replace('/');
       },
     );
 
@@ -71,7 +68,7 @@ const Auth = () => {
     try {
       const redirectUrl = `${window.location.origin}/`;
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -79,19 +76,29 @@ const Auth = () => {
         },
       });
 
-      if (error) {
-        toast('Erro no cadastro', {
-          description: error.message,
-        });
-      } else {
-        toast('Cadastro realizado!', {
-          description:
-            'Verifique seu email para confirmar a conta.',
-        });
+      if (error) throw error;
+
+      // Cria profile apenas se o usuário existe
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profile')
+          .insert({
+            id: data.user.id,
+            name,
+            created_at: new Date().toISOString(),
+          });
+
+        if (profileError) throw profileError;
       }
-    } catch (error) {
-      toast('Erro inesperado', {
-        description: 'Tente novamente mais tarde.',
+
+      toast('Cadastro realizado!', {
+        description:
+          'Verifique seu email para confirmar a conta.',
+      });
+    } catch (error: any) {
+      toast('Erro no cadastro', {
+        description:
+          error.message || 'Tente novamente mais tarde.',
       });
     } finally {
       setLoading(false);
@@ -109,27 +116,22 @@ const Auth = () => {
           password,
         });
 
-      if (error) {
-        toast('Erro no login', {
-          description: error.message,
-        });
-      } else {
-        toast('Login realizado!', {
-          description: 'Bem-vindo de volta!',
-        });
-      }
-    } catch (error) {
-      toast('Erro inesperado', {
-        description: 'Tente novamente mais tarde.',
+      if (error) throw error;
+
+      toast('Login realizado!', {
+        description: 'Bem-vindo de volta!',
+      });
+    } catch (error: any) {
+      toast('Erro no login', {
+        description:
+          error.message || 'Tente novamente mais tarde.',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  if (session) {
-    return null; // Will redirect
-  }
+  if (session) return null; // Já redireciona
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
@@ -176,17 +178,18 @@ const Auth = () => {
                   Cadastro
                 </TabsTrigger>
               </TabsList>
-              <div className="w-full">
+
+              <div className="mb-4 w-full">
                 <Button
                   type="button"
-                  variant={'outline'}
+                  variant="outline"
                   className="w-full cursor-pointer"
                 >
-                  <FcGoogle />
+                  <FcGoogle /> Continuar com Google
                 </Button>
               </div>
 
-              <div className="text-primary-foreground flex w-full flex-row items-center justify-between gap-2 font-semibold">
+              <div className="text-primary-foreground mb-4 flex w-full flex-row items-center justify-between gap-2 font-semibold">
                 <Separator className="max-w-36" />
                 <span>ou</span>
                 <Separator className="max-w-36" />
@@ -239,9 +242,10 @@ const Auth = () => {
                       required
                     />
                   </div>
+
                   <Button
                     type="submit"
-                    className="w-full cursor-pointer"
+                    className="w-full"
                     disabled={
                       loading || !email || !password
                     }
@@ -278,20 +282,27 @@ const Auth = () => {
                       required
                     />
                   </div>
-                  {/* <div className="space-y-2">
-										<Label htmlFor="name" className="flex items-center gap-2">
-											<Mail className="w-4 h-4" />
-											Nome
-										</Label>
-										<Input
-											id="name"
-											type="text"
-											placeholder="Seu nome"
-											value={name}
-											onChange={(e) => setName(e.target.value)}
-											required
-										/>
-									</div> */}
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="name"
+                      className="flex items-center gap-2"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Nome
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Seu nome"
+                      value={name}
+                      onChange={(e) =>
+                        setName(e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label
                       htmlFor="signup-password"
@@ -312,9 +323,10 @@ const Auth = () => {
                       minLength={6}
                     />
                   </div>
+
                   <Button
                     type="submit"
-                    className="w-full cursor-pointer"
+                    className="w-full"
                     disabled={
                       loading || !email || !password
                     }

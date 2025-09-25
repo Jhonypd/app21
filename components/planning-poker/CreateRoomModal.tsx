@@ -7,44 +7,86 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Users } from 'lucide-react';
 import { CustomButton } from '../ui/custom-button';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CreateRoomModalProps {
-  onCreateRoom: (roomData: {
-    name: string;
-    hasPassword: boolean;
-    password?: string;
-  }) => void;
+  onRoomCreated?: (room: any) => void; // Callback opcional quando sala é criada
 }
 
 export const CreateRoomModal = ({
-  onCreateRoom,
+  onRoomCreated,
 }: CreateRoomModalProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [hasPassword, setHasPassword] = useState(false);
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Assumindo que você tem uma forma de pegar o ID do usuário
+  const { user, session } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!roomName.trim()) return;
+    if (!user?.id || !session?.access_token) {
+      setError(
+        'Você precisa estar logado para criar uma sala',
+      );
+      return;
+    }
 
-    onCreateRoom({
-      name: roomName.trim(),
-      hasPassword,
-      password: hasPassword ? password : undefined,
-    });
+    setIsLoading(true);
+    setError('');
 
-    // Reset form
-    setRoomName('');
-    setPassword('');
-    setHasPassword(false);
-    setIsOpen(false);
+    try {
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`, // <-- token aqui
+        },
+        body: JSON.stringify({
+          createdBy: user.id,
+          password: hasPassword ? password : null,
+          privateRoom: hasPassword,
+        }),
+      });
+
+      const roomData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          roomData?.error || 'Erro ao criar sala',
+        );
+      }
+
+      if (onRoomCreated) {
+        onRoomCreated(roomData);
+      }
+
+      setRoomName('');
+      setPassword('');
+      setHasPassword(false);
+      setIsOpen(false);
+
+      console.log('Sala criada com sucesso!', roomData);
+    } catch (err) {
+      console.error('Erro ao criar sala:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao criar sala',
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -76,6 +118,12 @@ export const CreateRoomModal = ({
           onSubmit={handleSubmit}
           className="space-y-6 pt-4"
         >
+          {error && (
+            <div className="bg-destructive/15 text-destructive border-destructive/20 rounded-lg border p-3 text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label
               htmlFor="roomName"
@@ -90,6 +138,7 @@ export const CreateRoomModal = ({
               onChange={(e) => setRoomName(e.target.value)}
               className="bg-background border-border"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -109,6 +158,7 @@ export const CreateRoomModal = ({
               id="hasPassword"
               checked={hasPassword}
               onCheckedChange={setHasPassword}
+              disabled={isLoading}
             />
           </div>
 
@@ -130,6 +180,7 @@ export const CreateRoomModal = ({
                 }
                 className="bg-background border-border"
                 required={hasPassword}
+                disabled={isLoading}
               />
             </div>
           )}
@@ -140,12 +191,13 @@ export const CreateRoomModal = ({
               variant="outline"
               type="button"
               onClick={() => setIsOpen(false)}
+              disabled={isLoading}
             />
             <CustomButton
-              text="Criar Sala"
+              text={isLoading ? 'Criando...' : 'Criar Sala'}
               variant="primary"
               type="submit"
-              disabled={!roomName.trim()}
+              disabled={!roomName.trim() || isLoading}
             />
           </div>
         </form>
