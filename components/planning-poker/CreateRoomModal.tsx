@@ -50,10 +50,9 @@ export const CreateRoomModal = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`, // <-- token aqui
         },
+        credentials: 'include',
         body: JSON.stringify({
-          createdBy: user.id,
           password: hasPassword ? password : null,
           privateRoom: hasPassword,
         }),

@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
 interface RoomsProps {
-  createdBy: string;
   password?: string | null;
   privateRoom: boolean;
 }
 
 async function generateUniqueCode(
-  supabasePromise: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
 ) {
-  const supabase = await supabasePromise; // resolve a promise
   let code: string;
   let exists = true;
 
@@ -30,27 +29,41 @@ async function generateUniqueCode(
 }
 
 export async function POST(req: NextRequest) {
+  const cookieHeader = req.headers.get('cookie');
+  console.log(
+    '🍪 Cookies recebidos:',
+    cookieHeader?.includes('supabase-auth-token')
+      ? 'Contém supabase-auth-token'
+      : 'NÃO contém cookie de autenticação',
+  );
   try {
-    const token = req.headers
-      .get('Authorization')
-      ?.replace('Bearer ', '');
-    if (!token)
-      return NextResponse.json(
-        { error: 'Token não fornecido' },
-        { status: 401 },
-      );
-
-    const body: RoomsProps = await req.json();
-
     const supabase = await createClient();
 
-    const { createdBy, password, privateRoom } = body;
-    if (!createdBy)
-      return NextResponse.json(
-        { error: 'Id do usuário não informado' },
-        { status: 400 },
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    console.log('🔍 Debug Auth:');
+    console.log('- authError:', authError);
+    console.log('- user:', user);
+    console.log('- user.id:', user?.id);
+    if (authError || !user) {
+      console.warn(
+        '⚠️ Usuário NÃO autenticado ou sessão inválida',
       );
-    if (privateRoom && !password)
+      return NextResponse.json(
+        { error: 'Não autorizado' },
+        { status: 401 },
+      );
+    }
+    console.log(
+      '✅ Usuário autenticado com sucesso:',
+      user.id,
+    );
+    const body: RoomsProps = await req.json();
+    const { password, privateRoom } = body;
+
+    if (privateRoom && !password) {
       return NextResponse.json(
         {
           error:
@@ -58,26 +71,28 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 },
       );
+    }
 
-    const code = await generateUniqueCode(createClient());
-    const withPassword = password ?? null;
-    console.log(createdBy);
+    const code = await generateUniqueCode(supabase);
+
     const { data: newRoom, error } = await supabase
       .from('rooms')
       .insert({
-        created_by: createdBy,
-        password: withPassword,
+        created_by: user.id,
+        password: password ?? null,
         code,
         private: privateRoom,
       })
       .select()
       .single();
 
-    if (error)
+    if (error) {
+      console.error('Erro do Supabase:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 500 },
       );
+    }
 
     return NextResponse.json(newRoom, { status: 201 });
   } catch (err) {
