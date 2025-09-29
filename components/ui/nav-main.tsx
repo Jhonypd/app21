@@ -52,7 +52,7 @@ export function NavMain({ menus }: NavMainProps) {
                       <SidebarMenuSubButton asChild>
                         <a href={subItem.url}>
                           {subItem.icon && (
-                            <subItem.icon className="mr-2 h-4 w-4" />
+                            <subItem.icon className="!text-foreground [&>svg]:hover:!sidebar-accent-foreground mr-2 h-4 w-4" />
                           )}
                           <span>{subItem.title}</span>
                         </a>

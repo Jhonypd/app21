@@ -38,11 +38,6 @@ export interface MenuCategoryProps {
 
 export interface MenuList {
   menuList: MenuCategoryProps[];
-  projects: {
-    name: string;
-    url: string;
-    description?: string;
-  }[];
 }
 
 export const menus: MenuList = {
@@ -177,7 +172,7 @@ export const menus: MenuList = {
           description:
             'Gerenciar informações pessoais e avatar',
           icon: MdPerson,
-          url: '/settings/profile',
+          url: '/configuracoes/perfil',
         },
         {
           order: 402,
@@ -185,7 +180,7 @@ export const menus: MenuList = {
           description:
             'Configurações de estimativas e notificações',
           icon: FaCog,
-          url: '/settings/preferences',
+          url: '/configuracoes/preferences',
         },
         {
           order: 403,
@@ -193,14 +188,14 @@ export const menus: MenuList = {
           description:
             'Criar e gerenciar equipes de trabalho',
           icon: HiOutlineUserGroup,
-          url: '/settings/teams',
+          url: '/configuracoes/equipes',
         },
         {
           order: 404,
           title: 'Notificações',
           description: 'Configurar alertas e lembretes',
           icon: MdNotifications,
-          url: '/settings/notifications',
+          url: '/configuracoes/notifications',
         },
       ],
     },
@@ -234,30 +229,6 @@ export const menus: MenuList = {
           url: '/help/feedback',
         },
       ],
-    },
-  ],
-
-  // Projetos/Times Favoritos ou Recentes
-  projects: [
-    {
-      name: 'Time Frontend',
-      url: '/teams/frontend',
-      description: 'Estimativas do time de frontend',
-    },
-    {
-      name: 'Projeto E-commerce',
-      url: '/projects/ecommerce',
-      description: 'Planning do projeto e-commerce',
-    },
-    {
-      name: 'API Gateway',
-      url: '/projects/api-gateway',
-      description: 'Refatoração da API Gateway',
-    },
-    {
-      name: 'Mobile App v2',
-      url: '/projects/mobile-v2',
-      description: 'Nova versão do aplicativo mobile',
     },
   ],
 };

@@ -42,7 +42,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain menus={menus.menuList} />
-        <NavProjects projects={menus.projects} />
+        {/* <NavProjects projects={menus.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser
