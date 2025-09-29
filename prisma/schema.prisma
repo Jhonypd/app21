@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model pessoa {
+  id           String   @id
+  nome         String?
+  inativo      Boolean  @default(false)
+  user_id      String
+  data_criacao DateTime @default(now())
+
+  salas               sala[]
+  participacoes       participantesSala[]
+  historia            historia[]
+  votos               votos[]
+  membroEquipe        membroEquipe[]
+  projetoParticipante projetoParticipante[]
+}
+
+model equipe {
+  id            String         @id @default(uuid())
+  nome          String
+  inativo       Boolean        @default(false)
+  membrosEquipe membroEquipe[]
+  projetos      projeto[]
+}
+
+model membroEquipe {
+  id           String  @id @default(uuid())
+  pessoa_id    String
+  equipe_id    String
+  proprietario Boolean @default(false)
+
+  pessoa pessoa @relation(fields: [pessoa_id], references: [id])
+  equipe equipe @relation(fields: [equipe_id], references: [id])
+
+  @@unique([pessoa_id, equipe_id])
+}
+
+model projeto {
+  id            String                @id @default(uuid())
+  nome          String
+  equipe_id     String
+  inativo       Boolean               @default(false)
+  equipe        equipe                @relation(fields: [equipe_id], references: [id])
+  participantes projetoParticipante[]
+}
+
+model projetoParticipante {
+  id         String @id @default(uuid())
+  projeto_id String
+  pessoa_id  String
+
+  role Int
+
+  projeto projeto @relation(fields: [projeto_id], references: [id])
+  pessoa  pessoa  @relation(fields: [pessoa_id], references: [id])
+
+  @@unique([projeto_id, pessoa_id])
+}
+
+model sala {
+  id             String   @id @default(uuid())
+  codigo         Int      @unique @default(autoincrement())
+  titulo         String
+  criado_por     String
+  inativo        Boolean  @default(false)
+  senha          String?
+  data_criacao   DateTime @default(now())
+  data_alteracao DateTime @updatedAt()
+
+  participantes participantesSala[]
+  historia      historia[]
+  votos         votos[]
+
+  proprietario pessoa @relation(fields: [criado_por], references: [id])
+}
+
+model participantesSala {
+  id         String   @id @default(uuid())
+  sala_id    String
+  pessoa_id  String
+  adicionado DateTime @default(now())
+  pessoa     pessoa   @relation(fields: [pessoa_id], references: [id])
+  sala       sala     @relation(fields: [sala_id], references: [id])
+
+  @@unique([sala_id, pessoa_id])
+  @@index([sala_id])
+  @@index([pessoa_id])
+}
+
+model votos {
+  id          String @id @default(uuid())
+  pessoa_id   String
+  sala_id     String
+  historia_id String
+  valor       Int
+
+  historia historia @relation(fields: [historia_id], references: [id])
+  pessoa   pessoa   @relation(fields: [pessoa_id], references: [id])
+  sala     sala     @relation(fields: [sala_id], references: [id])
+
+  @@unique([sala_id, historia_id, pessoa_id])
+  @@index([sala_id])
+  @@index([historia_id])
+  @@index([pessoa_id])
+}
+
+model historia {
+  id             String   @id @default(uuid())
+  titulo         String
+  descricao      String
+  sala_id        String
+  criado_por     String
+  data_criacao   DateTime @default(now())
+  data_alteracao DateTime @updatedAt()
+  votos          votos[]
+
+  criador pessoa @relation(fields: [criado_por], references: [id])
+  sala    sala   @relation(fields: [sala_id], references: [id])
+
+  @@index([sala_id])
+}

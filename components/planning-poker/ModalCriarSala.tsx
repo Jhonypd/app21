@@ -13,9 +13,14 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Users } from 'lucide-react';
 import { CustomButton } from '../ui/custom-button';
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
+interface Rooms {
+  privateRoom: boolean;
+  password?: string;
+}
 interface CreateRoomModalProps {
-  onRoomCreated?: (room: any) => void; // Callback opcional quando sala é criada
+  onRoomCreated?: (room: Rooms) => void;
 }
 
 export const CreateRoomModal = ({
@@ -27,6 +32,7 @@ export const CreateRoomModal = ({
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const router = useRouter();
 
   // Assumindo que você tem uma forma de pegar o ID do usuário
   const { user, session } = useAuth();
@@ -46,15 +52,16 @@ export const CreateRoomModal = ({
     setError('');
 
     try {
-      const response = await fetch('/api/rooms', {
+      const response = await fetch('/api/salas/novaSala', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-          password: hasPassword ? password : null,
-          privateRoom: hasPassword,
+          titulo: roomName,
+          senha: hasPassword ? password : null,
+          salaPrivada: hasPassword,
         }),
       });
 
@@ -76,6 +83,7 @@ export const CreateRoomModal = ({
       setIsOpen(false);
 
       console.log('Sala criada com sucesso!', roomData);
+      router.replace('/dashboard/salas');
     } catch (err) {
       console.error('Erro ao criar sala:', err);
       setError(

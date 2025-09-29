@@ -16,122 +16,53 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Mail, Lock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 import { FcGoogle } from 'react-icons/fc';
 import { Separator } from '@/components/ui/separator';
 import { GiCardRandom } from 'react-icons/gi';
-import type { Session } from '@supabase/supabase-js';
+import { login, signup } from '@/app/actions/login';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [nome, setNome] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<Session | null>(
-    null,
-  );
-  const navigate = useRouter();
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      setEmail('yalali6338@dawhe.com');
+      setEmail('jesihow205@gddcorp.com');
       setPassword('123456');
     }
   }, []);
 
-  useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (session) navigate.replace('/');
-        setSession(session);
-      });
+  // Remove o handleSignUp e handleSignIn antigos
+  // As Server Actions serão chamadas diretamente no formAction
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        if (session) navigate.replace('/');
-      },
-    );
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAction = async (
+    formData: FormData,
+    action: 'login' | 'signup',
+  ) => {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
-
-      if (error) throw error;
-
-      // Cria profile apenas se o usuário existe
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profile')
-          .insert({
-            id: data.user.id,
-            name,
-            created_at: new Date().toISOString(),
-          });
-
-        if (profileError) throw profileError;
+      if (action === 'login') {
+        await login(formData);
+      } else {
+        await signup(formData);
       }
-
-      toast('Cadastro realizado!', {
-        description:
-          'Verifique seu email para confirmar a conta.',
-      });
-    } catch (error: any) {
-      toast('Erro no cadastro', {
-        description:
-          error.message || 'Tente novamente mais tarde.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const { error } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
+      // O redirect acontece nas Server Actions, então não precisamos fazer nada aqui
+    } catch (error: unknown) {
+      console.error('Auth error:', error);
+      if (error instanceof Error) {
+        toast('Erro na autenticação', {
+          description:
+            error.message || 'Tente novamente mais tarde.',
         });
-
-      if (error) throw error;
-
-      toast('Login realizado!', {
-        description: 'Bem-vindo de volta!',
-      });
-    } catch (error: any) {
-      toast('Erro no login', {
-        description:
-          error.message || 'Tente novamente mais tarde.',
-      });
+      }
     } finally {
       setLoading(false);
     }
   };
-
-  if (session) return null; // Já redireciona
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
@@ -199,10 +130,7 @@ const Auth = () => {
                 value="login"
                 className="space-y-4"
               >
-                <form
-                  onSubmit={handleSignIn}
-                  className="space-y-4"
-                >
+                <form className="space-y-4">
                   <div className="space-y-2">
                     <Label
                       htmlFor="email"
@@ -213,6 +141,7 @@ const Auth = () => {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       placeholder="seu@email.com"
                       value={email}
@@ -233,6 +162,7 @@ const Auth = () => {
                     </Label>
                     <Input
                       id="password"
+                      name="password"
                       type="password"
                       placeholder="Sua senha"
                       value={password}
@@ -245,6 +175,9 @@ const Auth = () => {
 
                   <Button
                     type="submit"
+                    formAction={(formData) =>
+                      handleAction(formData, 'login')
+                    }
                     className="w-full"
                     disabled={
                       loading || !email || !password
@@ -259,10 +192,7 @@ const Auth = () => {
                 value="signup"
                 className="space-y-4"
               >
-                <form
-                  onSubmit={handleSignUp}
-                  className="space-y-4"
-                >
+                <form className="space-y-4">
                   <div className="space-y-2">
                     <Label
                       htmlFor="signup-email"
@@ -273,6 +203,7 @@ const Auth = () => {
                     </Label>
                     <Input
                       id="signup-email"
+                      name="email"
                       type="email"
                       placeholder="seu@email.com"
                       value={email}
@@ -285,19 +216,20 @@ const Auth = () => {
 
                   <div className="space-y-2">
                     <Label
-                      htmlFor="name"
+                      htmlFor="nome"
                       className="flex items-center gap-2"
                     >
                       <Mail className="h-4 w-4" />
                       Nome
                     </Label>
                     <Input
-                      id="name"
+                      id="nome"
+                      name="nome"
                       type="text"
                       placeholder="Seu nome"
-                      value={name}
+                      value={nome}
                       onChange={(e) =>
-                        setName(e.target.value)
+                        setNome(e.target.value)
                       }
                       required
                     />
@@ -313,6 +245,7 @@ const Auth = () => {
                     </Label>
                     <Input
                       id="signup-password"
+                      name="password"
                       type="password"
                       placeholder="Mínimo 6 caracteres"
                       value={password}
@@ -326,6 +259,9 @@ const Auth = () => {
 
                   <Button
                     type="submit"
+                    formAction={(formData) =>
+                      handleAction(formData, 'signup')
+                    }
                     className="w-full"
                     disabled={
                       loading || !email || !password
