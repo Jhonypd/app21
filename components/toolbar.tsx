@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { PlusIcon, Search } from 'lucide-react';
-import { SearchInput } from './input-search';
+import { SearchInput } from './inputs/input-search';
 
 interface ToolbarProps {
   children: React.ReactNode;

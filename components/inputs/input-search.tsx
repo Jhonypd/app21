@@ -1,5 +1,5 @@
-import { Input } from '@/components/ui/input';
 import React, { useState, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
 export const useSearchInput = (

@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import Loading from '@/components/loading';
-import { DataTable } from '@/components/data-table/DataTable';
-import { PageHeader } from '@/components/page-header';
 import { HiOutlineUserGroup } from 'react-icons/hi';
-import BasicForm from '@/components/basic-form';
 import { EquipeForm, EquipeFormRef } from './equipes-form';
 import {
   CreateEquipeData,
@@ -16,20 +19,77 @@ import {
   EquipeFormValues,
   CurrentEquipeData,
 } from './schema';
+import BasicForm from '@/components/forms/basic-form';
+import TitlePage from '@/components/pages/title-page';
+import FilterPage from '@/components/pages/filter-page';
+import { FilterGrid } from '@/components/pages/filter-grid';
+import { FilterItem } from '@/components/pages/filter-item';
+import { Toolbar } from '@/components/toolbar';
+import DeleteButton from '@/components/pages/button-delete-page';
+import {
+  ColumnsEquipesTable,
+  Equipes,
+} from '@/app/modules/configuracoes/equipes/interfaces';
+import {
+  DataTable,
+  Limit,
+} from '@/components/table/data-table';
+import { equipesColumns } from '@/app/modules/configuracoes/equipes/components/columns-equipes';
+import {
+  toastError,
+  toastInfo,
+} from '@/components/custom-toast';
+import { Badge } from '@/components/ui/badge';
 
-interface Equipe {
-  id: string;
-  nome: string;
-  inativo: boolean;
-  data_criacao: string;
-  data_alteracao: string;
-  totalMembros: number;
-  totalProjetos: number;
-}
+// Função para mapear equipe para ColumnsEquipeTable
+const mapEquipeToTableData = (
+  equipe: Equipes,
+): ColumnsEquipesTable => ({
+  id: equipe.id,
+  editar: null,
+  nome: equipe.nome,
+  administrador:
+    equipe.membrosEquipe.find((m) => m.proprietario)
+      ?.nome || 'N/A',
+  integrantes: (
+    <Badge
+      variant={'neutral'}
+      onClick={() => {
+        toastInfo({
+          description: `${equipe.membrosEquipe.map((m) => m.nome).join(', ')}`,
+        });
+      }}
+    >
+      {equipe.membrosEquipe.length}
+    </Badge>
+  ),
+  projetos: (
+    <Badge
+      variant={'neutral'}
+      onClick={() => {
+        toastInfo({
+          description: `${equipe.projetos.map((p) => p.nome).join(', ')}`,
+        });
+      }}
+    >
+      {equipe.projetos.length}
+    </Badge>
+  ),
+  inativo: equipe.inativo ? 'inativo' : 'ativo',
+});
 
 const PageEquipes = () => {
-  const [equipes, setEquipes] = useState<Equipe[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Estados de paginação
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 20 as Limit,
+  });
+  const [equipes, setEquipes] = useState<Equipes[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPaginatedFetching, setIsPaginatedFetching] =
+    useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [currentEquipe, setCurrentEquipe] =
@@ -37,20 +97,83 @@ const PageEquipes = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isValidForm, setIsValidForm] =
     useState<boolean>(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    [],
+  );
+  const [formMode, setFormMode] = useState<
+    'create' | 'edit'
+  >('create');
   const { user } = useAuth();
   const formRef = useRef<EquipeFormRef>(null);
+
+  // Função para editar
+  const handleEdit = useCallback(async (id: string) => {
+    try {
+      setIsLoading(true);
+      setFormMode('edit');
+      // setEditingProcedureId(id);
+
+      // await fetchSchedule(id);
+
+      setIsSheetOpen(true);
+    } catch (error) {
+      console.error('Erro ao buscar agendamento:', error);
+      toastError({
+        description:
+          'Erro ao carregar agendamento para edição',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Colunas da tabela
+  const columns = useMemo(
+    () =>
+      equipesColumns({
+        selectedIds: selectedIds,
+        setSelectedIds: setSelectedIds,
+        data: equipes.map(mapEquipeToTableData),
+        onEdit: handleEdit,
+      }),
+    [selectedIds, equipes, handleEdit],
+  );
+
+  // Dados mapeados para a tabela
+  const mappedTable = useMemo(
+    () => equipes.map(mapEquipeToTableData),
+    [equipes],
+  );
+
+  // Handlers de paginação
+  const handlePageChange = (pageIndex: number) => {
+    setPagination((prev) => ({ ...prev, pageIndex }));
+  };
+  const handlePageSizeChange = (pageSize: Limit) => {
+    setPagination({ pageIndex: 0, pageSize });
+  };
 
   // Buscar equipes
   useEffect(() => {
     const fetchEquipes = async () => {
       try {
-        setLoading(true);
+        setIsLoading(true);
         const res = await fetch('/api/equipes');
         if (!res.ok) {
           throw new Error('Falha ao carregar as equipes');
         }
         const data = await res.json();
-        setEquipes(data.equipes || []);
+
+        // Ajuste aqui: pegar as equipes do novo formato
+        const equipesData =
+          data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
+          [];
+
+        setEquipes(equipesData);
+        setTotalCount(
+          data.ResultadoOperacao?.paginacao?.totalItens ||
+            0,
+        );
         setError(null);
       } catch (err) {
         const message =
@@ -62,134 +185,63 @@ const PageEquipes = () => {
           description: 'Tente novamente mais tarde.',
         });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchEquipes();
   }, []);
 
-  // Resetar estado do formulário
-  const resetFormState = () => {
-    setCurrentEquipe(null);
-    setIsEditMode(false);
-    formRef.current?.reset();
-  };
+  // Buscar equipes com paginação
+  useEffect(() => {
+    const fetchEquipesPaginated = async () => {
+      try {
+        setIsPaginatedFetching(true);
+        const params = new URLSearchParams({
+          pagina: pagination.pageIndex.toString(),
+          limite: pagination.pageSize.toString(),
+        });
 
-  // Abrir formulário para criação
-  const handleCreate = () => {
-    resetFormState();
-    setIsSheetOpen(true);
-  };
+        const res = await fetch(`/api/equipes?${params}`);
+        if (!res.ok) {
+          throw new Error('Falha ao carregar as equipes');
+        }
+        const data = await res.json();
 
-  // Abrir formulário para edição
-  const handleEdit = (equipe: Equipe) => {
-    const currentData: CurrentEquipeData = {
-      id: equipe.id,
-      nome: equipe.nome,
-      inativo: equipe.inativo,
-      membrosEquipe: [], // Você precisará buscar esses dados se necessário
-      projetos: [], // Você precisará buscar esses dados se necessário
+        // Ajuste aqui: pegar as equipes do novo formato
+        const equipesData =
+          data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
+          [];
+
+        setEquipes(equipesData);
+        setTotalCount(
+          data.ResultadoOperacao?.paginacao?.totalItens ||
+            0,
+        );
+        setError(null);
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : 'Erro desconhecido';
+        setError(message);
+        toast.error('Erro ao carregar equipes', {
+          description: 'Tente novamente mais tarde.',
+        });
+      } finally {
+        setIsPaginatedFetching(false);
+      }
     };
 
-    setCurrentEquipe(currentData);
-    setIsEditMode(true);
+    fetchEquipesPaginated();
+  }, [pagination.pageIndex, pagination.pageSize]);
+
+  const handleOpenCreateForm = useCallback(() => {
+    setFormMode('create');
     setIsSheetOpen(true);
-  };
+  }, []);
 
-  // Validação do formulário
-  const handleValidation = (valid: boolean) => {
-    console.log('Formulário válido:', valid);
-
-    setIsValidForm(valid);
-  };
-
-  // Mudanças nos dados do formulário
-  const handleDataChange = (data: {
-    values: EquipeFormValues;
-    createData?: CreateEquipeData;
-    editData?: EditEquipeData;
-  }) => {
-    console.log('Dados alterados:', data);
-    // Aqui você pode atualizar o estado se necessário
-  };
-
-  // Submissão do formulário
-  const handleSubmit = async (data: EquipeFormValues) => {
-    try {
-      const url =
-        isEditMode && currentEquipe
-          ? `/api/equipes/${currentEquipe.id}`
-          : '/api/equipes/nova-equipe';
-
-      const method = isEditMode ? 'PUT' : 'POST';
-      const body =
-        isEditMode && currentEquipe
-          ? { nome: data.nome, inativo: data.inativo }
-          : { nome: data.nome }; // Não envia inativo na criação
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao salvar equipe');
-      }
-
-      const result = await response.json();
-
-      toast.success(
-        isEditMode
-          ? 'Equipe atualizada com sucesso!'
-          : 'Equipe criada com sucesso!',
-      );
-
-      // Recarregar a lista de equipes
-      const equipesRes = await fetch('/api/equipes');
-      const equipesData = await equipesRes.json();
-      setEquipes(equipesData.equipes || []);
-
-      // Fechar o formulário
-      setIsSheetOpen(false);
-      resetFormState();
-    } catch (error) {
-      console.error('Erro ao salvar equipe:', error);
-      toast.error('Erro ao salvar equipe', {
-        description: 'Tente novamente mais tarde.',
-      });
-    }
-  };
-
-  // Excluir equipe
-  const handleDelete = async (id: string) => {
-    try {
-      const response = await fetch(`/api/equipes/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao excluir equipe');
-      }
-
-      toast.success('Equipe excluída com sucesso!');
-
-      // Atualizar lista
-      setEquipes((prev) =>
-        prev.filter((equipe) => equipe.id !== id),
-      );
-    } catch (error) {
-      console.error('Erro ao excluir equipe:', error);
-      toast.error('Erro ao excluir equipe', {
-        description: 'Tente novamente mais tarde.',
-      });
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Loading
         active
@@ -220,62 +272,76 @@ const PageEquipes = () => {
       </div>
     );
   }
+
   console.log({ equipes });
   return (
     <div className="container mx-auto w-full">
-      <PageHeader
+      <TitlePage
         title="Gerenciar Equipes"
         description="Criar e gerenciar equipes de trabalho"
         icon={<HiOutlineUserGroup />}
       />
 
-      <DataTable
-        form={
-          <BasicForm
-            title={
-              isEditMode ? 'Editar Equipe' : 'Nova Equipe'
-            }
-            submitText={isEditMode ? 'Atualizar' : 'Salvar'}
-            isLoading={false}
-            isOverlay={true}
-            mode={isEditMode ? 'edit' : 'create'}
-            open={isSheetOpen}
-            onOpenChange={(open) => {
-              setIsSheetOpen(open);
-              if (!open) {
-                resetFormState();
-              }
-            }}
-            onSubmit={() => formRef.current?.submit()}
-            isValid={isValidForm}
-          >
-            <EquipeForm
-              ref={formRef}
-              isLoading={false}
-              isValidated={handleValidation}
-              onDataChange={handleDataChange}
-              onSubmit={handleSubmit}
-              initialData={currentEquipe || undefined}
-            />
-          </BasicForm>
+      <FilterPage>
+        <FilterGrid>
+          <FilterItem>
+            <></>
+          </FilterItem>
+        </FilterGrid>
+      </FilterPage>
+
+      <Toolbar
+        onSearchChange={() =>
+          alert(
+            'Função de pesquisa ainda não implementada.',
+          )
         }
-        onCreate={handleCreate}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        data={equipes}
-        columns={[
-          { key: 'id', label: 'id' },
-          { key: 'nome', label: 'Nome' },
-          {
-            key: 'inativo',
-            label: 'Status',
-            format: (value: boolean) =>
-              value ? 'Inativo' : 'Ativo',
-          },
-          { key: 'totalMembros', label: 'Membros' },
-          { key: 'totalProjetos', label: 'Projetos' },
-        ]}
-      />
+        searchValue={''}
+        onOpenCreateForm={handleOpenCreateForm}
+        deleteButton={
+          <DeleteButton
+            onSubmit={() => {}}
+            description="Esta ação não pode ser desfeita."
+            title={
+              'Você tem certeza que deseja excluir o(s) agendamento(s) selecionado(s)?'
+            }
+            disabled={selectedIds.length === 0}
+          />
+        }
+      >
+        <BasicForm
+          isValid={false}
+          open={isSheetOpen}
+          onSubmit={() => {}}
+          onOpenChange={(open) => {
+            setIsSheetOpen(open);
+          }}
+          mode={formMode}
+          title={
+            formMode === 'edit'
+              ? 'Editar Sala'
+              : 'Nova Sala'
+          }
+          className="sm:max-w-2/4"
+        >
+          <></>
+        </BasicForm>
+      </Toolbar>
+      <div className="min-h-96">
+        <DataTable<ColumnsEquipesTable, unknown>
+          columns={columns}
+          data={mappedTable}
+          isLoading={isPaginatedFetching || isDeleting}
+          selectedIds={selectedIds}
+          pagination={{
+            pageIndex: pagination.pageIndex,
+            pageSize: pagination.pageSize,
+            totalCount,
+            onPageChange: handlePageChange,
+            onPageSizeChange: handlePageSizeChange,
+          }}
+        />
+      </div>
     </div>
   );
 };
