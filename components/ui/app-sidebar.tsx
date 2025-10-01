@@ -6,15 +6,19 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { NavMain } from './nav-main';
 import { menus } from '@/constants/menus';
-import { NavProjects } from './nav-projects';
 import { NavUser } from './nav-user';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { CollapsibleTrigger } from './collapsible';
+import { MdDashboard } from 'react-icons/md';
 
 export function AppSidebar({
   ...props
@@ -42,6 +46,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain menus={menus.menuList} />
+
         {/* <NavProjects projects={menus.projects} /> */}
       </SidebarContent>
       <SidebarFooter>

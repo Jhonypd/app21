@@ -56,52 +56,32 @@ const DataTableCell = <TData, TValue>({
 
   // Se o valor for um elemento React, renderiza diretamente
   if (isValidElement(value)) {
-    return (
-      <div
-        className={cn('ml-2 p-1 text-[#6b7382]', className)}
-      >
-        {value}
-      </div>
-    );
+    return value;
   }
 
   if (value === 'ativo' || value === 'inativo') {
     return (
-      <div
-        className={cn('ml-2 p-1 text-[#6b7382]', className)}
+      <Badge
+        variant={
+          value === 'ativo' ? 'success' : 'destructive'
+        }
+        className="ml-1 text-xs font-bold text-white uppercase"
       >
-        <Badge
-          variant={
-            value === 'ativo' ? 'success' : 'destructive'
-          }
-          className="ml-1 text-white"
-        >
-          {safeFormat(value)}
-        </Badge>
-      </div>
+        {safeFormat(value)}
+      </Badge>
     );
   }
 
   if (value === 'editar') {
     return (
-      <div
-        className={cn('ml-2 p-1 text-[#6b7382]', className)}
-      >
-        <SquarePen
-          aria-label="Editar"
-          className="text-primary h-5 w-5 cursor-pointer"
-        />
-      </div>
+      <SquarePen
+        aria-label="Editar"
+        className="text-primary h-5 w-5 cursor-pointer"
+      />
     );
   }
 
-  return (
-    <div
-      className={cn('ml-2 p-1 text-[#6b7382]', className)}
-    >
-      {safeFormat(value)}
-    </div>
-  );
+  return safeFormat(value);
 };
 
 export default DataTableCell;

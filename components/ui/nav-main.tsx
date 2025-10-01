@@ -18,6 +18,7 @@ import {
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { MenuCategoryProps } from '@/constants/menus';
+import { MdDashboard } from 'react-icons/md';
 
 interface NavMainProps {
   menus: MenuCategoryProps[];
@@ -28,6 +29,14 @@ export function NavMain({ menus }: NavMainProps) {
     <SidebarGroup>
       <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
       <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <a href="/dashboard">
+              <MdDashboard />
+              <span>Dashboard</span>
+            </a>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
         {menus.map((item) => (
           <Collapsible
             key={item.title}
@@ -39,7 +48,10 @@ export function NavMain({ menus }: NavMainProps) {
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton tooltip={item.title}>
                   {item.icon && (
-                    <item.icon className="h-4 w-4" />
+                    <item.icon
+                      className="h-5 w-5"
+                      size={20}
+                    />
                   )}
                   <span>{item.title}</span>
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -52,7 +64,7 @@ export function NavMain({ menus }: NavMainProps) {
                       <SidebarMenuSubButton asChild>
                         <a href={subItem.url}>
                           {subItem.icon && (
-                            <subItem.icon className="!text-foreground [&>svg]:hover:!sidebar-accent-foreground mr-2 h-4 w-4" />
+                            <subItem.icon className="!text-foreground [&>svg]:hover:!sidebar-accent-foreground mr-2 h-5 w-5 [&>svg]:size-5" />
                           )}
                           <span>{subItem.title}</span>
                         </a>

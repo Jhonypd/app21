@@ -1,5 +1,4 @@
 import { ArrowUpDownIcon } from 'lucide-react';
-import { Button } from '../ui/button';
 import { Column } from '@tanstack/react-table';
 
 type HeaderTableProps<T> = {
@@ -20,15 +19,24 @@ export function HeaderTable<T>({
   };
 
   return (
-    <Button
-      className="text-[#3f4053] uppercase hover:bg-transparent"
-      variant="ghost"
+    // <Button
+    //   className="text-primary hover:text-primary/60 flex w-full justify-start text-start uppercase hover:bg-transparent"
+    //   variant="ghost"
+
+    // >
+    //   {label}
+    //   {sortable && (
+    //     <ArrowUpDownIcon className="ml-2 h-4 w-4" />
+    //   )}
+    // </Button>
+    <div
+      className="text-primary hover:text-primary/60 flex w-full justify-start text-start uppercase hover:bg-transparent"
       onClick={handleSort}
     >
       {label}
       {sortable && (
         <ArrowUpDownIcon className="ml-2 h-4 w-4" />
       )}
-    </Button>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ import {
 import { AppSidebar } from '@/components/ui/app-sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import Loading from '@/components/loading';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 interface LayoutProps {
   children: ReactNode;
@@ -41,25 +42,12 @@ const Layout = ({ children }: LayoutProps) => {
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/dashboard">
-                    Dashboard
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>
-                    Minhas Salas
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+
+            <Breadcrumbs />
           </div>
         </header>
         <div
-          className={`bg-background flex flex-1 flex-col gap-4 overflow-x-hidden pt-2 ${isMobile ? 'w-screen max-w-screen' : 'max-w-full'}`}
+          className={`bg-background flex flex-1 flex-col gap-4 overflow-x-hidden px-4 pt-2 sm:px-6 ${isMobile ? 'w-screen max-w-screen' : 'max-w-full'}`}
         >
           {children}
         </div>

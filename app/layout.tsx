@@ -34,6 +34,7 @@ export default function RootLayout({
           <Layout>
             {children}
             <Toaster
+              className="z-[999999999] mx-auto flex w-full justify-end md:text-nowrap"
               visibleToasts={1}
               expand={false}
             />

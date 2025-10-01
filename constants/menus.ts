@@ -1,23 +1,27 @@
 import {
   MdMeetingRoom,
-  MdDashboard,
   MdAdd,
-  MdGroup,
+  MdLogin,
   MdHistory,
   MdSettings,
   MdAnalytics,
-  MdSchedule,
   MdPerson,
   MdNotifications,
   MdHelp,
   MdBugReport,
   MdFeedback,
+  MdWork,
+  MdFolder,
+  MdList,
 } from 'react-icons/md';
-import { FaUsers, FaChartBar, FaCog } from 'react-icons/fa';
 import {
-  HiOutlineDocumentReport,
-  HiOutlineUserGroup,
-} from 'react-icons/hi';
+  FaChartBar,
+  FaCog,
+  FaUsers,
+  FaUsersCog,
+} from 'react-icons/fa';
+import { HiOutlineDocumentReport } from 'react-icons/hi';
+import { RiBarChartGroupedFill } from 'react-icons/ri';
 import { IconType } from 'react-icons';
 
 export interface MenuProps {
@@ -42,78 +46,59 @@ export interface MenuList {
 
 export const menus: MenuList = {
   menuList: [
-    // Dashboard Principal
+    // Gerenciamento de Salas
     {
       order: 100,
-      title: 'Dashboard',
-      description: 'Visão geral e métricas principais',
-      icon: MdDashboard,
+      title: 'Salas',
+      description:
+        'Gerenciamento de salas de Planning Poker',
+      icon: MdMeetingRoom,
       menus: [
         {
           order: 101,
-          title: 'Início',
-          description:
-            'Painel principal com estatísticas e salas ativas',
-          icon: MdDashboard,
-          url: '/dashboard',
+          title: 'Todas as Salas',
+          description: 'Minhas salas e salas participando',
+          icon: MdMeetingRoom,
+          url: '/salas',
         },
         {
           order: 102,
-          title: 'Atividades Recentes',
+          title: 'Nova Sala',
           description:
-            'Últimas estimativas e atividades realizadas',
-          icon: MdHistory,
-          url: '/dashboard/activity',
+            'Criar uma nova sala de Planning Poker',
+          icon: MdAdd,
+          url: '/salas/criar',
+        },
+        {
+          order: 103,
+          title: 'Entrar com Código',
+          description: 'Entrar em uma sala existente',
+          icon: MdLogin,
+          url: '/salas/entrar',
         },
       ],
     },
 
-    // Gerenciamento de Salas
+    // Gerenciamento de Projetos
     {
       order: 200,
-      title: 'Salas',
-      description:
-        'Gerenciamento completo das salas de Planning Poker',
-      icon: MdMeetingRoom,
+      title: 'Projetos',
+      description: 'Gerenciamento de projetos e backlog',
+      icon: MdWork,
       menus: [
         {
           order: 201,
-          title: 'Minhas Salas',
-          description:
-            'Lista de todas as salas que você criou',
-          icon: MdMeetingRoom,
-          url: 'dashboard/salas',
+          title: 'Meus Projetos',
+          description: 'Lista de projetos ativos',
+          icon: MdFolder,
+          url: '/projetos',
         },
         {
           order: 202,
-          title: 'Criar Nova Sala',
-          description:
-            'Criar uma nova sala de Planning Poker',
-          icon: MdAdd,
-          url: '/rooms/create',
-        },
-        {
-          order: 203,
-          title: 'Salas Participando',
-          description: 'Salas onde você é participante',
-          icon: FaUsers,
-          url: '/rooms/participating',
-        },
-        {
-          order: 204,
-          title: 'Entrar em Sala',
-          description:
-            'Entrar em uma sala existente com código',
-          icon: MdGroup,
-          url: '/rooms/join',
-        },
-        {
-          order: 205,
-          title: 'Salas Agendadas',
-          description:
-            'Salas programadas para sessões futuras',
-          icon: MdSchedule,
-          url: '/rooms/scheduled',
+          title: 'Backlog',
+          description: 'Histórias e tarefas a estimar',
+          icon: MdList,
+          url: '/projetos/backlog',
         },
       ],
     },
@@ -127,26 +112,24 @@ export const menus: MenuList = {
       menus: [
         {
           order: 301,
-          title: 'Dashboard Analytics',
-          description: 'Métricas e gráficos das sessões',
-          icon: FaChartBar,
-          url: '/reports/analytics',
+          title: 'Atividades Recentes',
+          description: 'Últimas estimativas e atividades',
+          icon: MdHistory,
+          url: '/relatorios/atividades',
         },
         {
           order: 302,
-          title: 'Histórico de Sessões',
-          description:
-            'Histórico completo das sessões realizadas',
-          icon: MdHistory,
-          url: '/reports/sessions',
+          title: 'Dashboard Analytics',
+          description: 'Métricas e gráficos das sessões',
+          icon: FaChartBar,
+          url: '/relatorios/analytics',
         },
         {
           order: 303,
-          title: 'Relatórios de Time',
-          description:
-            'Performance e participação dos membros',
-          icon: HiOutlineUserGroup,
-          url: '/reports/team',
+          title: 'Histórico de Sessões',
+          description: 'Histórico completo das sessões',
+          icon: MdHistory,
+          url: '/relatorios/sessoes',
         },
         {
           order: 304,
@@ -154,79 +137,94 @@ export const menus: MenuList = {
           description:
             'Exportar relatórios em diferentes formatos',
           icon: HiOutlineDocumentReport,
-          url: '/reports/export',
+          url: '/relatorios/exportar',
         },
       ],
     },
 
-    // Configurações e Perfil
+    // Gerenciamento de Times
     {
       order: 400,
-      title: 'Configurações',
-      description: 'Configurações pessoais e do sistema',
-      icon: MdSettings,
+      title: 'Times',
+      description: 'Gerenciamento de equipes',
+      icon: FaUsersCog,
       menus: [
         {
           order: 401,
-          title: 'Meu Perfil',
+          title: 'Minhas Equipes',
+          description: 'Gerenciar equipes de trabalho',
+          icon: FaUsers,
+          url: '/times/minhas-equipes',
+        },
+        {
+          order: 402,
+          title: 'Relatórios de Time',
           description:
-            'Gerenciar informações pessoais e avatar',
+            'Performance e participação dos membros',
+          icon: RiBarChartGroupedFill,
+          url: '/times/relatorios',
+        },
+      ],
+    },
+
+    // Configurações Pessoais
+    {
+      order: 500,
+      title: 'Configurações',
+      description: 'Configurações pessoais',
+      icon: MdSettings,
+      menus: [
+        {
+          order: 501,
+          title: 'Meu Perfil',
+          description: 'Gerenciar informações pessoais',
           icon: MdPerson,
           url: '/configuracoes/perfil',
         },
         {
-          order: 402,
+          order: 502,
           title: 'Preferências',
-          description:
-            'Configurações de estimativas e notificações',
+          description: 'Configurações de estimativas',
           icon: FaCog,
-          url: '/configuracoes/preferences',
+          url: '/configuracoes/preferencias',
         },
         {
-          order: 403,
-          title: 'Gerenciar Times',
-          description:
-            'Criar e gerenciar equipes de trabalho',
-          icon: HiOutlineUserGroup,
-          url: '/configuracoes/equipes',
-        },
-        {
-          order: 404,
+          order: 503,
           title: 'Notificações',
           description: 'Configurar alertas e lembretes',
           icon: MdNotifications,
-          url: '/configuracoes/notifications',
+          url: '/configuracoes/notificacoes',
         },
       ],
     },
 
     // Suporte e Ajuda
     {
-      order: 500,
+      order: 600,
       title: 'Suporte',
-      description: 'Ajuda, documentação e suporte técnico',
+      description: 'Ajuda e suporte técnico',
       icon: MdHelp,
       menus: [
         {
-          order: 501,
+          order: 601,
           title: 'Central de Ajuda',
           description: 'Documentação e guias de uso',
           icon: MdHelp,
-          url: '/help/docs',
+          url: '/suporte/ajuda',
         },
         {
-          order: 502,
+          order: 602,
           title: 'Reportar Bug',
           description: 'Relatar problemas técnicos',
           icon: MdBugReport,
-          url: '/help/bug-report',
+          url: '/suporte/bug',
         },
         {
-          order: 503,
+          order: 603,
           title: 'Enviar Feedback',
           description: 'Sugestões e melhorias',
           icon: MdFeedback,
-          url: '/help/feedback',
+          url: '/suporte/feedback',
         },
       ],
     },

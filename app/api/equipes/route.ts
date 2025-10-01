@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/lib/prisma';
+import { comboProjetos } from '@/app/modules/times/minha-equipes/actions/combo-projetos';
 
 export async function GET(requisicao: NextRequest) {
   try {
@@ -127,7 +128,9 @@ export async function GET(requisicao: NextRequest) {
     }));
 
     // Buscar projetos para o ComboProjetos (vazio por enquanto)
-    const comboProjetos: any[] = [];
+    const comboProjeto = await comboProjetos({
+      idUsuario,
+    });
 
     // Calcular totais de páginas
     const totalPaginas = Math.ceil(totalItens / limite);
@@ -135,7 +138,7 @@ export async function GET(requisicao: NextRequest) {
 
     const resposta = {
       ResultadoOperacao: {
-        ComboProjetos: comboProjetos,
+        comboProjetos: comboProjeto,
         ListaGrid: [
           {
             equipes: equipesFormatadas,

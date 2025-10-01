@@ -25,7 +25,7 @@ const CheckboxHeader = ({
   }, [isIndeterminate]);
 
   return (
-    <div className="inline-flex h-full items-center justify-center">
+    <div className="inline-flex h-7 items-center justify-center">
       <Checkbox
         ref={ref}
         checked={isAllSelected}
@@ -33,7 +33,7 @@ const CheckboxHeader = ({
           onToggleAll(Boolean(value));
         }}
         aria-label="Selecionar todos"
-        className="h-[18px] w-[18px] rounded-xs"
+        className="h-[18px] w-[18px] rounded-xs border-slate-400"
       />
     </div>
   );

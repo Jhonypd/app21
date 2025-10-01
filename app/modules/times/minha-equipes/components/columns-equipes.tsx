@@ -23,7 +23,7 @@ export const equipesColumns = ({
   onEdit,
 }: EquipesColumnsProps): ColumnDef<ColumnsEquipes>[] => [
   {
-    accessorKey: 'select',
+    accessorKey: 'selected',
     header: () => {
       const allRowIds = data.map((row) => row.id);
       const isAllSelected =
@@ -45,7 +45,7 @@ export const equipesColumns = ({
     cell: ({ row }) => {
       const equipeId = row.original.id;
       return (
-        <div className="inline-flex h-full items-center justify-center">
+        <div className="inline-flex h-7 items-center justify-center">
           <Checkbox
             checked={selectedIds.includes(equipeId)}
             onCheckedChange={(value) => {
@@ -56,7 +56,7 @@ export const equipesColumns = ({
               );
             }}
             aria-label="Selecionar linha"
-            className="h-[18px] w-[18px] rounded-xs"
+            className="h-[18px] w-[18px] rounded-xs border-slate-400"
           />
         </div>
       );
@@ -101,7 +101,7 @@ export const equipesColumns = ({
     filterFn: 'includesString',
   },
   {
-    accessorKey: 'administrado',
+    accessorKey: 'administrador',
     header: ({ column }) => {
       return (
         <HeaderTable
@@ -147,6 +147,7 @@ export const equipesColumns = ({
         <HeaderTable
           label="Projetos"
           column={column}
+          sortable={false}
         />
       );
     },

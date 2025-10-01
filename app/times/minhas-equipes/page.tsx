@@ -29,54 +29,22 @@ import DeleteButton from '@/components/pages/button-delete-page';
 import {
   ColumnsEquipesTable,
   Equipes,
-} from '@/app/modules/configuracoes/equipes/interfaces';
+} from '@/app/modules/times/minha-equipes/interfaces';
 import {
   DataTable,
   Limit,
 } from '@/components/table/data-table';
-import { equipesColumns } from '@/app/modules/configuracoes/equipes/components/columns-equipes';
 import {
   toastError,
   toastInfo,
+  toastSuccess,
 } from '@/components/custom-toast';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { equipesColumns } from '@/app/modules/times/minha-equipes/components/columns-equipes';
+import { mapEquipeToTableData } from '@/app/modules/times/minha-equipes/helpers/map-data-to-table';
 
 // Função para mapear equipe para ColumnsEquipeTable
-const mapEquipeToTableData = (
-  equipe: Equipes,
-): ColumnsEquipesTable => ({
-  id: equipe.id,
-  editar: null,
-  nome: equipe.nome,
-  administrador:
-    equipe.membrosEquipe.find((m) => m.proprietario)
-      ?.nome || 'N/A',
-  integrantes: (
-    <Badge
-      variant={'neutral'}
-      onClick={() => {
-        toastInfo({
-          description: `${equipe.membrosEquipe.map((m) => m.nome).join(', ')}`,
-        });
-      }}
-    >
-      {equipe.membrosEquipe.length}
-    </Badge>
-  ),
-  projetos: (
-    <Badge
-      variant={'neutral'}
-      onClick={() => {
-        toastInfo({
-          description: `${equipe.projetos.map((p) => p.nome).join(', ')}`,
-        });
-      }}
-    >
-      {equipe.projetos.length}
-    </Badge>
-  ),
-  inativo: equipe.inativo ? 'inativo' : 'ativo',
-});
 
 const PageEquipes = () => {
   // Estados de paginação
@@ -85,6 +53,9 @@ const PageEquipes = () => {
     pageSize: 20 as Limit,
   });
   const [equipes, setEquipes] = useState<Equipes[]>([]);
+  const [equipe, setEquipe] = useState<Equipes | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isPaginatedFetching, setIsPaginatedFetching] =
     useState(false);
@@ -106,6 +77,25 @@ const PageEquipes = () => {
   const { user } = useAuth();
   const formRef = useRef<EquipeFormRef>(null);
 
+  const fetchEquipe = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const res = await fetch(
+        `/api/equipes/obter-dados-alterar/${id}`,
+      );
+      if (!res.ok) {
+        throw new Error('Falha ao carregar as equipes');
+      }
+
+      const data = await res.json();
+      setEquipe(data);
+    } catch (error) {
+      console.error(error);
+      toastError({ description: `${error}` });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // Função para editar
   const handleEdit = useCallback(async (id: string) => {
     try {
@@ -113,7 +103,7 @@ const PageEquipes = () => {
       setFormMode('edit');
       // setEditingProcedureId(id);
 
-      // await fetchSchedule(id);
+      await fetchEquipe(id);
 
       setIsSheetOpen(true);
     } catch (error) {
@@ -241,15 +231,6 @@ const PageEquipes = () => {
     setIsSheetOpen(true);
   }, []);
 
-  if (isLoading) {
-    return (
-      <Loading
-        active
-        type="transaction"
-      />
-    );
-  }
-
   if (error) {
     return (
       <div className="container mx-auto w-full">
@@ -273,19 +254,27 @@ const PageEquipes = () => {
     );
   }
 
-  console.log({ equipes });
   return (
     <div className="container mx-auto w-full">
+      {isLoading ||
+        (isDeleting && (
+          <Loading
+            active
+            type="transaction"
+          />
+        ))}
       <TitlePage
         title="Gerenciar Equipes"
         description="Criar e gerenciar equipes de trabalho"
         icon={<HiOutlineUserGroup />}
       />
 
-      <FilterPage>
+      <FilterPage className="mt-6">
         <FilterGrid>
           <FilterItem>
-            <></>
+            <p className="flex items-center gap-2 px-2 text-base font-normal text-slate-500">
+              <Switch /> Inativos
+            </p>
           </FilterItem>
         </FilterGrid>
       </FilterPage>
@@ -324,7 +313,12 @@ const PageEquipes = () => {
           }
           className="sm:max-w-2/4"
         >
-          <></>
+          <EquipeForm
+            initialData={equipe!}
+            isLoading={isLoading}
+            isValidated={() => false}
+            onDataChange={() => false}
+          />
         </BasicForm>
       </Toolbar>
       <div className="min-h-96">

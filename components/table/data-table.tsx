@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ColumnDef,
@@ -8,7 +8,7 @@ import {
   getSortedRowModel,
   SortingState,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 
 import {
   Table,
@@ -17,10 +17,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useState } from "react";
+} from '@/components/ui/table';
+import { useState } from 'react';
 
-import { PaginationControls } from "./pagination-controls";
+import { PaginationControls } from './pagination-controls';
 
 export type Limit = 10 | 20 | 50 | 100;
 interface PaginationConfig {
@@ -67,7 +67,9 @@ export function DataTable<TData, TValue>({
             },
             sorting,
           },
-          pageCount: Math.ceil(pagination.totalCount / pagination.pageSize),
+          pageCount: Math.ceil(
+            pagination.totalCount / pagination.pageSize,
+          ),
         }
       : {}),
   });
@@ -76,11 +78,14 @@ export function DataTable<TData, TValue>({
     <div className="flex min-h-[500px] max-w-full flex-col">
       <div className="max-w-full grow overflow-hidden rounded-md border">
         <Table className="relative h-full min-h-fit flex-1 overflow-auto">
-          <TableHeader className="sticky top-0 items-center bg-accent !uppercase">
+          <TableHeader className="bg-accent sticky top-0 items-center !uppercase">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className="hover:bg-slate-500/10"
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -97,11 +102,13 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={
+                    row.getIsSelected() && 'selected'
+                  }
                   className={
                     row.getIsSelected()
-                      ? "items-center bg-muted/50"
-                      : "items-center"
+                      ? 'bg-primary/30 hover:bg-primary/20 items-center'
+                      : 'items-center'
                   }
                 >
                   {row.getVisibleCells().map((cell) => {
@@ -111,7 +118,10 @@ export function DataTable<TData, TValue>({
                     );
 
                     return (
-                      <TableCell key={cell.id} className="h-full items-center">
+                      <TableCell
+                        key={cell.id}
+                        className="h-full w-fit items-start text-base font-normal text-slate-600"
+                      >
                         {renderedCell}
                       </TableCell>
                     );

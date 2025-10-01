@@ -20,7 +20,7 @@ const DataTableEditCell = ({
       size={'icon'}
       onClick={() => onEdit(id)}
       className={cn(
-        "text-primary hover:text-primary hover:bg-primary/10 inline-flex h-full cursor-pointer items-center justify-center gap-2 [&_svg:not([class*='size-'])]:size-6",
+        "text-primary hover:text-primary/80 hover:bg-primary/10 flex h-7 cursor-pointer items-center justify-center gap-2 [&_svg:not([class*='size-'])]:size-5",
         className,
       )}
       aria-label="Editar procedimento"
