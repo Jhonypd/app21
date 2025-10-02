@@ -5,8 +5,8 @@ export const equipeFormSchema = z.object({
   nome: z
     .string()
     .min(
-      5,
-      'O nome da equipe precisa ter no mínimo 5 caracteres',
+      3,
+      'O nome da equipe precisa ter no mínimo 3 caracteres',
     )
     .max(100, 'O nome deve ter no máximo 100 caracteres'),
   inativo: z.boolean().default(false),

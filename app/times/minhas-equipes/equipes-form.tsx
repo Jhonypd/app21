@@ -26,6 +26,8 @@ import {
 import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
 import { TextInput } from '@/components/inputs/input-text';
 import { FaLaptopCode } from 'react-icons/fa';
+import { SearchInput } from '@/components/inputs/input-search';
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface EquipeFormRef {
   reset: () => void;
@@ -220,6 +222,28 @@ const EquipeForm = forwardRef<
             />
 
             {/* Status (Inativo) */}
+
+            <FormField
+              control={form.control}
+              name="inativo"
+              render={({ field }) => (
+                <FormItem className="col-span-full sm:col-span-1">
+                  <FormControl>
+                    <div className="flex items-center gap-2">
+                      <SearchInput
+                        placeholder="Adicionar integrantes"
+                        label="Usuários"
+                        onChange={field.onChange}
+                        value={`${field.value}`}
+                      />
+                      <Card>
+                        <CardContent></CardContent>
+                      </Card>
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             {isEditMode && (
               <FormField
