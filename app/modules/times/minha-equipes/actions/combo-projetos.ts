@@ -5,10 +5,12 @@ import { NextResponse } from 'next/server';
 
 interface ComboProjetosProps {
   idUsuario: string;
+  inativo: boolean;
 }
 
 export async function comboProjetos({
   idUsuario,
+  inativo,
 }: ComboProjetosProps) {
   if (!idUsuario) {
     return NextResponse.json(
@@ -24,6 +26,7 @@ export async function comboProjetos({
           participantes: {
             some: { pessoa: { id: idUsuario } },
           },
+          inativo,
         },
         select: { id: true, nome: true, inativo: true },
       });

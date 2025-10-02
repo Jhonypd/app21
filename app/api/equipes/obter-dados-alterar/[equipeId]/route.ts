@@ -71,6 +71,7 @@ export async function GET(
     // Buscar projetos do combo (dados puros, não NextResponse)
     const comboProjeto = await comboProjetos({
       idUsuario,
+      inativo: true,
     });
 
     return NextResponse.json({

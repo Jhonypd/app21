@@ -123,7 +123,7 @@ const Loading = ({
       {type === 'page-transition' && (
         <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-24 w-24 animate-spin rounded-full border-b-2 border-amber-700"></div>
+            <div className="border-primary mx-auto mb-4 h-32 w-32 animate-spin rounded-full border-b-4"></div>
           </div>
         </div>
       )}
@@ -131,7 +131,7 @@ const Loading = ({
       {type === 'transaction' && (
         <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-24 w-24 animate-spin rounded-full border-b-2 border-amber-700"></div>
+            <div className="border-primary mx-auto mb-4 h-32 w-32 animate-spin rounded-full border-b-4"></div>
           </div>
         </div>
       )}

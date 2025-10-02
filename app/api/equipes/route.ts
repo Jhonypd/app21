@@ -5,7 +5,6 @@ import { comboProjetos } from '@/app/modules/times/minha-equipes/actions/combo-p
 export async function GET(requisicao: NextRequest) {
   try {
     const idUsuario = requisicao.headers.get('x-user-id');
-    console.log({ idUsuario });
 
     if (!idUsuario) {
       return NextResponse.json(
@@ -130,6 +129,7 @@ export async function GET(requisicao: NextRequest) {
     // Buscar projetos para o ComboProjetos (vazio por enquanto)
     const comboProjeto = await comboProjetos({
       idUsuario,
+      inativo: false,
     });
 
     // Calcular totais de páginas
@@ -138,7 +138,7 @@ export async function GET(requisicao: NextRequest) {
 
     const resposta = {
       ResultadoOperacao: {
-        comboProjetos: comboProjeto,
+        comboProjeto: comboProjeto,
         ListaGrid: [
           {
             equipes: equipesFormatadas,

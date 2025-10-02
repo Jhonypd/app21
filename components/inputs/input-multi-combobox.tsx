@@ -13,7 +13,7 @@ import { HiSquares2X2 } from 'react-icons/hi2';
 export interface ComboBoxItemMulti {
   id: string;
   nome: string;
-  active?: boolean;
+  inativo?: boolean;
 }
 
 export const useMultiComboBoxInput = (
@@ -178,7 +178,7 @@ export const MultiComboBoxInput: React.FC<
   const renderOptionItem = ({
     id,
     nome,
-    active,
+    inativo,
   }: ComboBoxItemMulti) => (
     <div
       key={id}
@@ -189,7 +189,7 @@ export const MultiComboBoxInput: React.FC<
           : 'bg-muted'
       }`}
     >
-      <span className={`${!active && 'text-orange-500'}`}>
+      <span className={`${!inativo && 'text-orange-500'}`}>
         {nome}
       </span>
     </div>

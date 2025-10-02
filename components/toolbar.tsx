@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { PlusIcon, Search } from 'lucide-react';
 import { SearchInput } from './inputs/input-search';
+import Loading from './loading';
 
 interface ToolbarProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface ToolbarProps {
   deleteButton: React.ReactNode;
   searchValue?: string;
   searchPlaceholder?: string;
+  isCreateLoading: boolean;
 }
 
 export const Toolbar = ({
@@ -18,9 +20,16 @@ export const Toolbar = ({
   deleteButton,
   searchValue = '',
   searchPlaceholder = 'Pesquisar serviços...',
+  isCreateLoading = false,
 }: ToolbarProps) => {
   return (
     <div className="flex w-full flex-col-reverse flex-nowrap justify-between gap-4 py-4 sm:flex-row">
+      {isCreateLoading && (
+        <Loading
+          active
+          type="transaction"
+        />
+      )}
       {/* Seção de Busca */}
       <div className="flex w-full items-center gap-3 sm:max-w-sm">
         <SearchInput
@@ -44,6 +53,7 @@ export const Toolbar = ({
         <Button
           className="cursor-pointer px-5 uppercase"
           onClick={onOpenCreateForm}
+          disabled={isCreateLoading}
         >
           <PlusIcon className="h-4 w-4 cursor-pointer sm:mr-2" />
           <span className="hidden sm:block">Incluir</span>

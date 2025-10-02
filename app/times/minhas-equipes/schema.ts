@@ -37,8 +37,7 @@ export interface CurrentEquipeData {
 // Tipos para criação e edição
 export type CreateEquipeData = {
   nome: string;
-  projetos: Array<{ id: string }>; // 👈 só precisa do id na criação
-  // inativo não é enviado na criação, usa default do banco
+  projetos: Array<{ id: string }>;
 };
 
 export type EditEquipeData = {

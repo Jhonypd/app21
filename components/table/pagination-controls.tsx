@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { Limit } from "./data-table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+} from '@/components/ui/select';
+import type { Limit } from './data-table';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaginationControlsProps {
   pageIndex: number;
@@ -42,7 +42,7 @@ export function PaginationControls({
           }}
           disabled={isLoading}
         >
-          <SelectTrigger className="h-8 w-[60px] cursor-pointer">
+          <SelectTrigger className="h-8 w-fit cursor-pointer">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="max-w-[60px] cursor-pointer">
@@ -63,7 +63,9 @@ export function PaginationControls({
           className="cursor-pointer"
         >
           <ChevronLeft className="h-4 w-4 cursor-pointer sm:ml-2" />
-          <span className="hidden uppercase sm:block">Anterior</span>
+          <span className="hidden uppercase sm:block">
+            Anterior
+          </span>
         </Button>
         <div className="text-xs text-[#3f4053] sm:text-sm">
           {`${pageIndex * pageSize + 1}-${Math.min((pageIndex + 1) * pageSize, totalCount)} de ${totalCount}`}
@@ -73,11 +75,15 @@ export function PaginationControls({
           size="sm"
           onClick={() => onPageChange?.(pageIndex + 1)}
           disabled={
-            isLoading || pageIndex >= Math.ceil(totalCount / pageSize) - 1
+            isLoading ||
+            pageIndex >=
+              Math.ceil(totalCount / pageSize) - 1
           }
           className="cursor-pointer"
         >
-          <span className="hidden uppercase sm:block">Próximo</span>
+          <span className="hidden uppercase sm:block">
+            Próximo
+          </span>
           <ChevronRight className="h-4 w-4 cursor-pointer sm:ml-2" />
         </Button>
       </div>

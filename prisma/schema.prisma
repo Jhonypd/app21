@@ -34,7 +34,7 @@ model equipe {
   nome          String
   inativo       Boolean        @default(false)
   membrosEquipe membroEquipe[]
-  projetos      projeto[]
+  projetos      projeto[] @relation("EquipeProjeto")
 }
 
 model membroEquipe {
@@ -54,7 +54,7 @@ model projeto {
   nome          String
   equipe_id     String
   inativo       Boolean               @default(false)
-  equipe        equipe                @relation(fields: [equipe_id], references: [id])
+  equipe        equipe[]               @relation("EquipeProjeto")
   participantes projetoParticipante[]
 }
 

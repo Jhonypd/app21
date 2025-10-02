@@ -16,6 +16,7 @@ interface TextInputProps {
   error?: boolean;
   maxLength?: number;
   minLength?: number;
+  autoFocus?: boolean;
 }
 
 export const useTextValidation = (
@@ -54,6 +55,7 @@ export const TextInput: React.FC<TextInputProps> = ({
   error = false,
   maxLength,
   minLength,
+  autoFocus = false,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -101,6 +103,7 @@ export const TextInput: React.FC<TextInputProps> = ({
             WebkitAppearance: 'none',
             MozAppearance: 'textfield',
           }}
+          autoFocus={autoFocus}
           className={`peer h-auto rounded-md bg-inherit py-3 pr-4 pl-11 text-gray-600 transition-colors duration-200 focus:ring-0 focus:outline-none dark:bg-none [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden ${
             error
               ? 'border-red-500 focus:border-red-500'

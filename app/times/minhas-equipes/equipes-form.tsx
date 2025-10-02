@@ -10,10 +10,8 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
   equipeFormSchema,
@@ -26,7 +24,6 @@ import {
   convertCurrentDataToForm,
 } from './schema';
 import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
-import { LuFolderCode } from 'react-icons/lu';
 import { TextInput } from '@/components/inputs/input-text';
 import { FaLaptopCode } from 'react-icons/fa';
 
@@ -36,6 +33,11 @@ export interface EquipeFormRef {
 }
 
 interface EquipeFormProps {
+  comboProjetos: {
+    id: string;
+    nome: string;
+    inativo: boolean;
+  }[];
   isLoading: boolean;
   isValidated: (valid: boolean) => void;
   onDataChange: (data: {
@@ -58,6 +60,7 @@ const EquipeForm = forwardRef<
       onDataChange,
       initialData,
       onSubmit,
+      comboProjetos,
     },
     ref,
   ) => {
@@ -79,6 +82,7 @@ const EquipeForm = forwardRef<
         const formValues =
           convertCurrentDataToForm(initialData);
         form.reset(formValues);
+        isValidated(true);
       }
     }, [initialData, form]);
 
@@ -170,6 +174,7 @@ const EquipeForm = forwardRef<
                       error={
                         fieldState.error ? true : false
                       }
+                      autoFocus={false}
                     />
                   </FormControl>
                   <FormMessage />
@@ -197,12 +202,15 @@ const EquipeForm = forwardRef<
                                   active: !projeto.inativo,
                                 }),
                               )
-                            : []
+                            : comboProjetos
                         }
                         label="Projetos"
                         placeholder="Selecione o(s) projetos"
                         icone={FaLaptopCode}
                         disabled={isLoading}
+                        error={
+                          fieldState.error ? true : false
+                        }
                       />
                     </FormControl>
                     <FormMessage />

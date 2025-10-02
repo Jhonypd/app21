@@ -4,20 +4,18 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
+// import { useAuth } from '@/hooks/useAuth';
 import Loading from '@/components/loading';
 import { HiOutlineUserGroup } from 'react-icons/hi';
-import { EquipeForm, EquipeFormRef } from './equipes-form';
+import { EquipeForm } from './equipes-form';
 import {
   CreateEquipeData,
+  CurrentEquipeData,
   EditEquipeData,
   EquipeFormValues,
-  CurrentEquipeData,
 } from './schema';
 import BasicForm from '@/components/forms/basic-form';
 import TitlePage from '@/components/pages/title-page';
@@ -39,12 +37,11 @@ import {
   toastInfo,
   toastSuccess,
 } from '@/components/custom-toast';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { equipesColumns } from '@/app/modules/times/minha-equipes/components/columns-equipes';
 import { mapEquipeToTableData } from '@/app/modules/times/minha-equipes/helpers/map-data-to-table';
-
-// Função para mapear equipe para ColumnsEquipeTable
+import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
+import { FaLaptopCode } from 'react-icons/fa';
 
 const PageEquipes = () => {
   // Estados de paginação
@@ -52,71 +49,279 @@ const PageEquipes = () => {
     pageIndex: 0,
     pageSize: 20 as Limit,
   });
+
   const [equipes, setEquipes] = useState<Equipes[]>([]);
-  const [equipe, setEquipe] = useState<Equipes | null>(
-    null,
-  );
+  const [editingEquipe, setEditingEquipe] =
+    useState<CurrentEquipeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaginatedFetching, setIsPaginatedFetching] =
     useState(false);
   const [isDeleteLoading, setIsDeleteLoading] =
     useState(false);
+  const [isCreateLoading, setIsCreateLoading] =
+    useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [currentEquipe, setCurrentEquipe] =
-    useState<CurrentEquipeData | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isValidForm, setIsValidForm] =
     useState<boolean>(false);
+  const [selectedEquipesFilter, setSelectedEquipesFilter] =
+    useState<string[]>([]);
+  const [comboFiltroProjetos, setComboFiltroProjetos] =
+    useState<
+      { id: string; nome: string; inativo: boolean }[]
+    >([]);
+  const [comboProjetosForm, setComboProjetosForm] =
+    useState<
+      { id: string; nome: string; inativo: boolean }[]
+    >([]);
   const [selectedIds, setSelectedIds] = useState<string[]>(
     [],
   );
-  const [formMode, setFormMode] = useState<
-    'create' | 'edit'
-  >('create');
-  const { user } = useAuth();
-  const formRef = useRef<EquipeFormRef>(null);
+  const [formData, setFormData] = useState<{
+    values: EquipeFormValues;
+    createData?: CreateEquipeData; // Ou o tipo específico para criação
+    editData?: EditEquipeData; // Ou o tipo específico para edição
+  } | null>(null);
 
-  const fetchEquipe = async (equipeId: string) => {
+  // const { user } = useAuth();
+  // const formRef = useRef<EquipeFormRef>(null);
+
+  // Buscar dados para edição
+  const fetchEquipeParaEdicao = async (
+    equipeId: string,
+  ) => {
     try {
       setIsLoading(true);
       const res = await fetch(
         `/api/equipes/obter-dados-alterar/${equipeId}`,
-        { method: 'GET' },
       );
+
+      if (!res.ok) {
+        throw new Error(
+          'Falha ao carregar os dados da equipe',
+        );
+      }
+
+      const data = await res.json();
+      setEditingEquipe(data.ResultadoOperacao.equipe);
+      setComboProjetosForm(
+        data.ResultadoOperacao.comboProjeto,
+      );
+    } catch (error) {
+      console.error(error);
+      toastError({
+        description: 'Erro ao carregar dados da equipe',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Função para buscar dados para inserir
+  const fetchDadosParaInserir = async () => {
+    try {
+      setIsCreateLoading(true);
+      const res = await fetch(
+        '/api/equipes/obter-dados-inserir',
+      );
+
+      if (!res.ok) {
+        throw new Error(
+          'Falha ao carregar dados para criação',
+        );
+      }
+
+      const data = await res.json();
+      setComboProjetosForm(
+        data.ResultadoOperacao?.comboProjeto || [],
+      );
+      return true; // Sucesso
+    } catch (error) {
+      console.error(
+        'Erro ao buscar dados para inserir:',
+        error,
+      );
+      toastError({
+        description: 'Erro ao carregar dados para criação',
+      });
+      return false; // Falha
+    } finally {
+      setIsCreateLoading(false);
+    }
+  };
+
+  // Buscar equipes com paginação
+  const fetchEquipes = async () => {
+    try {
+      const isPaginated =
+        pagination.pageIndex > 0 ||
+        pagination.pageSize !== 20;
+
+      if (isPaginated) {
+        setIsPaginatedFetching(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      const params = new URLSearchParams({
+        pagina: pagination.pageIndex.toString(),
+        limite: pagination.pageSize.toString(),
+      });
+
+      const url = isPaginated
+        ? `/api/equipes?${params}`
+        : '/api/equipes';
+      const res = await fetch(url);
+
       if (!res.ok) {
         throw new Error('Falha ao carregar as equipes');
       }
 
       const data = await res.json();
-      console.log({ data });
-      setEquipe(data.ResultadoOperacao.equipe);
-    } catch (error) {
-      console.error(error);
-      toastError({ description: `${error}` });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  // Função para editar
-  const handleEdit = useCallback(async (id: string) => {
-    try {
-      setIsLoading(true);
-      setFormMode('edit');
-      // setEditingProcedureId(id);
+      const equipesData =
+        data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
+        [];
 
-      await fetchEquipe(id);
+      // ADICIONAR ESTA LINHA: Buscar projetos do combo da resposta
+      const projetosData =
+        data.ResultadoOperacao?.comboProjeto || [];
 
-      setIsSheetOpen(true);
-    } catch (error) {
-      console.error('Erro ao buscar agendamento:', error);
+      setEquipes(equipesData);
+      setComboFiltroProjetos(projetosData); // ← IMPORTANTE: definir os projetos
+      setTotalCount(
+        data.ResultadoOperacao?.paginacao?.totalItens || 0,
+      );
+      setError(null);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Erro desconhecido';
+      setError(message);
       toastError({
-        description:
-          'Erro ao carregar agendamento para edição',
+        description: 'Erro ao carregar equipes',
       });
     } finally {
       setIsLoading(false);
+      setIsPaginatedFetching(false);
+    }
+  };
+
+  // Função para editar
+  const handleEdit = useCallback(async (id: string) => {
+    try {
+      setIsEditMode(true);
+      await fetchEquipeParaEdicao(id);
+      setIsSheetOpen(true);
+    } catch (error) {
+      console.error('Erro ao buscar equipe:', error);
+      toastError({
+        description: 'Erro ao carregar equipe para edição',
+      });
+    }
+  }, []);
+
+  // Função para criar nova equipe - MODIFICADA
+  const handleCreate = useCallback(async () => {
+    try {
+      // Buscar dados para inserir primeiro
+      const success = await fetchDadosParaInserir();
+
+      if (success) {
+        setIsEditMode(false);
+        setEditingEquipe(null);
+        setIsSheetOpen(true);
+      }
+    } catch (error) {
+      console.error('Erro ao preparar criação:', error);
+      toastError({
+        description: 'Erro ao preparar criação da equipe',
+      });
+    }
+  }, []);
+
+  const handleSubmitForm = useCallback(async () => {
+    if (!formData) {
+      toastError({
+        description: 'Dados do formulário não encontrados',
+      });
+      return;
+    }
+
+    console.log('Dados para envio:', formData);
+
+    try {
+      setIsLoading(true);
+
+      if (isEditMode && editingEquipe) {
+        // Modo edição
+        const response = await fetch(
+          `/api/equipes/${editingEquipe.id}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData.values), // Ou formData.editData se tiver estrutura diferente
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error('Erro ao atualizar equipe');
+        }
+
+        toastSuccess({
+          description: 'Equipe atualizada com sucesso!',
+        });
+      } else {
+        // Modo criação
+        const response = await fetch(
+          '/api/equipes/nova-equipe',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              nome: formData.values.nome,
+              projetos: formData.values.projetos || [],
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.erro || 'Erro ao criar equipe',
+          );
+        }
+
+        toastSuccess({
+          description: 'Equipe criada com sucesso!',
+        });
+      }
+
+      setIsSheetOpen(false);
+      fetchEquipes(); // Recarregar a lista
+    } catch (error) {
+      console.error('Erro ao salvar equipe:', error);
+      toastError({
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Erro ao salvar equipe',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [formData, isEditMode, editingEquipe]);
+
+  // Fechar formulário
+  const handleCloseForm = useCallback((open: boolean) => {
+    setIsSheetOpen(open);
+    if (!open) {
+      setEditingEquipe(null);
+      setIsEditMode(false);
+      setComboProjetosForm([]);
+      setFormData(null); // ← Limpa os dados do formulário
     }
   }, []);
 
@@ -124,8 +329,8 @@ const PageEquipes = () => {
   const columns = useMemo(
     () =>
       equipesColumns({
-        selectedIds: selectedIds,
-        setSelectedIds: setSelectedIds,
+        selectedIds,
+        setSelectedIds,
         data: equipes.map(mapEquipeToTableData),
         onEdit: handleEdit,
       }),
@@ -142,99 +347,26 @@ const PageEquipes = () => {
   const handlePageChange = (pageIndex: number) => {
     setPagination((prev) => ({ ...prev, pageIndex }));
   };
+
   const handlePageSizeChange = (pageSize: Limit) => {
     setPagination({ pageIndex: 0, pageSize });
   };
 
-  // Buscar equipes
+  // Buscar equipes quando a paginação mudar
   useEffect(() => {
-    const fetchEquipes = async () => {
-      try {
-        setIsLoading(true);
-        const res = await fetch('/api/equipes', {
-          method: 'GET',
-        });
-        if (!res.ok) {
-          throw new Error('Falha ao carregar as equipes');
-        }
-        const data = await res.json();
-
-        // Ajuste aqui: pegar as equipes do novo formato
-        const equipesData =
-          data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
-          [];
-
-        setEquipes(equipesData);
-        setTotalCount(
-          data.ResultadoOperacao?.paginacao?.totalItens ||
-            0,
-        );
-        setError(null);
-      } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'Erro desconhecido';
-        setError(message);
-        toast.error('Erro ao carregar equipes', {
-          description: 'Tente novamente mais tarde.',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchEquipes();
-  }, []);
-
-  // Buscar equipes com paginação
-  useEffect(() => {
-    const fetchEquipesPaginated = async () => {
-      try {
-        setIsPaginatedFetching(true);
-        const params = new URLSearchParams({
-          pagina: pagination.pageIndex.toString(),
-          limite: pagination.pageSize.toString(),
-        });
-
-        const res = await fetch(`/api/equipes?${params}`);
-        if (!res.ok) {
-          throw new Error('Falha ao carregar as equipes');
-        }
-        const data = await res.json();
-
-        // Ajuste aqui: pegar as equipes do novo formato
-        const equipesData =
-          data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
-          [];
-
-        setEquipes(equipesData);
-        setTotalCount(
-          data.ResultadoOperacao?.paginacao?.totalItens ||
-            0,
-        );
-        setError(null);
-      } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'Erro desconhecido';
-        setError(message);
-        toast.error('Erro ao carregar equipes', {
-          description: 'Tente novamente mais tarde.',
-        });
-      } finally {
-        setIsPaginatedFetching(false);
-      }
-    };
-
-    fetchEquipesPaginated();
   }, [pagination.pageIndex, pagination.pageSize]);
 
-  const handleOpenCreateForm = useCallback(() => {
-    setFormMode('create');
-    setIsSheetOpen(true);
-  }, []);
+  const handleDataChange = useCallback(
+    (data: {
+      values: EquipeFormValues;
+      createData?: CreateEquipeData;
+      editData?: EditEquipeData;
+    }) => {
+      setFormData(data);
+    },
+    [],
+  );
 
   if (error) {
     return (
@@ -248,7 +380,7 @@ const PageEquipes = () => {
               {error}
             </p>
             <Button
-              onClick={() => window.location.reload()}
+              onClick={fetchEquipes}
               variant="outline"
             >
               Tentar novamente
@@ -267,6 +399,7 @@ const PageEquipes = () => {
           type="transaction"
         />
       )}
+
       <TitlePage
         title="Gerenciar Equipes"
         description="Criar e gerenciar equipes de trabalho"
@@ -274,11 +407,22 @@ const PageEquipes = () => {
       />
 
       <FilterPage className="mt-6">
-        <FilterGrid>
-          <FilterItem>
-            <p className="flex items-center gap-2 px-2 text-base font-normal text-slate-500">
+        <FilterGrid className="grid-cols-12">
+          <FilterItem className="col-span-full items-center sm:col-span-3">
+            <p className="flex h-full items-center gap-2 px-2 text-base font-normal text-slate-500">
               <Switch /> Inativos
             </p>
+          </FilterItem>
+          <FilterItem className="col-span-full sm:col-span-3">
+            <MultiComboBoxInput
+              value={selectedEquipesFilter}
+              onChange={setSelectedEquipesFilter}
+              options={comboFiltroProjetos}
+              label="Projetos"
+              placeholder="Selecione o(s) projetos"
+              icone={FaLaptopCode}
+              disabled={isLoading}
+            />
           </FilterItem>
         </FilterGrid>
       </FilterPage>
@@ -287,45 +431,44 @@ const PageEquipes = () => {
         onSearchChange={() =>
           toastInfo({
             description:
-              'Função de pesquisa ainda não implementada.',
+              'Função de pesquisa em desenvolvimento.',
           })
         }
         searchValue={''}
-        onOpenCreateForm={handleOpenCreateForm}
+        onOpenCreateForm={handleCreate}
+        isCreateLoading={isCreateLoading}
         deleteButton={
           <DeleteButton
             onSubmit={() => {}}
             description="Esta ação não pode ser desfeita."
-            title={
-              'Você tem certeza que deseja excluir o(s) agendamento(s) selecionado(s)?'
-            }
+            title="Você tem certeza que deseja excluir a(s) equipe(s) selecionada(s)?"
             disabled={selectedIds.length === 0}
           />
         }
       >
         <BasicForm
-          isValid={false}
+          isValid={isValidForm}
           open={isSheetOpen}
-          onSubmit={() => {}}
-          onOpenChange={(open) => {
-            setIsSheetOpen(open);
-          }}
-          mode={formMode}
+          onSubmit={handleSubmitForm}
+          onOpenChange={handleCloseForm}
+          mode={isEditMode ? 'edit' : 'create'}
           title={
-            formMode === 'edit'
-              ? 'Editar Sala'
-              : 'Nova Sala'
+            isEditMode ? 'Editar Equipe' : 'Nova Equipe'
           }
           className="sm:max-w-2/4"
         >
           <EquipeForm
-            initialData={equipe!}
-            isLoading={isLoading}
-            isValidated={() => false}
-            onDataChange={() => false}
+            // ref={formRef}
+            initialData={editingEquipe || undefined}
+            isLoading={isLoading || isCreateLoading}
+            isValidated={setIsValidForm}
+            onDataChange={handleDataChange} // Implementar se necessário
+            onSubmit={handleSubmitForm}
+            comboProjetos={comboProjetosForm}
           />
         </BasicForm>
       </Toolbar>
+
       <div className="min-h-96">
         <DataTable<ColumnsEquipesTable, unknown>
           columns={columns}
