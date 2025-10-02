@@ -25,6 +25,10 @@ import {
   convertFormToEditData,
   convertCurrentDataToForm,
 } from './schema';
+import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
+import { LuFolderCode } from 'react-icons/lu';
+import { TextInput } from '@/components/inputs/input-text';
+import { FaLaptopCode } from 'react-icons/fa';
 
 export interface EquipeFormRef {
   reset: () => void;
@@ -64,6 +68,7 @@ const EquipeForm = forwardRef<
       defaultValues: {
         nome: '',
         inativo: false,
+        projetos: [],
       },
       mode: 'onChange',
     });
@@ -126,6 +131,7 @@ const EquipeForm = forwardRef<
         form.reset({
           nome: '',
           inativo: false,
+          projetos: [],
         });
       },
       submit: () => {
@@ -145,7 +151,7 @@ const EquipeForm = forwardRef<
         <FormProvider {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="grid grid-cols-1 gap-6 py-2"
+            className="grid grid-cols-1 gap-4 py-2"
           >
             {/* Nome da Equipe */}
             <FormField
@@ -153,19 +159,16 @@ const EquipeForm = forwardRef<
               name="nome"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Nome da Equipe *</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Digite o nome da equipe"
+                    <TextInput
+                      label="Nome"
                       value={field.value}
                       onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
                       disabled={isLoading}
-                      className={
-                        fieldState.error
-                          ? 'border-destructive'
-                          : ''
+                      name={field.name}
+                      placeholder="Digite o nome da equipe"
+                      error={
+                        fieldState.error ? true : false
                       }
                     />
                   </FormControl>
@@ -173,33 +176,60 @@ const EquipeForm = forwardRef<
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="projetos"
+              render={({ field, fieldState }) => {
+                const selectedValue = field.value || [];
+
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <MultiComboBoxInput
+                        value={selectedValue}
+                        onChange={field.onChange}
+                        options={
+                          initialData?.projetos
+                            ? initialData.projetos.map(
+                                (projeto) => ({
+                                  id: projeto.id,
+                                  nome: projeto.nome,
+                                  active: !projeto.inativo,
+                                }),
+                              )
+                            : []
+                        }
+                        label="Projetos"
+                        placeholder="Selecione o(s) projetos"
+                        icone={FaLaptopCode}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
 
             {/* Status (Inativo) */}
 
-            {initialData?.id && (
+            {isEditMode && (
               <FormField
                 control={form.control}
                 name="inativo"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Status
-                      </FormLabel>
-                      <div className="text-muted-foreground text-sm">
-                        {field.value
-                          ? 'Equipe inativa'
-                          : 'Equipe ativa'}
-                      </div>
-                    </div>
+                  <FormItem className="col-span-full sm:col-span-1">
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={(checked) =>
-                          field.onChange(Boolean(checked))
-                        }
-                        disabled={isLoading}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          id="inativo"
+                        />
+                        <label htmlFor="inativo">
+                          Inativo
+                        </label>
+                      </div>
                     </FormControl>
                   </FormItem>
                 )}

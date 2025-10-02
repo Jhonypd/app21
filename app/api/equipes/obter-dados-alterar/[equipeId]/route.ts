@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/lib/prisma';
 import { comboProjetos } from '@/app/modules/times/minha-equipes/actions/combo-projetos';
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { equipeId: string } },
+) {
   try {
     const idUsuario = req.headers.get('x-user-id');
+
     if (!idUsuario) {
       return NextResponse.json(
         { erro: 'ID do usuário não fornecido' },
@@ -12,8 +16,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { searchParams } = new URL(req.url);
-    const equipeId = searchParams.get('equipeId');
+    const { equipeId } = await params;
+
     if (!equipeId) {
       return NextResponse.json(
         { erro: 'Id da equipe não fornecido' },

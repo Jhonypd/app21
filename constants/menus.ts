@@ -17,12 +17,14 @@ import {
 import {
   FaChartBar,
   FaCog,
+  FaLaptopCode,
   FaUsers,
   FaUsersCog,
 } from 'react-icons/fa';
 import { HiOutlineDocumentReport } from 'react-icons/hi';
 import { RiBarChartGroupedFill } from 'react-icons/ri';
 import { IconType } from 'react-icons';
+import { LuFolderCode } from 'react-icons/lu';
 
 export interface MenuProps {
   order: number;
@@ -84,7 +86,7 @@ export const menus: MenuList = {
       order: 200,
       title: 'Projetos',
       description: 'Gerenciamento de projetos e backlog',
-      icon: MdWork,
+      icon: FaLaptopCode,
       menus: [
         {
           order: 201,

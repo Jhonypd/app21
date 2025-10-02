@@ -59,7 +59,8 @@ const PageEquipes = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPaginatedFetching, setIsPaginatedFetching] =
     useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteLoading, setIsDeleteLoading] =
+    useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -77,18 +78,20 @@ const PageEquipes = () => {
   const { user } = useAuth();
   const formRef = useRef<EquipeFormRef>(null);
 
-  const fetchEquipe = async (id: string) => {
+  const fetchEquipe = async (equipeId: string) => {
     try {
       setIsLoading(true);
       const res = await fetch(
-        `/api/equipes/obter-dados-alterar/${id}`,
+        `/api/equipes/obter-dados-alterar/${equipeId}`,
+        { method: 'GET' },
       );
       if (!res.ok) {
         throw new Error('Falha ao carregar as equipes');
       }
 
       const data = await res.json();
-      setEquipe(data);
+      console.log({ data });
+      setEquipe(data.ResultadoOperacao.equipe);
     } catch (error) {
       console.error(error);
       toastError({ description: `${error}` });
@@ -148,7 +151,9 @@ const PageEquipes = () => {
     const fetchEquipes = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/equipes');
+        const res = await fetch('/api/equipes', {
+          method: 'GET',
+        });
         if (!res.ok) {
           throw new Error('Falha ao carregar as equipes');
         }
@@ -256,13 +261,12 @@ const PageEquipes = () => {
 
   return (
     <div className="container mx-auto w-full">
-      {isLoading ||
-        (isDeleting && (
-          <Loading
-            active
-            type="transaction"
-          />
-        ))}
+      {(isDeleteLoading || isLoading) && (
+        <Loading
+          active
+          type="transaction"
+        />
+      )}
       <TitlePage
         title="Gerenciar Equipes"
         description="Criar e gerenciar equipes de trabalho"
@@ -281,9 +285,10 @@ const PageEquipes = () => {
 
       <Toolbar
         onSearchChange={() =>
-          alert(
-            'Função de pesquisa ainda não implementada.',
-          )
+          toastInfo({
+            description:
+              'Função de pesquisa ainda não implementada.',
+          })
         }
         searchValue={''}
         onOpenCreateForm={handleOpenCreateForm}
@@ -325,7 +330,7 @@ const PageEquipes = () => {
         <DataTable<ColumnsEquipesTable, unknown>
           columns={columns}
           data={mappedTable}
-          isLoading={isPaginatedFetching || isDeleting}
+          isLoading={isPaginatedFetching || isDeleteLoading}
           selectedIds={selectedIds}
           pagination={{
             pageIndex: pagination.pageIndex,
