@@ -3,6 +3,7 @@
     "Conexao",
     "configuracoes",
     "Confirmacao",
+    "Diferencas",
     "ecommerce",
     "Edicao",
     "icone",
@@ -17,6 +18,8 @@
     "supabase",
     "SUPABASE",
     "Unico",
-    "usuario"
+    "Unicos",
+    "usuario",
+    "usuarios"
   ]
 }

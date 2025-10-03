@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prismaClient } from '@/lib/prisma';
 import { comboProjetos } from '@/app/modules/times/minha-equipes/actions/combo-projetos';
 
 export async function GET(req: NextRequest) {

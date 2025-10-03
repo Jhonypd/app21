@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 
 interface ComboProjetosProps {
   idUsuario: string;
-  inativo: boolean;
+  inativo?: boolean;
 }
 
 export async function comboProjetos({

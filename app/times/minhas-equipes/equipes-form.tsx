@@ -3,6 +3,7 @@ import React, {
   useEffect,
   forwardRef,
   useImperativeHandle,
+  useState,
 } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,17 +18,18 @@ import {
   equipeFormSchema,
   EquipeFormValues,
   CurrentEquipeData,
-  CreateEquipeData,
-  EditEquipeData,
   convertFormToCreateData,
   convertFormToEditData,
   convertCurrentDataToForm,
+  EquipeFormDataChange,
 } from './schema';
 import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
 import { TextInput } from '@/components/inputs/input-text';
 import { FaLaptopCode } from 'react-icons/fa';
-import { SearchInput } from '@/components/inputs/input-search';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+  MultiSelectCommand,
+  Option,
+} from '@/components/inputs/input-multi-command';
 
 export interface EquipeFormRef {
   reset: () => void;
@@ -42,14 +44,31 @@ interface EquipeFormProps {
   }[];
   isLoading: boolean;
   isValidated: (valid: boolean) => void;
-  onDataChange: (data: {
-    values: EquipeFormValues;
-    createData?: CreateEquipeData;
-    editData?: EditEquipeData;
-  }) => void;
+  onDataChange: (data: EquipeFormDataChange) => void;
   initialData?: CurrentEquipeData;
   onSubmit?: (data: EquipeFormValues) => void;
+  campoPesquisaUsuario?: (
+    texto: string,
+  ) => Promise<Option[]>;
 }
+
+// Função para calcular diferenças entre arrays
+const calcularDiferencas = (
+  atual: any[],
+  novo: any[],
+): { adicionar: string[]; remover: string[] } => {
+  const idsAtual = atual.map((item) => item.id || item);
+  const idsNovo = novo.map((item) => item.id || item);
+
+  const adicionar = idsNovo.filter(
+    (id) => !idsAtual.includes(id),
+  );
+  const remover = idsAtual.filter(
+    (id) => !idsNovo.includes(id),
+  );
+
+  return { adicionar, remover };
+};
 
 const EquipeForm = forwardRef<
   EquipeFormRef,
@@ -63,10 +82,16 @@ const EquipeForm = forwardRef<
       initialData,
       onSubmit,
       comboProjetos,
+      campoPesquisaUsuario,
     },
     ref,
   ) => {
     const isEditMode = !!initialData;
+    const [selecionados, setSelecionados] = useState<
+      Option[]
+    >([]);
+    const [projetosSelecionados, setProjetosSelecionados] =
+      useState<string[]>([]);
 
     const form = useForm<EquipeFormValues>({
       resolver: zodResolver(equipeFormSchema) as any,
@@ -83,10 +108,14 @@ const EquipeForm = forwardRef<
       if (initialData) {
         const formValues =
           convertCurrentDataToForm(initialData);
+        setSelecionados(initialData.membrosEquipe || []);
+        setProjetosSelecionados(
+          initialData.projetos?.map((p) => p.id) || [],
+        );
         form.reset(formValues);
         isValidated(true);
       }
-    }, [initialData, form]);
+    }, [initialData, form, isValidated]);
 
     // Atualizar validação e dados ao mudar o formulário
     useEffect(() => {
@@ -104,22 +133,50 @@ const EquipeForm = forwardRef<
 
         const formValues = result.data;
 
-        const payload =
-          isEditMode && initialData
-            ? {
-                values: formValues,
-                editData: convertFormToEditData(
-                  formValues,
-                  initialData.id,
-                ),
-              }
-            : {
-                values: formValues,
-                createData:
-                  convertFormToCreateData(formValues),
-              };
+        if (isEditMode && initialData) {
+          // Calcular diferenças para projetos
+          const {
+            adicionar: projetosAdicionar,
+            remover: projetosRemover,
+          } = calcularDiferencas(
+            initialData.projetos || [],
+            projetosSelecionados,
+          );
 
-        onDataChange(payload);
+          // Calcular diferenças para membros
+          const {
+            adicionar: membrosAdicionar,
+            remover: membrosRemover,
+          } = calcularDiferencas(
+            initialData.membrosEquipe || [],
+            selecionados,
+          );
+
+          const payload: EquipeFormDataChange = {
+            values: formValues,
+            editData: convertFormToEditData(
+              formValues,
+              initialData.id,
+              projetosAdicionar,
+              projetosRemover,
+              membrosAdicionar,
+              membrosRemover,
+            ),
+          };
+
+          onDataChange(payload);
+        } else {
+          // Modo criação
+          const payload: EquipeFormDataChange = {
+            values: formValues,
+            createData: convertFormToCreateData(
+              formValues,
+              selecionados.map((m) => m.id),
+            ),
+          };
+
+          onDataChange(payload);
+        }
       });
 
       return () => subscription.unsubscribe();
@@ -129,7 +186,17 @@ const EquipeForm = forwardRef<
       onDataChange,
       isEditMode,
       initialData,
+      selecionados,
+      projetosSelecionados,
     ]);
+
+    // Handler para mudança de projetos
+    const handleProjetosChange = (
+      novosProjetos: string[],
+    ) => {
+      setProjetosSelecionados(novosProjetos);
+      form.setValue('projetos', novosProjetos);
+    };
 
     // Expor métodos via ref
     useImperativeHandle(ref, () => ({
@@ -139,6 +206,8 @@ const EquipeForm = forwardRef<
           inativo: false,
           projetos: [],
         });
+        setSelecionados([]);
+        setProjetosSelecionados([]);
       },
       submit: () => {
         form.handleSubmit((data) => {
@@ -183,67 +252,49 @@ const EquipeForm = forwardRef<
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="projetos"
-              render={({ field, fieldState }) => {
-                const selectedValue = field.value || [];
 
-                return (
-                  <FormItem>
-                    <FormControl>
-                      <MultiComboBoxInput
-                        value={selectedValue}
-                        onChange={field.onChange}
-                        options={
-                          initialData?.projetos
-                            ? initialData.projetos.map(
-                                (projeto) => ({
-                                  id: projeto.id,
-                                  nome: projeto.nome,
-                                  active: !projeto.inativo,
-                                }),
-                              )
-                            : comboProjetos
-                        }
-                        label="Projetos"
-                        placeholder="Selecione o(s) projetos"
-                        icone={FaLaptopCode}
-                        disabled={isLoading}
-                        error={
-                          fieldState.error ? true : false
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
-            />
+            {/* Projetos */}
+            <FormItem>
+              <FormControl>
+                <MultiComboBoxInput
+                  value={projetosSelecionados}
+                  onChange={handleProjetosChange}
+                  options={
+                    initialData?.projetos &&
+                    initialData.projetos.length > 0
+                      ? initialData.projetos.map((p) => ({
+                          id: p.id,
+                          nome: p.nome,
+                          active: !p.inativo,
+                        }))
+                      : comboProjetos.map((p) => ({
+                          id: p.id,
+                          nome: p.nome,
+                          active: !p.inativo,
+                        }))
+                  }
+                  label="Projetos"
+                  placeholder="Selecione o(s) projetos"
+                  icone={FaLaptopCode}
+                  disabled={isLoading}
+                  error={!!form.formState.errors.projetos}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
 
-            {/* Status (Inativo) */}
-
-            <FormField
-              control={form.control}
-              name="inativo"
-              render={({ field }) => (
-                <FormItem className="col-span-full sm:col-span-1">
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      <SearchInput
-                        placeholder="Adicionar integrantes"
-                        label="Usuários"
-                        onChange={field.onChange}
-                        value={`${field.value}`}
-                      />
-                      <Card>
-                        <CardContent></CardContent>
-                      </Card>
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            {/* Membros da Equipe */}
+            <FormItem>
+              <FormControl>
+                <MultiSelectCommand
+                  value={selecionados}
+                  onChange={setSelecionados}
+                  onSearch={campoPesquisaUsuario}
+                  placeholder="Pesquisar usuário"
+                  label="Integrantes da equipe"
+                />
+              </FormControl>
+            </FormItem>
 
             {isEditMode && (
               <FormField
@@ -269,20 +320,26 @@ const EquipeForm = forwardRef<
             )}
 
             {/* Informações de contexto */}
-            <div className="bg-muted/50 rounded-lg p-4">
+            <div className="bg-muted/50 grid rounded-lg p-4">
               <h4 className="mb-2 text-sm font-medium">
                 Informações
               </h4>
-              <div className="text-muted-foreground space-y-1 text-sm">
-                <p>
+              <div className="text-muted-foreground w-full space-y-1 text-sm text-wrap">
+                <p className="w-full text-wrap">
                   • Equipes inativas não aparecerão para
                   novos projetos
                 </p>
-                <p>
+                <p className="w-full text-wrap">
                   • Membros podem ser adicionados após a
                   criação
                 </p>
-                <p>• O nome da equipe deve ser único</p>
+                <p className="w-full text-wrap">
+                  • O nome da equipe deve ser único
+                </p>
+                <p className="w-full text-wrap">
+                  • A equipe pode ser transferida apenas
+                  para usuários previamente integrados
+                </p>
               </div>
             </div>
           </form>

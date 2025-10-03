@@ -30,7 +30,7 @@ export function HeaderTable<T>({
     //   )}
     // </Button>
     <div
-      className="text-primary hover:text-primary/60 flex w-full justify-start text-start uppercase hover:bg-transparent"
+      className="text-primary hover:text-primary/60 flex w-full cursor-context-menu justify-start text-start uppercase hover:bg-transparent"
       onClick={handleSort}
     >
       {label}

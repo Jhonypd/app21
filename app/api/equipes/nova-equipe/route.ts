@@ -4,7 +4,8 @@ import { prismaClient } from '@/lib/prisma';
 
 interface NovaEquipeProps {
   nome: string;
-  projetos: string[]; // Array de IDs dos projetos
+  projetos: string[];
+  membros: string[];
 }
 
 export async function POST(req: NextRequest) {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body: NovaEquipeProps = await req.json();
-    const { nome, projetos } = body;
+    const { nome, projetos, membros = [] } = body;
 
     // Validar dados obrigatórios
     if (!nome || !nome.trim()) {
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // 2. Adicionar o usuário como proprietário
+        // 2. Adicionar o usuário logado como proprietário (administrador)
         await prisma.membroEquipe.create({
           data: {
             equipe_id: equipe.id,
@@ -65,7 +66,32 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // 3. Vincular projetos se houver
+        // 3. Adicionar outros membros se houver (excluindo duplicatas e o próprio criador)
+        if (membros && membros.length > 0) {
+          const membrosUnicos = [
+            ...new Set(membros),
+          ].filter((membroId) => membroId !== idUsuario);
+
+          for (const membroId of membrosUnicos) {
+            // Verificar se a pessoa existe e está ativa
+            const pessoaExistente =
+              await prisma.pessoa.findUnique({
+                where: { id: membroId, inativo: false },
+              });
+
+            if (pessoaExistente) {
+              await prisma.membroEquipe.create({
+                data: {
+                  equipe_id: equipe.id,
+                  pessoa_id: membroId,
+                  proprietario: false,
+                },
+              });
+            }
+          }
+        }
+
+        // 4. Vincular projetos se houver
         if (projetos && projetos.length > 0) {
           // Verificar se os projetos existem e estão ativos
           const projetosExistentes =
@@ -104,7 +130,7 @@ export async function POST(req: NextRequest) {
         ResultadoOperacao: {
           sucesso: true,
           mensagem: 'Equipe criada com sucesso',
-          equipe: novaEquipe.id,
+          id: novaEquipe.id,
         },
       },
       { status: 201 },

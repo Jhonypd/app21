@@ -42,6 +42,7 @@ import { equipesColumns } from '@/app/modules/times/minha-equipes/components/col
 import { mapEquipeToTableData } from '@/app/modules/times/minha-equipes/helpers/map-data-to-table';
 import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
 import { FaLaptopCode } from 'react-icons/fa';
+import { Option } from '@/components/inputs/input-multi-command';
 
 const PageEquipes = () => {
   // Estados de paginação
@@ -85,8 +86,42 @@ const PageEquipes = () => {
     editData?: EditEquipeData; // Ou o tipo específico para edição
   } | null>(null);
 
-  // const { user } = useAuth();
-  // const formRef = useRef<EquipeFormRef>(null);
+  const buscarUsuarios = async (
+    texto: string,
+    excludeIds: string[] = [],
+  ): Promise<Option[]> => {
+    if (!texto.trim()) return [];
+
+    try {
+      // Constrói a URL com parâmetro de exclusão
+      const params = new URLSearchParams({
+        pesquisa: texto,
+        ...(excludeIds.length > 0 && {
+          excluirIds: excludeIds.join(','),
+        }),
+      });
+
+      const response = await fetch(
+        `/api/pessoas/pesquisar?${params}`,
+      );
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar usuários');
+      }
+
+      const data = await response.json();
+      const pessoas = data.ResultadoOperacao?.pessoas || [];
+
+      return pessoas.map((pessoa: any) => ({
+        id: pessoa.id,
+        nome: pessoa.nome,
+        inativo: pessoa.inativo,
+      }));
+    } catch (error) {
+      console.error('Erro na busca de usuários:', error);
+      return [];
+    }
+  };
 
   // Buscar dados para edição
   const fetchEquipeParaEdicao = async (
@@ -243,6 +278,7 @@ const PageEquipes = () => {
   }, []);
 
   const handleSubmitForm = useCallback(async () => {
+    console.log(formData);
     if (!formData) {
       toastError({
         description: 'Dados do formulário não encontrados',
@@ -255,25 +291,44 @@ const PageEquipes = () => {
     try {
       setIsLoading(true);
 
-      if (isEditMode && editingEquipe) {
-        // Modo edição
+      if (
+        isEditMode &&
+        editingEquipe &&
+        formData.editData
+      ) {
+        // Modo edição - usar nova rota com listas de adição/remoção
         const response = await fetch(
-          `/api/equipes/${editingEquipe.id}`,
+          '/api/equipes/alterar-equipe',
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData.values), // Ou formData.editData se tiver estrutura diferente
+            body: JSON.stringify({
+              id: editingEquipe.id,
+              nome: formData.values.nome,
+              inativo: formData.values.inativo,
+              projetosAdicionar:
+                formData.editData.projetosAdicionar || [],
+              projetosRemover:
+                formData.editData.projetosRemover || [],
+              membrosAdicionar:
+                formData.editData.membrosAdicionar || [],
+              membrosRemover:
+                formData.editData.membrosRemover || [],
+            }),
           },
         );
 
         if (!response.ok) {
-          throw new Error('Erro ao atualizar equipe');
+          const errorData = await response.json();
+          throw new Error(
+            errorData.erro || 'Erro ao atualizar equipe',
+          );
         }
 
         toastSuccess({
           description: 'Equipe atualizada com sucesso!',
         });
-      } else {
+      } else if (formData.createData) {
         // Modo criação
         const response = await fetch(
           '/api/equipes/nova-equipe',
@@ -282,7 +337,9 @@ const PageEquipes = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               nome: formData.values.nome,
-              projetos: formData.values.projetos || [],
+              projetos: formData.createData.projetos || [],
+              membros:
+                formData.createData.membrosAdicionar || [],
             }),
           },
         );
@@ -297,6 +354,8 @@ const PageEquipes = () => {
         toastSuccess({
           description: 'Equipe criada com sucesso!',
         });
+      } else {
+        throw new Error('Dados inválidos para envio');
       }
 
       setIsSheetOpen(false);
@@ -455,16 +514,16 @@ const PageEquipes = () => {
           title={
             isEditMode ? 'Editar Equipe' : 'Nova Equipe'
           }
-          className="sm:max-w-2/4"
+          className="max-w-96 sm:max-w-2/4"
         >
           <EquipeForm
-            // ref={formRef}
             initialData={editingEquipe || undefined}
             isLoading={isLoading || isCreateLoading}
             isValidated={setIsValidForm}
-            onDataChange={handleDataChange} // Implementar se necessário
+            onDataChange={handleDataChange}
             onSubmit={handleSubmitForm}
             comboProjetos={comboProjetosForm}
+            campoPesquisaUsuario={buscarUsuarios} // ← Nova prop
           />
         </BasicForm>
       </Toolbar>
