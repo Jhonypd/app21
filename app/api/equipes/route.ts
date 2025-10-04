@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/lib/prisma';
-import { comboProjetos } from '@/app/modules/times/minha-equipes/actions/combo-projetos';
 
 export async function GET(requisicao: NextRequest) {
   try {
@@ -17,8 +16,7 @@ export async function GET(requisicao: NextRequest) {
     const { searchParams } = new URL(requisicao.url);
     const dono = searchParams.get('dono') === 'true';
     const campoPesquisa = searchParams.get('campoPesquisa');
-    const projetoId = searchParams.get('projetoId');
-    const inativo = searchParams.get('inativo') === 'true';
+    const inativo = searchParams.get('inativo');
     // const dataInicio = searchParams.get('dataInicio');
     // const dataFim = searchParams.get('dataFim');
     const pagina = parseInt(
@@ -27,7 +25,7 @@ export async function GET(requisicao: NextRequest) {
     const limite = parseInt(
       searchParams.get('limite') || '10',
     ) as 10 | 20 | 30 | 50 | 100;
-
+    console.log({ inativo });
     // Construir cláusula where
     const onde: any = {};
 
@@ -57,17 +55,8 @@ export async function GET(requisicao: NextRequest) {
       };
     }
 
-    // Filtro por projeto
-    if (projetoId) {
-      onde.projetos = {
-        some: {
-          id: projetoId,
-        },
-      };
-    }
-
     // Filtro por status
-    if (inativo !== undefined) {
+    if (inativo !== null) {
       onde.inativo = inativo;
     }
 
@@ -99,16 +88,6 @@ export async function GET(requisicao: NextRequest) {
             },
           },
         },
-        projetos: {
-          select: {
-            id: true,
-            nome: true,
-            inativo: true,
-          },
-          where: {
-            inativo: false,
-          },
-        },
       },
     });
 
@@ -123,14 +102,7 @@ export async function GET(requisicao: NextRequest) {
         inativo: membro.pessoa.inativo,
         proprietario: membro.proprietario,
       })),
-      projetos: equipe.projetos,
     }));
-
-    // Buscar projetos para o ComboProjetos (vazio por enquanto)
-    const comboProjeto = await comboProjetos({
-      idUsuario,
-      inativo: false,
-    });
 
     // Calcular totais de páginas
     const totalPaginas = Math.ceil(totalItens / limite);
@@ -138,7 +110,6 @@ export async function GET(requisicao: NextRequest) {
 
     const resposta = {
       ResultadoOperacao: {
-        comboProjeto: comboProjeto,
         ListaGrid: [
           {
             equipes: equipesFormatadas,
