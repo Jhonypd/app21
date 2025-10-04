@@ -5,6 +5,7 @@ import React, {
   useImperativeHandle,
   useState,
 } from 'react';
+import { FaUserShield } from 'react-icons/fa6';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -23,13 +24,12 @@ import {
   convertCurrentDataToForm,
   EquipeFormDataChange,
 } from './schema';
-import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
 import { TextInput } from '@/components/inputs/input-text';
-import { FaLaptopCode } from 'react-icons/fa';
 import {
   MultiSelectCommand,
   Option,
 } from '@/components/inputs/input-multi-command';
+import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
 
 export interface EquipeFormRef {
   reset: () => void;
@@ -37,11 +37,6 @@ export interface EquipeFormRef {
 }
 
 interface EquipeFormProps {
-  comboProjetos: {
-    id: string;
-    nome: string;
-    inativo: boolean;
-  }[];
   isLoading: boolean;
   isValidated: (valid: boolean) => void;
   onDataChange: (data: EquipeFormDataChange) => void;
@@ -54,11 +49,11 @@ interface EquipeFormProps {
 
 // Função para calcular diferenças entre arrays
 const calcularDiferencas = (
-  atual: any[],
-  novo: any[],
+  atual: Option[],
+  novo: Option[],
 ): { adicionar: string[]; remover: string[] } => {
-  const idsAtual = atual.map((item) => item.id || item);
-  const idsNovo = novo.map((item) => item.id || item);
+  const idsAtual = atual.map((item) => item.id || item.id);
+  const idsNovo = novo.map((item) => item.id || item.id);
 
   const adicionar = idsNovo.filter(
     (id) => !idsAtual.includes(id),
@@ -81,7 +76,6 @@ const EquipeForm = forwardRef<
       onDataChange,
       initialData,
       onSubmit,
-      comboProjetos,
       campoPesquisaUsuario,
     },
     ref,
@@ -90,15 +84,12 @@ const EquipeForm = forwardRef<
     const [selecionados, setSelecionados] = useState<
       Option[]
     >([]);
-    const [projetosSelecionados, setProjetosSelecionados] =
-      useState<string[]>([]);
 
     const form = useForm<EquipeFormValues>({
       resolver: zodResolver(equipeFormSchema) as any,
       defaultValues: {
         nome: '',
         inativo: false,
-        projetos: [],
       },
       mode: 'onChange',
     });
@@ -109,9 +100,6 @@ const EquipeForm = forwardRef<
         const formValues =
           convertCurrentDataToForm(initialData);
         setSelecionados(initialData.membrosEquipe || []);
-        setProjetosSelecionados(
-          initialData.projetos?.map((p) => p.id) || [],
-        );
         form.reset(formValues);
         isValidated(true);
       }
@@ -121,7 +109,6 @@ const EquipeForm = forwardRef<
     useEffect(() => {
       const subscription = form.watch((values) => {
         const result = equipeFormSchema.safeParse(values);
-
         if (!result.success) {
           isValidated(false);
           const currentValues = form.getValues();
@@ -135,13 +122,6 @@ const EquipeForm = forwardRef<
 
         if (isEditMode && initialData) {
           // Calcular diferenças para projetos
-          const {
-            adicionar: projetosAdicionar,
-            remover: projetosRemover,
-          } = calcularDiferencas(
-            initialData.projetos || [],
-            projetosSelecionados,
-          );
 
           // Calcular diferenças para membros
           const {
@@ -157,8 +137,6 @@ const EquipeForm = forwardRef<
             editData: convertFormToEditData(
               formValues,
               initialData.id,
-              projetosAdicionar,
-              projetosRemover,
               membrosAdicionar,
               membrosRemover,
             ),
@@ -187,16 +165,7 @@ const EquipeForm = forwardRef<
       isEditMode,
       initialData,
       selecionados,
-      projetosSelecionados,
     ]);
-
-    // Handler para mudança de projetos
-    const handleProjetosChange = (
-      novosProjetos: string[],
-    ) => {
-      setProjetosSelecionados(novosProjetos);
-      form.setValue('projetos', novosProjetos);
-    };
 
     // Expor métodos via ref
     useImperativeHandle(ref, () => ({
@@ -204,10 +173,8 @@ const EquipeForm = forwardRef<
         form.reset({
           nome: '',
           inativo: false,
-          projetos: [],
         });
         setSelecionados([]);
-        setProjetosSelecionados([]);
       },
       submit: () => {
         form.handleSubmit((data) => {
@@ -220,6 +187,10 @@ const EquipeForm = forwardRef<
     const handleSubmit = (data: EquipeFormValues) => {
       onSubmit?.(data);
     };
+
+    const admAtual = initialData?.membrosEquipe.filter(
+      (membro) => membro.administrador === true,
+    );
 
     return (
       <div className="h-full px-2">
@@ -257,27 +228,25 @@ const EquipeForm = forwardRef<
             <FormItem>
               <FormControl>
                 <MultiComboBoxInput
-                  value={projetosSelecionados}
-                  onChange={handleProjetosChange}
+                  value={[]}
+                  onChange={() => {}}
                   options={
-                    initialData?.projetos &&
-                    initialData.projetos.length > 0
-                      ? initialData.projetos.map((p) => ({
-                          id: p.id,
-                          nome: p.nome,
-                          active: !p.inativo,
-                        }))
-                      : comboProjetos.map((p) => ({
-                          id: p.id,
-                          nome: p.nome,
-                          active: !p.inativo,
-                        }))
+                    initialData?.membrosEquipe &&
+                    initialData.membrosEquipe.length > 0
+                      ? initialData.membrosEquipe.map(
+                          (p) => ({
+                            id: p.id,
+                            nome: p.nome,
+                            active: !p.inativo,
+                          }),
+                        )
+                      : []
                   }
-                  label="Projetos"
-                  placeholder="Selecione o(s) projetos"
-                  icone={FaLaptopCode}
+                  label="Integrantes atuais"
+                  placeholder="Integrantes atuais"
+                  icone={FaUserShield}
                   disabled={isLoading}
-                  error={!!form.formState.errors.projetos}
+                  error={!!form.formState.errors}
                 />
               </FormControl>
               <FormMessage />

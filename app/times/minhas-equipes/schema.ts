@@ -10,7 +10,6 @@ export const equipeFormSchema = z.object({
     )
     .max(100, 'O nome deve ter no máximo 100 caracteres'),
   inativo: z.boolean().default(false),
-  projetos: z.array(z.string()).default([]),
 });
 
 export type EquipeFormValues = z.infer<
@@ -25,18 +24,13 @@ export interface CurrentEquipeData {
     id: string;
     nome: string;
     inativo: boolean;
-  }>;
-  projetos: Array<{
-    id: string;
-    nome: string;
-    inativo: boolean;
+    administrador: boolean;
   }>;
 }
 
 // Tipos para criação e edição
 export type CreateEquipeData = {
   nome: string;
-  projetos: string[]; // Mudou para array de strings
   membrosAdicionar: string[];
 };
 
@@ -44,10 +38,15 @@ export type EditEquipeData = {
   id: string;
   nome: string;
   inativo: boolean;
-  projetosAdicionar: string[];
-  projetosRemover: string[];
   membrosAdicionar: string[];
   membrosRemover: string[];
+  administrador: {
+    id: string;
+    nome: string;
+    inativo: boolean;
+    administrador: boolean;
+  };
+  novoAdministradorId?: string;
 };
 
 // Interface para o onDataChange
@@ -63,25 +62,29 @@ export const convertFormToCreateData = (
   membrosAdicionar: string[] = [],
 ): CreateEquipeData => ({
   nome: formData.nome,
-  projetos: formData.projetos,
   membrosAdicionar,
 });
 
 export const convertFormToEditData = (
   formData: EquipeFormValues,
   id: string,
-  projetosAdicionar: string[] = [],
-  projetosRemover: string[] = [],
   membrosAdicionar: string[] = [],
   membrosRemover: string[] = [],
+  administrador: {
+    id: string;
+    nome: string;
+    inativo: boolean;
+    administrador: boolean;
+  },
+  novoAdministradorId?: string,
 ): EditEquipeData => ({
   id,
   nome: formData.nome,
   inativo: formData.inativo,
-  projetosAdicionar,
-  projetosRemover,
   membrosAdicionar,
   membrosRemover,
+  administrador,
+  novoAdministradorId,
 });
 
 export const convertCurrentDataToForm = (
@@ -89,5 +92,4 @@ export const convertCurrentDataToForm = (
 ): EquipeFormValues => ({
   nome: currentData.nome,
   inativo: currentData.inativo,
-  projetos: currentData.projetos.map((p) => p.id),
 });

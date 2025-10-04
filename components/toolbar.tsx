@@ -10,7 +10,7 @@ interface ToolbarProps {
   deleteButton: React.ReactNode;
   searchValue?: string;
   searchPlaceholder?: string;
-  isCreateLoading: boolean;
+  isCreateLoading?: boolean;
 }
 
 export const Toolbar = ({

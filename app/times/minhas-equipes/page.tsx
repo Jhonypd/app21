@@ -37,12 +37,10 @@ import {
   toastInfo,
   toastSuccess,
 } from '@/components/custom-toast';
-import { Switch } from '@/components/ui/switch';
 import { equipesColumns } from '@/app/modules/times/minha-equipes/components/columns-equipes';
 import { mapEquipeToTableData } from '@/app/modules/times/minha-equipes/helpers/map-data-to-table';
-import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
-import { FaLaptopCode } from 'react-icons/fa';
 import { Option } from '@/components/inputs/input-multi-command';
+import { ComboBoxInput } from '@/components/inputs/input-combobox';
 
 const PageEquipes = () => {
   // Estados de paginação
@@ -50,16 +48,15 @@ const PageEquipes = () => {
     pageIndex: 0,
     pageSize: 20 as Limit,
   });
-
+  const [statusFiltro, setStatusFiltro] = useState(null);
   const [equipes, setEquipes] = useState<Equipes[]>([]);
   const [editingEquipe, setEditingEquipe] =
     useState<CurrentEquipeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaginatedFetching, setIsPaginatedFetching] =
     useState(false);
+
   const [isDeleteLoading, setIsDeleteLoading] =
-    useState(false);
-  const [isCreateLoading, setIsCreateLoading] =
     useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -67,23 +64,15 @@ const PageEquipes = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isValidForm, setIsValidForm] =
     useState<boolean>(false);
-  const [selectedEquipesFilter, setSelectedEquipesFilter] =
-    useState<string[]>([]);
-  const [comboFiltroProjetos, setComboFiltroProjetos] =
-    useState<
-      { id: string; nome: string; inativo: boolean }[]
-    >([]);
-  const [comboProjetosForm, setComboProjetosForm] =
-    useState<
-      { id: string; nome: string; inativo: boolean }[]
-    >([]);
   const [selectedIds, setSelectedIds] = useState<string[]>(
     [],
   );
+  // const [novoAdministradorId, setNovoAdministradorId] =
+  //   useState<string | null>(null);
   const [formData, setFormData] = useState<{
     values: EquipeFormValues;
-    createData?: CreateEquipeData; // Ou o tipo específico para criação
-    editData?: EditEquipeData; // Ou o tipo específico para edição
+    createData?: CreateEquipeData;
+    editData?: EditEquipeData;
   } | null>(null);
 
   const buscarUsuarios = async (
@@ -141,9 +130,6 @@ const PageEquipes = () => {
 
       const data = await res.json();
       setEditingEquipe(data.ResultadoOperacao.equipe);
-      setComboProjetosForm(
-        data.ResultadoOperacao.comboProjeto,
-      );
     } catch (error) {
       console.error(error);
       toastError({
@@ -151,39 +137,6 @@ const PageEquipes = () => {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Função para buscar dados para inserir
-  const fetchDadosParaInserir = async () => {
-    try {
-      setIsCreateLoading(true);
-      const res = await fetch(
-        '/api/equipes/obter-dados-inserir',
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          'Falha ao carregar dados para criação',
-        );
-      }
-
-      const data = await res.json();
-      setComboProjetosForm(
-        data.ResultadoOperacao?.comboProjeto || [],
-      );
-      return true; // Sucesso
-    } catch (error) {
-      console.error(
-        'Erro ao buscar dados para inserir:',
-        error,
-      );
-      toastError({
-        description: 'Erro ao carregar dados para criação',
-      });
-      return false; // Falha
-    } finally {
-      setIsCreateLoading(false);
     }
   };
 
@@ -219,12 +172,7 @@ const PageEquipes = () => {
         data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
         [];
 
-      // ADICIONAR ESTA LINHA: Buscar projetos do combo da resposta
-      const projetosData =
-        data.ResultadoOperacao?.comboProjeto || [];
-
       setEquipes(equipesData);
-      setComboFiltroProjetos(projetosData); // ← IMPORTANTE: definir os projetos
       setTotalCount(
         data.ResultadoOperacao?.paginacao?.totalItens || 0,
       );
@@ -261,14 +209,9 @@ const PageEquipes = () => {
   // Função para criar nova equipe - MODIFICADA
   const handleCreate = useCallback(async () => {
     try {
-      // Buscar dados para inserir primeiro
-      const success = await fetchDadosParaInserir();
-
-      if (success) {
-        setIsEditMode(false);
-        setEditingEquipe(null);
-        setIsSheetOpen(true);
-      }
+      setIsEditMode(false);
+      setEditingEquipe(null);
+      setIsSheetOpen(true);
     } catch (error) {
       console.error('Erro ao preparar criação:', error);
       toastError({
@@ -278,15 +221,12 @@ const PageEquipes = () => {
   }, []);
 
   const handleSubmitForm = useCallback(async () => {
-    console.log(formData);
     if (!formData) {
       toastError({
         description: 'Dados do formulário não encontrados',
       });
       return;
     }
-
-    console.log('Dados para envio:', formData);
 
     try {
       setIsLoading(true);
@@ -306,14 +246,12 @@ const PageEquipes = () => {
               id: editingEquipe.id,
               nome: formData.values.nome,
               inativo: formData.values.inativo,
-              projetosAdicionar:
-                formData.editData.projetosAdicionar || [],
-              projetosRemover:
-                formData.editData.projetosRemover || [],
               membrosAdicionar:
                 formData.editData.membrosAdicionar || [],
               membrosRemover:
                 formData.editData.membrosRemover || [],
+              novoAdministradorId:
+                formData.editData.novoAdministradorId,
             }),
           },
         );
@@ -337,7 +275,6 @@ const PageEquipes = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               nome: formData.values.nome,
-              projetos: formData.createData.projetos || [],
               membros:
                 formData.createData.membrosAdicionar || [],
             }),
@@ -371,6 +308,7 @@ const PageEquipes = () => {
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData, isEditMode, editingEquipe]);
 
   // Fechar formulário
@@ -379,7 +317,6 @@ const PageEquipes = () => {
     if (!open) {
       setEditingEquipe(null);
       setIsEditMode(false);
-      setComboProjetosForm([]);
       setFormData(null); // ← Limpa os dados do formulário
     }
   }, []);
@@ -414,6 +351,7 @@ const PageEquipes = () => {
   // Buscar equipes quando a paginação mudar
   useEffect(() => {
     fetchEquipes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.pageIndex, pagination.pageSize]);
 
   const handleDataChange = useCallback(
@@ -426,29 +364,6 @@ const PageEquipes = () => {
     },
     [],
   );
-
-  if (error) {
-    return (
-      <div className="container mx-auto w-full">
-        <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-          <div className="max-w-md">
-            <h2 className="text-destructive mb-4 text-xl font-semibold">
-              Erro ao carregar equipes
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              {error}
-            </p>
-            <Button
-              onClick={fetchEquipes}
-              variant="outline"
-            >
-              Tentar novamente
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto w-full">
@@ -468,19 +383,17 @@ const PageEquipes = () => {
       <FilterPage className="mt-6">
         <FilterGrid className="grid-cols-12">
           <FilterItem className="col-span-full items-center sm:col-span-3">
-            <p className="flex h-full items-center gap-2 px-2 text-base font-normal text-slate-500">
-              <Switch /> Inativos
-            </p>
-          </FilterItem>
-          <FilterItem className="col-span-full sm:col-span-3">
-            <MultiComboBoxInput
-              value={selectedEquipesFilter}
-              onChange={setSelectedEquipesFilter}
-              options={comboFiltroProjetos}
-              label="Projetos"
-              placeholder="Selecione o(s) projetos"
-              icone={FaLaptopCode}
-              disabled={isLoading}
+            <ComboBoxInput
+              onChange={(e) => setStatusFiltro(e)}
+              options={[
+                { id: '1', name: 'Ativo' },
+                { id: '2', name: 'Inativo' },
+              ]}
+              value={statusFiltro ? statusFiltro : ''}
+              label="Status"
+              name="inativo"
+              placeholder=""
+              onReset={() => undefined}
             />
           </FilterItem>
         </FilterGrid>
@@ -495,7 +408,6 @@ const PageEquipes = () => {
         }
         searchValue={''}
         onOpenCreateForm={handleCreate}
-        isCreateLoading={isCreateLoading}
         deleteButton={
           <DeleteButton
             onSubmit={() => {}}
@@ -518,31 +430,31 @@ const PageEquipes = () => {
         >
           <EquipeForm
             initialData={editingEquipe || undefined}
-            isLoading={isLoading || isCreateLoading}
+            isLoading={isLoading}
             isValidated={setIsValidForm}
             onDataChange={handleDataChange}
             onSubmit={handleSubmitForm}
-            comboProjetos={comboProjetosForm}
-            campoPesquisaUsuario={buscarUsuarios} // ← Nova prop
+            campoPesquisaUsuario={buscarUsuarios}
           />
         </BasicForm>
       </Toolbar>
 
-      <div className="min-h-96">
-        <DataTable<ColumnsEquipesTable, unknown>
-          columns={columns}
-          data={mappedTable}
-          isLoading={isPaginatedFetching || isDeleteLoading}
-          selectedIds={selectedIds}
-          pagination={{
-            pageIndex: pagination.pageIndex,
-            pageSize: pagination.pageSize,
-            totalCount,
-            onPageChange: handlePageChange,
-            onPageSizeChange: handlePageSizeChange,
-          }}
-        />
-      </div>
+      <DataTable<ColumnsEquipesTable, unknown>
+        columns={columns}
+        data={mappedTable}
+        isLoading={isPaginatedFetching || isDeleteLoading}
+        selectedIds={selectedIds}
+        refreshFetch={fetchEquipes}
+        error={error ? true : undefined}
+        errorDescription={error ? error : undefined}
+        pagination={{
+          pageIndex: pagination.pageIndex,
+          pageSize: pagination.pageSize,
+          totalCount,
+          onPageChange: handlePageChange,
+          onPageSizeChange: handlePageSizeChange,
+        }}
+      />
     </div>
   );
 };

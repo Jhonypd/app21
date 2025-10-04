@@ -4,7 +4,6 @@ import { prismaClient } from '@/lib/prisma';
 
 interface NovaEquipeProps {
   nome: string;
-  projetos: string[];
   membros: string[];
 }
 
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body: NovaEquipeProps = await req.json();
-    const { nome, projetos, membros = [] } = body;
+    const { nome, membros = [] } = body;
 
     // Validar dados obrigatórios
     if (!nome || !nome.trim()) {
@@ -88,36 +87,6 @@ export async function POST(req: NextRequest) {
                 },
               });
             }
-          }
-        }
-
-        // 4. Vincular projetos se houver
-        if (projetos && projetos.length > 0) {
-          // Verificar se os projetos existem e estão ativos
-          const projetosExistentes =
-            await prisma.projeto.findMany({
-              where: {
-                id: { in: projetos },
-                inativo: false,
-              },
-              select: { id: true },
-            });
-
-          const idsProjetosValidos = projetosExistentes.map(
-            (p) => p.id,
-          );
-
-          if (idsProjetosValidos.length > 0) {
-            await prisma.equipe.update({
-              where: { id: equipe.id },
-              data: {
-                projetos: {
-                  connect: idsProjetosValidos.map((id) => ({
-                    id,
-                  })),
-                },
-              },
-            });
           }
         }
 

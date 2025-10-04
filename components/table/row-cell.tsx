@@ -65,7 +65,7 @@ const DataTableCell = <TData, TValue>({
         variant={
           value === 'ativo' ? 'success' : 'destructive'
         }
-        className="ml-1 text-xs font-bold text-white uppercase"
+        className="ml-1 cursor-default text-xs font-bold text-white uppercase"
       >
         {safeFormat(value)}
       </Badge>

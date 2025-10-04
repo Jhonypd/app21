@@ -5,7 +5,10 @@ import DataTableCell from '@/components/table/row-cell';
 import { HeaderTable } from '@/components/table/data-header-table';
 import CheckboxHeader from '@/components/table/checkbox-header';
 import DataTableEditCell from '@/components/table/row-cell-edit';
-import { ColumnsEquipes } from '../types';
+import {
+  ColumnsEquipes,
+  ColumnsIntegrantesEquipes,
+} from '../types';
 
 interface EquipesColumnsProps {
   selectedIds: string[];
@@ -14,6 +17,10 @@ interface EquipesColumnsProps {
   >;
   data: ColumnsEquipes[];
   onEdit: (id: string) => void;
+}
+
+interface IntegrantesEquipesColumnsProps {
+  data: ColumnsIntegrantesEquipes[];
 }
 
 export const equipesColumns = ({
@@ -140,18 +147,52 @@ export const equipesColumns = ({
     cell: (cell) => <DataTableCell cell={cell} />,
     filterFn: 'includesString',
   },
-  {
-    accessorKey: 'projetos',
-    header: ({ column }) => {
-      return (
-        <HeaderTable
-          label="Projetos"
-          column={column}
-          sortable={false}
-        />
-      );
-    },
-    cell: (cell) => <DataTableCell cell={cell} />,
-    filterFn: 'includesString',
-  },
 ];
+
+export const IntegrantesEquipesColumns =
+  ({}: IntegrantesEquipesColumnsProps): ColumnDef<ColumnsIntegrantesEquipes>[] => [
+    {
+      accessorKey: 'nome',
+      header: ({ column }) => {
+        return (
+          <HeaderTable
+            label="Nome"
+            column={column}
+          />
+        );
+      },
+      cell: (cell) => (
+        <DataTableCell
+          className="text-nowrap"
+          cell={cell}
+        />
+      ),
+      filterFn: 'includesString',
+    },
+    {
+      accessorKey: 'administrador',
+      header: ({ column }) => {
+        return (
+          <HeaderTable
+            label="Administrador"
+            column={column}
+          />
+        );
+      },
+      cell: (cell) => <DataTableCell cell={cell} />,
+      filterFn: 'includesString',
+    },
+    {
+      accessorKey: 'inativo',
+      header: ({ column }) => {
+        return (
+          <HeaderTable
+            label="Status"
+            column={column}
+          />
+        );
+      },
+      cell: (cell) => <DataTableCell cell={cell} />,
+      filterFn: 'includesString',
+    },
+  ];

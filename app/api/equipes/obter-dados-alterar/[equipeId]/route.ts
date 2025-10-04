@@ -64,8 +64,7 @@ export async function GET(
         nome: m.pessoa.nome,
         inativo: m.pessoa.inativo,
         proprietario: m.proprietario,
-      })),
-      projetos: equipe.projetos,
+      }))
     };
 
     // Buscar projetos do combo (dados puros, não NextResponse)
