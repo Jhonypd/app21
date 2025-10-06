@@ -33,38 +33,6 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background min-h-screen">
-      {/* Header/Navbar */}
-      <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 border-b backdrop-blur">
-        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-2">
-              <GiCardRandom className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-foreground text-xl font-bold">
-              Planning Poker
-            </span>
-          </div>
-
-          <Button
-            onClick={handleAuthAction}
-            className="flex items-center gap-2"
-            size="sm"
-          >
-            {isAuthenticated ? (
-              <>
-                Dashboard
-                <ArrowRight className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                <LogIn className="h-4 w-4" />
-                Entrar
-              </>
-            )}
-          </Button>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="container mx-auto max-w-7xl px-4">
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center py-12">
@@ -76,7 +44,7 @@ const LandingPage = () => {
                   Bem-vindo de volta,
                 </p>
                 <p className="text-foreground font-medium">
-                  {user.email}
+                  {user.nome}
                 </p>
               </div>
             )}

@@ -10,7 +10,6 @@ import {
   MdHelp,
   MdBugReport,
   MdFeedback,
-  MdWork,
   MdFolder,
   MdList,
 } from 'react-icons/md';
@@ -24,8 +23,6 @@ import {
 import { HiOutlineDocumentReport } from 'react-icons/hi';
 import { RiBarChartGroupedFill } from 'react-icons/ri';
 import { IconType } from 'react-icons';
-import { LuFolderCode } from 'react-icons/lu';
-
 export interface MenuProps {
   order: number;
   title: string;
@@ -147,7 +144,7 @@ export const menus: MenuList = {
     // Gerenciamento de Times
     {
       order: 400,
-      title: 'Times',
+      title: 'Equipes',
       description: 'Gerenciamento de equipes',
       icon: FaUsersCog,
       menus: [
@@ -156,7 +153,7 @@ export const menus: MenuList = {
           title: 'Minhas Equipes',
           description: 'Gerenciar equipes de trabalho',
           icon: FaUsers,
-          url: '/times/minhas-equipes',
+          url: '/equipes/minhas-equipes',
         },
         {
           order: 402,
@@ -164,7 +161,7 @@ export const menus: MenuList = {
           description:
             'Performance e participação dos membros',
           icon: RiBarChartGroupedFill,
-          url: '/times/relatorios',
+          url: '/equipes/relatorios',
         },
       ],
     },
