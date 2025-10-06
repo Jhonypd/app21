@@ -7,8 +7,6 @@ import {
   useState,
 } from 'react';
 import Loading from '@/components/loading';
-import { HiOutlineUserGroup } from 'react-icons/hi';
-import { EquipeForm } from './equipes-form';
 import {
   CreateEquipeData,
   CurrentEquipeData,
@@ -40,8 +38,12 @@ import {
 } from '@/app/modules/equipes/minha-equipes/interfaces';
 import { mapEquipeToTableData } from '@/app/modules/equipes/minha-equipes/helpers/map-data-to-table';
 import { equipesColumns } from '@/app/modules/equipes/minha-equipes/components/columns-equipes';
+import { EquipeForm } from './projetos-form';
+import { FaLaptopCode } from 'react-icons/fa';
+import { Projetos } from '@/app/modules/projetos/meus-projetos/interfaces';
 
-const PageEquipes = () => {
+const PageProjetos = () => {
+  // Estados de paginação
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 20 as Limit,
@@ -53,7 +55,7 @@ const PageEquipes = () => {
   const [statusFiltroAplicado, setStatusFiltroAplicado] =
     useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [equipes, setEquipes] = useState<Equipes[]>([]);
+  const [projetos, setProjetos] = useState<Projetos[]>([]);
   const [editingEquipe, setEditingEquipe] =
     useState<CurrentEquipeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -173,7 +175,7 @@ const PageEquipes = () => {
   };
 
   // Buscar equipes com paginação e filtro
-  const fetchEquipes = async () => {
+  const fetchProjetos = async () => {
     try {
       const isPaginated =
         pagination.pageIndex > 0 ||
@@ -194,19 +196,19 @@ const PageEquipes = () => {
         }),
       });
 
-      const url = `/api/equipes?${params}`;
+      const url = `/api/projetos?${params}`;
       const res = await fetch(url);
 
       if (!res.ok) {
-        throw new Error('Falha ao carregar as equipes');
+        throw new Error('Falha ao carregar as projetos');
       }
 
       const data = await res.json();
-      const equipesData =
-        data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
+      const projetosData =
+        data.ResultadoOperacao?.ListaGrid?.[0]?.projetos ||
         [];
 
-      setEquipes(equipesData);
+      setProjetos(projetosData);
       setTotalCount(
         data.ResultadoOperacao?.paginacao?.totalItens || 0,
       );
@@ -218,7 +220,7 @@ const PageEquipes = () => {
           : 'Erro desconhecido';
       setError(message);
       toastError({
-        description: 'Erro ao carregar equipes',
+        description: 'Erro ao carregar projetos',
       });
     } finally {
       setIsLoading(false);
@@ -229,8 +231,8 @@ const PageEquipes = () => {
   // Função para aplicar filtros
   const aplicarFiltros = () => {
     setStatusFiltroAplicado(statusFiltro);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    setIsFilterOpen(false);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 })); // Reset para primeira página
+    setIsFilterOpen(false); // Fecha o filtro após aplicar
   };
 
   // Função para deletar equipes
@@ -262,7 +264,9 @@ const PageEquipes = () => {
         description: result.ResultadoOperacao.mensagem,
       });
 
-      fetchEquipes();
+      // Recarregar a lista
+      fetchProjetos();
+      // Limpar seleção
       setSelectedIds([]);
     } catch (error) {
       console.error('Erro ao deletar equipes:', error);
@@ -296,6 +300,7 @@ const PageEquipes = () => {
     try {
       setIsEditMode(false);
       setEditingEquipe(null);
+      // Resetar formData para modo criação
       setFormData({
         values: {
           nome: '',
@@ -316,6 +321,9 @@ const PageEquipes = () => {
   }, []);
 
   const handleSubmitForm = useCallback(async () => {
+    // Agora formData nunca será null porque tem valor padrão
+    console.log('Dados para envio:', formData);
+
     try {
       setIsLoading(true);
 
@@ -382,7 +390,7 @@ const PageEquipes = () => {
       }
 
       setIsSheetOpen(false);
-      fetchEquipes(); // Recarregar a lista
+      fetchProjetos(); // Recarregar a lista
     } catch (error) {
       console.error('Erro ao salvar equipe:', error);
       toastError({
@@ -394,7 +402,7 @@ const PageEquipes = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, isEditMode, editingEquipe]);
+  }, [formData, isEditMode, fetchProjetos]);
 
   // Fechar formulário
   const handleCloseForm = useCallback((open: boolean) => {
@@ -402,8 +410,10 @@ const PageEquipes = () => {
     if (!open) {
       setEditingEquipe(null);
       setIsEditMode(false);
+      // Não resetar formData completamente, apenas remove referências específicas
       setFormData((prev) => ({
         values: prev.values,
+        // Mantém a estrutura mas limpa dados específicos
       }));
     }
   }, []);
@@ -414,16 +424,16 @@ const PageEquipes = () => {
       equipesColumns({
         selectedIds,
         setSelectedIds,
-        data: equipes.map(mapEquipeToTableData),
+        data: projetos.map(mapEquipeToTableData),
         onEdit: handleEdit,
       }),
-    [selectedIds, equipes, handleEdit],
+    [selectedIds, projetos, handleEdit],
   );
 
   // Dados mapeados para a tabela
   const mappedTable = useMemo(
-    () => equipes.map(mapEquipeToTableData),
-    [equipes],
+    () => projetos.map(mapEquipeToTableData),
+    [projetos],
   );
 
   // Handlers de paginação
@@ -437,7 +447,7 @@ const PageEquipes = () => {
 
   // Buscar equipes quando a paginação ou filtro aplicado mudar
   useEffect(() => {
-    fetchEquipes();
+    fetchProjetos();
   }, [
     pagination.pageIndex,
     pagination.pageSize,
@@ -465,9 +475,9 @@ const PageEquipes = () => {
       )}
 
       <TitlePage
-        title="Gerenciar Equipes"
-        description="Criar e gerenciar equipes de trabalho"
-        icon={<HiOutlineUserGroup />}
+        title="Projetos"
+        description="Criar e gerenciar projetos"
+        icon={<FaLaptopCode />}
       />
 
       <FilterPage
@@ -538,7 +548,7 @@ const PageEquipes = () => {
         data={mappedTable}
         isLoading={isPaginatedFetching || isDeleteLoading}
         selectedIds={selectedIds}
-        refreshFetch={fetchEquipes}
+        refreshFetch={fetchProjetos}
         error={error ? true : undefined}
         errorDescription={error ? error : undefined}
         pagination={{
@@ -553,4 +563,4 @@ const PageEquipes = () => {
   );
 };
 
-export default PageEquipes;
+export default PageProjetos;

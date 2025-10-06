@@ -90,7 +90,7 @@ export const menus: MenuList = {
           title: 'Meus Projetos',
           description: 'Lista de projetos ativos',
           icon: MdFolder,
-          url: '/projetos',
+          url: '/projetos/meus-projetos',
         },
         {
           order: 202,
@@ -103,43 +103,43 @@ export const menus: MenuList = {
     },
 
     // Relatórios e Analytics
-    {
-      order: 300,
-      title: 'Relatórios',
-      description: 'Análises e relatórios das estimativas',
-      icon: MdAnalytics,
-      menus: [
-        {
-          order: 301,
-          title: 'Atividades Recentes',
-          description: 'Últimas estimativas e atividades',
-          icon: MdHistory,
-          url: '/relatorios/atividades',
-        },
-        {
-          order: 302,
-          title: 'Dashboard Analytics',
-          description: 'Métricas e gráficos das sessões',
-          icon: FaChartBar,
-          url: '/relatorios/analytics',
-        },
-        {
-          order: 303,
-          title: 'Histórico de Sessões',
-          description: 'Histórico completo das sessões',
-          icon: MdHistory,
-          url: '/relatorios/sessoes',
-        },
-        {
-          order: 304,
-          title: 'Exportar Dados',
-          description:
-            'Exportar relatórios em diferentes formatos',
-          icon: HiOutlineDocumentReport,
-          url: '/relatorios/exportar',
-        },
-      ],
-    },
+    // {
+    //   order: 300,
+    //   title: 'Relatórios',
+    //   description: 'Análises e relatórios das estimativas',
+    //   icon: MdAnalytics,
+    //   menus: [
+    //     {
+    //       order: 301,
+    //       title: 'Atividades Recentes',
+    //       description: 'Últimas estimativas e atividades',
+    //       icon: MdHistory,
+    //       url: '/relatorios/atividades',
+    //     },
+    //     {
+    //       order: 302,
+    //       title: 'Dashboard Analytics',
+    //       description: 'Métricas e gráficos das sessões',
+    //       icon: FaChartBar,
+    //       url: '/relatorios/analytics',
+    //     },
+    //     {
+    //       order: 303,
+    //       title: 'Histórico de Sessões',
+    //       description: 'Histórico completo das sessões',
+    //       icon: MdHistory,
+    //       url: '/relatorios/sessoes',
+    //     },
+    //     {
+    //       order: 304,
+    //       title: 'Exportar Dados',
+    //       description:
+    //         'Exportar relatórios em diferentes formatos',
+    //       icon: HiOutlineDocumentReport,
+    //       url: '/relatorios/exportar',
+    //     },
+    //   ],
+    // },
 
     // Gerenciamento de Times
     {
@@ -167,65 +167,65 @@ export const menus: MenuList = {
     },
 
     // Configurações Pessoais
-    {
-      order: 500,
-      title: 'Configurações',
-      description: 'Configurações pessoais',
-      icon: MdSettings,
-      menus: [
-        {
-          order: 501,
-          title: 'Meu Perfil',
-          description: 'Gerenciar informações pessoais',
-          icon: MdPerson,
-          url: '/configuracoes/perfil',
-        },
-        {
-          order: 502,
-          title: 'Preferências',
-          description: 'Configurações de estimativas',
-          icon: FaCog,
-          url: '/configuracoes/preferencias',
-        },
-        {
-          order: 503,
-          title: 'Notificações',
-          description: 'Configurar alertas e lembretes',
-          icon: MdNotifications,
-          url: '/configuracoes/notificacoes',
-        },
-      ],
-    },
+    // {
+    //   order: 500,
+    //   title: 'Configurações',
+    //   description: 'Configurações pessoais',
+    //   icon: MdSettings,
+    //   menus: [
+    //     {
+    //       order: 501,
+    //       title: 'Meu Perfil',
+    //       description: 'Gerenciar informações pessoais',
+    //       icon: MdPerson,
+    //       url: '/configuracoes/perfil',
+    //     },
+    //     {
+    //       order: 502,
+    //       title: 'Preferências',
+    //       description: 'Configurações de estimativas',
+    //       icon: FaCog,
+    //       url: '/configuracoes/preferencias',
+    //     },
+    //     {
+    //       order: 503,
+    //       title: 'Notificações',
+    //       description: 'Configurar alertas e lembretes',
+    //       icon: MdNotifications,
+    //       url: '/configuracoes/notificacoes',
+    //     },
+    //   ],
+    // },
 
     // Suporte e Ajuda
-    {
-      order: 600,
-      title: 'Suporte',
-      description: 'Ajuda e suporte técnico',
-      icon: MdHelp,
-      menus: [
-        {
-          order: 601,
-          title: 'Central de Ajuda',
-          description: 'Documentação e guias de uso',
-          icon: MdHelp,
-          url: '/suporte/ajuda',
-        },
-        {
-          order: 602,
-          title: 'Reportar Bug',
-          description: 'Relatar problemas técnicos',
-          icon: MdBugReport,
-          url: '/suporte/bug',
-        },
-        {
-          order: 603,
-          title: 'Enviar Feedback',
-          description: 'Sugestões e melhorias',
-          icon: MdFeedback,
-          url: '/suporte/feedback',
-        },
-      ],
-    },
+    // {
+    //   order: 600,
+    //   title: 'Suporte',
+    //   description: 'Ajuda e suporte técnico',
+    //   icon: MdHelp,
+    //   menus: [
+    //     {
+    //       order: 601,
+    //       title: 'Central de Ajuda',
+    //       description: 'Documentação e guias de uso',
+    //       icon: MdHelp,
+    //       url: '/suporte/ajuda',
+    //     },
+    //     {
+    //       order: 602,
+    //       title: 'Reportar Bug',
+    //       description: 'Relatar problemas técnicos',
+    //       icon: MdBugReport,
+    //       url: '/suporte/bug',
+    //     },
+    //     {
+    //       order: 603,
+    //       title: 'Enviar Feedback',
+    //       description: 'Sugestões e melhorias',
+    //       icon: MdFeedback,
+    //       url: '/suporte/feedback',
+    //     },
+    //   ],
+    // },
   ],
 };
