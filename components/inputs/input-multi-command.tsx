@@ -175,11 +175,10 @@ export const MultiSelectCommand: React.FC<
           <Command className="absolute top-0 right-0 left-0 z-20 mt-12 min-h-28 rounded-md border bg-white shadow-md">
             <CommandList>
               {loading && (
-                <div className="flex items-center justify-center p-4">
-                  <Loading
-                    active
-                    type="transaction"
-                  />
+                <div className="pointer-events-auto flex min-h-full items-center justify-center bg-black/60 p-4">
+                  <div className="text-center">
+                    <div className="border-primary mx-auto mb-4 h-14 w-14 animate-spin rounded-full border-b-4"></div>
+                  </div>
                 </div>
               )}
               {!loading && (

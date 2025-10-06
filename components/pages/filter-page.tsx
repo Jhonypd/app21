@@ -3,10 +3,10 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { ListFilterIcon } from "lucide-react";
-import React from "react";
+} from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { ListFilterIcon } from 'lucide-react';
+import React from 'react';
 
 interface Props {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ interface Props {
 
 const FilterPage = ({
   children,
-  className = "",
+  className = '',
   onSubmit,
   onOpenChange,
   isOpen = false,
@@ -27,11 +27,11 @@ const FilterPage = ({
     await onSubmit?.();
   };
 
-  const accordionValue = isOpen ? "filter" : undefined;
+  const accordionValue = isOpen ? 'filter' : undefined;
 
   const handleValueChange = (value: string) => {
     if (onOpenChange) {
-      onOpenChange(value === "filter");
+      onOpenChange(value === 'filter');
     }
   };
 
@@ -43,8 +43,14 @@ const FilterPage = ({
       onValueChange={handleValueChange}
       className="w-full max-w-full overflow-hidden rounded-lg border-2 px-4"
     >
-      <AccordionItem value="filter" className="w-full border-b-0">
-        <AccordionTrigger className="w-full cursor-pointer border-none text-primary hover:no-underline">
+      <AccordionItem
+        value="filter"
+        className="w-full border-b-0"
+      >
+        <AccordionTrigger
+          type="button"
+          className="text-primary w-full cursor-pointer border-none hover:no-underline"
+        >
           <span className="text-bold flex gap-2 uppercase">
             <ListFilterIcon /> Filtros
           </span>
@@ -56,7 +62,10 @@ const FilterPage = ({
             <div className="flex-1">{children}</div>
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleSubmit} className="cursor-pointer uppercase">
+            <Button
+              onClick={handleSubmit}
+              className="cursor-pointer uppercase"
+            >
               Filtrar
             </Button>
           </div>

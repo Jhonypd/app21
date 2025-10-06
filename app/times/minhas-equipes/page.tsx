@@ -6,8 +6,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Button } from '@/components/ui/button';
-// import { useAuth } from '@/hooks/useAuth';
 import Loading from '@/components/loading';
 import { HiOutlineUserGroup } from 'react-icons/hi';
 import { EquipeForm } from './equipes-form';
@@ -48,14 +46,19 @@ const PageEquipes = () => {
     pageIndex: 0,
     pageSize: 20 as Limit,
   });
-  const [statusFiltro, setStatusFiltro] = useState(null);
+
+  const [statusFiltro, setStatusFiltro] = useState<
+    string | null
+  >(null);
+  const [statusFiltroAplicado, setStatusFiltroAplicado] =
+    useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [equipes, setEquipes] = useState<Equipes[]>([]);
   const [editingEquipe, setEditingEquipe] =
     useState<CurrentEquipeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaginatedFetching, setIsPaginatedFetching] =
     useState(false);
-
   const [isDeleteLoading, setIsDeleteLoading] =
     useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -67,13 +70,18 @@ const PageEquipes = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>(
     [],
   );
-  // const [novoAdministradorId, setNovoAdministradorId] =
-  //   useState<string | null>(null);
+
+  // Estado do formData com valor padrão
   const [formData, setFormData] = useState<{
     values: EquipeFormValues;
     createData?: CreateEquipeData;
     editData?: EditEquipeData;
-  } | null>(null);
+  }>({
+    values: {
+      nome: '',
+      inativo: false,
+    },
+  });
 
   const buscarUsuarios = async (
     texto: string,
@@ -82,7 +90,6 @@ const PageEquipes = () => {
     if (!texto.trim()) return [];
 
     try {
-      // Constrói a URL com parâmetro de exclusão
       const params = new URLSearchParams({
         pesquisa: texto,
         ...(excludeIds.length > 0 && {
@@ -101,11 +108,17 @@ const PageEquipes = () => {
       const data = await response.json();
       const pessoas = data.ResultadoOperacao?.pessoas || [];
 
-      return pessoas.map((pessoa: any) => ({
-        id: pessoa.id,
-        nome: pessoa.nome,
-        inativo: pessoa.inativo,
-      }));
+      return pessoas.map(
+        (pessoa: {
+          id: string;
+          nome: string;
+          inativo: boolean;
+        }) => ({
+          id: pessoa.id,
+          nome: pessoa.nome,
+          inativo: pessoa.inativo,
+        }),
+      );
     } catch (error) {
       console.error('Erro na busca de usuários:', error);
       return [];
@@ -130,6 +143,25 @@ const PageEquipes = () => {
 
       const data = await res.json();
       setEditingEquipe(data.ResultadoOperacao.equipe);
+
+      // Inicializar formData com os dados da equipe
+      if (data.ResultadoOperacao.equipe) {
+        setFormData({
+          values: {
+            nome: data.ResultadoOperacao.equipe.nome || '',
+            inativo:
+              data.ResultadoOperacao.equipe.inativo ||
+              false,
+          },
+          editData: {
+            id: data.ResultadoOperacao.equipe.id,
+            nome: data.ResultadoOperacao.equipe.nome,
+            inativo: data.ResultadoOperacao.equipe.inativo,
+            membrosAdicionar: [],
+            membrosRemover: [],
+          },
+        });
+      }
     } catch (error) {
       console.error(error);
       toastError({
@@ -140,7 +172,7 @@ const PageEquipes = () => {
     }
   };
 
-  // Buscar equipes com paginação
+  // Buscar equipes com paginação e filtro
   const fetchEquipes = async () => {
     try {
       const isPaginated =
@@ -156,11 +188,13 @@ const PageEquipes = () => {
       const params = new URLSearchParams({
         pagina: pagination.pageIndex.toString(),
         limite: pagination.pageSize.toString(),
+        ...(statusFiltroAplicado && {
+          inativo:
+            statusFiltroAplicado === '2' ? 'true' : 'false',
+        }),
       });
 
-      const url = isPaginated
-        ? `/api/equipes?${params}`
-        : '/api/equipes';
+      const url = `/api/equipes?${params}`;
       const res = await fetch(url);
 
       if (!res.ok) {
@@ -192,11 +226,64 @@ const PageEquipes = () => {
     }
   };
 
+  // Função para aplicar filtros
+  const aplicarFiltros = () => {
+    setStatusFiltroAplicado(statusFiltro);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 })); // Reset para primeira página
+    setIsFilterOpen(false); // Fecha o filtro após aplicar
+  };
+
+  // Função para deletar equipes
+  const handleDelete = async (ids: string[]) => {
+    try {
+      setIsDeleteLoading(true);
+
+      const response = await fetch(
+        '/api/equipes/delete-equipes',
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ids: ids.join(','),
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.erro || 'Erro ao deletar equipes',
+        );
+      }
+
+      const result = await response.json();
+
+      toastSuccess({
+        description: result.ResultadoOperacao.mensagem,
+      });
+
+      // Recarregar a lista
+      fetchEquipes();
+      // Limpar seleção
+      setSelectedIds([]);
+    } catch (error) {
+      console.error('Erro ao deletar equipes:', error);
+      toastError({
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Erro ao deletar equipes',
+      });
+    } finally {
+      setIsDeleteLoading(false);
+    }
+  };
+
   // Função para editar
   const handleEdit = useCallback(async (id: string) => {
     try {
-      setIsEditMode(true);
       await fetchEquipeParaEdicao(id);
+      setIsEditMode(true);
       setIsSheetOpen(true);
     } catch (error) {
       console.error('Erro ao buscar equipe:', error);
@@ -206,11 +293,22 @@ const PageEquipes = () => {
     }
   }, []);
 
-  // Função para criar nova equipe - MODIFICADA
+  // Função para criar nova equipe
   const handleCreate = useCallback(async () => {
     try {
       setIsEditMode(false);
       setEditingEquipe(null);
+      // Resetar formData para modo criação
+      setFormData({
+        values: {
+          nome: '',
+          inativo: false,
+        },
+        createData: {
+          nome: '',
+          membrosAdicionar: [],
+        },
+      });
       setIsSheetOpen(true);
     } catch (error) {
       console.error('Erro ao preparar criação:', error);
@@ -221,12 +319,8 @@ const PageEquipes = () => {
   }, []);
 
   const handleSubmitForm = useCallback(async () => {
-    if (!formData) {
-      toastError({
-        description: 'Dados do formulário não encontrados',
-      });
-      return;
-    }
+    // Agora formData nunca será null porque tem valor padrão
+    console.log('Dados para envio:', formData);
 
     try {
       setIsLoading(true);
@@ -236,9 +330,9 @@ const PageEquipes = () => {
         editingEquipe &&
         formData.editData
       ) {
-        // Modo edição - usar nova rota com listas de adição/remoção
+        // Modo edição
         const response = await fetch(
-          '/api/equipes/alterar-equipe',
+          `/api/equipes/alterar-equipe`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -250,8 +344,6 @@ const PageEquipes = () => {
                 formData.editData.membrosAdicionar || [],
               membrosRemover:
                 formData.editData.membrosRemover || [],
-              novoAdministradorId:
-                formData.editData.novoAdministradorId,
             }),
           },
         );
@@ -308,7 +400,6 @@ const PageEquipes = () => {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData, isEditMode, editingEquipe]);
 
   // Fechar formulário
@@ -317,7 +408,11 @@ const PageEquipes = () => {
     if (!open) {
       setEditingEquipe(null);
       setIsEditMode(false);
-      setFormData(null); // ← Limpa os dados do formulário
+      // Não resetar formData completamente, apenas remove referências específicas
+      setFormData((prev) => ({
+        values: prev.values,
+        // Mantém a estrutura mas limpa dados específicos
+      }));
     }
   }, []);
 
@@ -348,11 +443,14 @@ const PageEquipes = () => {
     setPagination({ pageIndex: 0, pageSize });
   };
 
-  // Buscar equipes quando a paginação mudar
+  // Buscar equipes quando a paginação ou filtro aplicado mudar
   useEffect(() => {
     fetchEquipes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.pageIndex, pagination.pageSize]);
+  }, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    statusFiltroAplicado,
+  ]);
 
   const handleDataChange = useCallback(
     (data: {
@@ -380,20 +478,24 @@ const PageEquipes = () => {
         icon={<HiOutlineUserGroup />}
       />
 
-      <FilterPage className="mt-6">
+      <FilterPage
+        onOpenChange={setIsFilterOpen}
+        isOpen={isFilterOpen}
+        onSubmit={aplicarFiltros}
+        className="mt-6"
+      >
         <FilterGrid className="grid-cols-12">
           <FilterItem className="col-span-full items-center sm:col-span-3">
             <ComboBoxInput
-              onChange={(e) => setStatusFiltro(e)}
+              onChange={(value) => setStatusFiltro(value)}
               options={[
-                { id: '1', name: 'Ativo' },
-                { id: '2', name: 'Inativo' },
+                { id: '1', nome: 'Ativo' },
+                { id: '2', nome: 'Inativo' },
               ]}
-              value={statusFiltro ? statusFiltro : ''}
+              value={statusFiltro || ''}
               label="Status"
-              name="inativo"
-              placeholder=""
-              onReset={() => undefined}
+              name="status"
+              placeholder="Selecione o status"
             />
           </FilterItem>
         </FilterGrid>
@@ -410,7 +512,7 @@ const PageEquipes = () => {
         onOpenCreateForm={handleCreate}
         deleteButton={
           <DeleteButton
-            onSubmit={() => {}}
+            onSubmit={() => handleDelete(selectedIds)}
             description="Esta ação não pode ser desfeita."
             title="Você tem certeza que deseja excluir a(s) equipe(s) selecionada(s)?"
             disabled={selectedIds.length === 0}

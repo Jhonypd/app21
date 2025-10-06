@@ -4,8 +4,9 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useState,
+  useCallback,
+  useRef,
 } from 'react';
-import { FaUserShield } from 'react-icons/fa6';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -29,7 +30,6 @@ import {
   MultiSelectCommand,
   Option,
 } from '@/components/inputs/input-multi-command';
-import { MultiComboBoxInput } from '@/components/inputs/input-multi-combobox';
 
 export interface EquipeFormRef {
   reset: () => void;
@@ -52,8 +52,8 @@ const calcularDiferencas = (
   atual: Option[],
   novo: Option[],
 ): { adicionar: string[]; remover: string[] } => {
-  const idsAtual = atual.map((item) => item.id || item.id);
-  const idsNovo = novo.map((item) => item.id || item.id);
+  const idsAtual = atual.map((item) => item.id);
+  const idsNovo = novo.map((item) => item.id);
 
   const adicionar = idsNovo.filter(
     (id) => !idsAtual.includes(id),
@@ -85,6 +85,12 @@ const EquipeForm = forwardRef<
       Option[]
     >([]);
 
+    // Usar useRef para manter uma referência estável dos dados iniciais
+    const initialDataRef = useRef<
+      CurrentEquipeData | undefined
+    >(initialData);
+    const membrosIniciaisRef = useRef<Option[]>([]);
+
     const form = useForm<EquipeFormValues>({
       resolver: zodResolver(equipeFormSchema) as any,
       defaultValues: {
@@ -94,78 +100,112 @@ const EquipeForm = forwardRef<
       mode: 'onChange',
     });
 
+    // Atualizar as referências quando initialData mudar
+    useEffect(() => {
+      if (initialData) {
+        initialDataRef.current = initialData;
+        membrosIniciaisRef.current =
+          initialData.membrosEquipe || [];
+      }
+    }, [initialData]);
+
+    // Função para atualizar os dados no pai
+    const atualizarDadosNoPai = useCallback(() => {
+      const formValues = form.getValues();
+      const result = equipeFormSchema.safeParse(formValues);
+
+      if (!result.success) {
+        isValidated(false);
+        onDataChange({ values: formValues });
+        return;
+      }
+
+      isValidated(true);
+      const validatedValues = result.data;
+
+      if (isEditMode && initialDataRef.current) {
+        // Usar a referência estável dos membros iniciais
+        const membrosIniciais = membrosIniciaisRef.current;
+
+        // Calcular diferenças para membros
+        const {
+          adicionar: membrosAdicionar,
+          remover: membrosRemover,
+        } = calcularDiferencas(
+          membrosIniciais,
+          selecionados,
+        );
+
+        const payload: EquipeFormDataChange = {
+          values: validatedValues,
+          editData: convertFormToEditData(
+            validatedValues,
+            initialDataRef.current.id,
+            membrosAdicionar,
+            membrosRemover,
+          ),
+        };
+
+        onDataChange(payload);
+      } else {
+        // Modo criação
+        const payload: EquipeFormDataChange = {
+          values: validatedValues,
+          createData: convertFormToCreateData(
+            validatedValues,
+            selecionados.map((m) => m.id),
+          ),
+        };
+
+        onDataChange(payload);
+      }
+    }, [
+      form,
+      isEditMode,
+      selecionados,
+      isValidated,
+      onDataChange,
+    ]);
+
+    // Handler para mudança de membros
+    const handleMembrosChange = useCallback(
+      (novosSelecionados: Option[]) => {
+        setSelecionados(novosSelecionados);
+      },
+      [],
+    );
+
     // Converter dados da tabela para valores do formulário
     useEffect(() => {
       if (initialData) {
         const formValues =
           convertCurrentDataToForm(initialData);
-        setSelecionados(initialData.membrosEquipe || []);
+        const membrosIniciais =
+          initialData.membrosEquipe || [];
+
+        setSelecionados(membrosIniciais);
         form.reset(formValues);
         isValidated(true);
+
+        // Atualizar referências
+        initialDataRef.current = initialData;
+        membrosIniciaisRef.current = membrosIniciais;
       }
     }, [initialData, form, isValidated]);
 
+    // Atualizar dados no pai quando selecionados mudarem
+    useEffect(() => {
+      atualizarDadosNoPai();
+    }, [selecionados, atualizarDadosNoPai]);
+
     // Atualizar validação e dados ao mudar o formulário
     useEffect(() => {
-      const subscription = form.watch((values) => {
-        const result = equipeFormSchema.safeParse(values);
-        if (!result.success) {
-          isValidated(false);
-          const currentValues = form.getValues();
-          onDataChange({ values: currentValues });
-          return;
-        }
-
-        isValidated(true);
-
-        const formValues = result.data;
-
-        if (isEditMode && initialData) {
-          // Calcular diferenças para projetos
-
-          // Calcular diferenças para membros
-          const {
-            adicionar: membrosAdicionar,
-            remover: membrosRemover,
-          } = calcularDiferencas(
-            initialData.membrosEquipe || [],
-            selecionados,
-          );
-
-          const payload: EquipeFormDataChange = {
-            values: formValues,
-            editData: convertFormToEditData(
-              formValues,
-              initialData.id,
-              membrosAdicionar,
-              membrosRemover,
-            ),
-          };
-
-          onDataChange(payload);
-        } else {
-          // Modo criação
-          const payload: EquipeFormDataChange = {
-            values: formValues,
-            createData: convertFormToCreateData(
-              formValues,
-              selecionados.map((m) => m.id),
-            ),
-          };
-
-          onDataChange(payload);
-        }
+      const subscription = form.watch(() => {
+        atualizarDadosNoPai();
       });
 
       return () => subscription.unsubscribe();
-    }, [
-      form,
-      isValidated,
-      onDataChange,
-      isEditMode,
-      initialData,
-      selecionados,
-    ]);
+    }, [form, atualizarDadosNoPai]);
 
     // Expor métodos via ref
     useImperativeHandle(ref, () => ({
@@ -175,6 +215,8 @@ const EquipeForm = forwardRef<
           inativo: false,
         });
         setSelecionados([]);
+        initialDataRef.current = undefined;
+        membrosIniciaisRef.current = [];
       },
       submit: () => {
         form.handleSubmit((data) => {
@@ -187,10 +229,6 @@ const EquipeForm = forwardRef<
     const handleSubmit = (data: EquipeFormValues) => {
       onSubmit?.(data);
     };
-
-    const admAtual = initialData?.membrosEquipe.filter(
-      (membro) => membro.administrador === true,
-    );
 
     return (
       <div className="h-full px-2">
@@ -224,40 +262,12 @@ const EquipeForm = forwardRef<
               )}
             />
 
-            {/* Projetos */}
-            <FormItem>
-              <FormControl>
-                <MultiComboBoxInput
-                  value={[]}
-                  onChange={() => {}}
-                  options={
-                    initialData?.membrosEquipe &&
-                    initialData.membrosEquipe.length > 0
-                      ? initialData.membrosEquipe.map(
-                          (p) => ({
-                            id: p.id,
-                            nome: p.nome,
-                            active: !p.inativo,
-                          }),
-                        )
-                      : []
-                  }
-                  label="Integrantes atuais"
-                  placeholder="Integrantes atuais"
-                  icone={FaUserShield}
-                  disabled={isLoading}
-                  error={!!form.formState.errors}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-
             {/* Membros da Equipe */}
             <FormItem>
               <FormControl>
                 <MultiSelectCommand
                   value={selecionados}
-                  onChange={setSelecionados}
+                  onChange={handleMembrosChange}
                   onSearch={campoPesquisaUsuario}
                   placeholder="Pesquisar usuário"
                   label="Integrantes da equipe"
@@ -306,8 +316,8 @@ const EquipeForm = forwardRef<
                   • O nome da equipe deve ser único
                 </p>
                 <p className="w-full text-wrap">
-                  • A equipe pode ser transferida apenas
-                  para usuários previamente integrados
+                  • Apenas o administrador da equipe pode
+                  realizar alterações
                 </p>
               </div>
             </div>

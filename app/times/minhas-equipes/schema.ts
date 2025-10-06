@@ -40,13 +40,6 @@ export type EditEquipeData = {
   inativo: boolean;
   membrosAdicionar: string[];
   membrosRemover: string[];
-  administrador: {
-    id: string;
-    nome: string;
-    inativo: boolean;
-    administrador: boolean;
-  };
-  novoAdministradorId?: string;
 };
 
 // Interface para o onDataChange
@@ -70,21 +63,12 @@ export const convertFormToEditData = (
   id: string,
   membrosAdicionar: string[] = [],
   membrosRemover: string[] = [],
-  administrador: {
-    id: string;
-    nome: string;
-    inativo: boolean;
-    administrador: boolean;
-  },
-  novoAdministradorId?: string,
 ): EditEquipeData => ({
   id,
   nome: formData.nome,
   inativo: formData.inativo,
   membrosAdicionar,
   membrosRemover,
-  administrador,
-  novoAdministradorId,
 });
 
 export const convertCurrentDataToForm = (

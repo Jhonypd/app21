@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/lib/prisma';
-import { comboProjetos } from '@/app/modules/times/minha-equipes/actions/combo-projetos';
 
 export async function GET(
   req: NextRequest,
@@ -25,7 +24,42 @@ export async function GET(
       );
     }
 
-    // Buscar equipe
+    // Primeiro verificar se o usuário é o proprietário da equipe
+    const equipeComProprietario =
+      await prismaClient.equipe.findUnique({
+        where: { id: equipeId },
+        include: {
+          membrosEquipe: {
+            where: {
+              proprietario: true,
+              pessoa_id: idUsuario,
+            },
+            include: {
+              pessoa: {
+                select: {
+                  id: true,
+                  nome: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+    // Verificar se o usuário é o proprietário
+    if (
+      !equipeComProprietario ||
+      equipeComProprietario.membrosEquipe.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          erro: 'Acesso negado. Apenas o proprietário da equipe pode visualizar estes dados.',
+        },
+        { status: 403 },
+      );
+    }
+
+    // Agora buscar a equipe completa (sem o usuário atual na lista de membros)
     const equipe = await prismaClient.equipe.findUnique({
       where: { id: equipeId },
       include: {
@@ -39,10 +73,10 @@ export async function GET(
               },
             },
           },
-        },
-        projetos: {
-          select: { id: true, nome: true, inativo: true },
-          where: { inativo: false },
+          where: {
+            // Remove o usuário atual da lista de membros
+            pessoa_id: { not: idUsuario },
+          },
         },
       },
     });
@@ -50,7 +84,7 @@ export async function GET(
     if (!equipe) {
       return NextResponse.json(
         { erro: 'Equipe não encontrada' },
-        { status: 400 },
+        { status: 404 },
       );
     }
 
@@ -64,17 +98,11 @@ export async function GET(
         nome: m.pessoa.nome,
         inativo: m.pessoa.inativo,
         proprietario: m.proprietario,
-      }))
+      })),
     };
-
-    // Buscar projetos do combo (dados puros, não NextResponse)
-    const comboProjeto = await comboProjetos({
-      idUsuario,
-    });
 
     return NextResponse.json({
       ResultadoOperacao: {
-        comboProjeto: comboProjeto,
         equipe: equipeFormatada,
       },
     });

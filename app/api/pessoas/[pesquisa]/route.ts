@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/lib/prisma';
 
-// app/api/pessoas/pesquisar/route.ts
 export async function GET(req: NextRequest) {
   try {
     const idUsuario = req.headers.get('x-user-id');
@@ -22,10 +21,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Converter string de IDs para array
-    const idsParaExcluir = excluirIds
+    // IDs para excluir: usuário atual + IDs enviados
+    const idsExclusaoUsuario = [idUsuario];
+    const idsExclusaoAdicionais = excluirIds
       ? excluirIds.split(',')
       : [];
+
+    const todosIdsParaExcluir = [
+      ...idsExclusaoUsuario,
+      ...idsExclusaoAdicionais,
+    ];
 
     const pessoas = await prismaClient.pessoa.findMany({
       where: {
@@ -38,10 +43,7 @@ export async function GET(req: NextRequest) {
           },
         ],
         inativo: false,
-        // EXCLUIR os IDs que já estão selecionados
-        ...(idsParaExcluir.length > 0 && {
-          id: { notIn: idsParaExcluir },
-        }),
+        id: { notIn: todosIdsParaExcluir },
       },
       select: { id: true, nome: true, inativo: true },
       take: 10,

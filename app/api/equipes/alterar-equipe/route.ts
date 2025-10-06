@@ -7,7 +7,6 @@ interface AtualizarEquipeProps {
   inativo: boolean;
   membrosAdicionar: string[];
   membrosRemover: string[];
-  novoAdministradorId?: string;
 }
 
 export async function PUT(req: NextRequest) {
@@ -28,7 +27,6 @@ export async function PUT(req: NextRequest) {
       inativo,
       membrosAdicionar = [],
       membrosRemover = [],
-      novoAdministradorId,
     } = body;
 
     // Validar dados obrigatórios
@@ -46,7 +44,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // Verificar se a equipe existe
+    // Verificar se a equipe existe E se o usuário é o administrador
     const equipeExistente =
       await prismaClient.equipe.findUnique({
         where: { id },
@@ -66,59 +64,26 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    // Verificar se o usuário atual é o administrador da equipe
+    const usuarioEhAdministrador =
+      equipeExistente.membrosEquipe.some(
+        (m) => m.proprietario && m.pessoa_id === idUsuario,
+      );
+
+    if (!usuarioEhAdministrador) {
+      return NextResponse.json(
+        {
+          erro: 'Acesso negado. Apenas o administrador da equipe pode realizar alterações.',
+        },
+        { status: 403 },
+      );
+    }
+
     // Encontrar o administrador atual
     const administradorAtual =
       equipeExistente.membrosEquipe.find(
         (m) => m.proprietario,
       );
-
-    // Validar transferência de administração
-    if (novoAdministradorId) {
-      // Verificar se o novo administrador existe e está ativo
-      const novoAdministrador =
-        await prismaClient.pessoa.findUnique({
-          where: {
-            id: novoAdministradorId,
-            inativo: false,
-          },
-        });
-
-      if (!novoAdministrador) {
-        return NextResponse.json(
-          {
-            erro: 'Novo administrador não encontrado ou está inativo',
-          },
-          { status: 404 },
-        );
-      }
-
-      // Verificar se o novo administrador já é membro da equipe
-      const jaEhMembro = equipeExistente.membrosEquipe.find(
-        (m) => m.pessoa_id === novoAdministradorId,
-      );
-
-      if (!jaEhMembro) {
-        return NextResponse.json(
-          {
-            erro: 'O novo administrador deve ser membro da equipe antes da transferência',
-          },
-          { status: 400 },
-        );
-      }
-
-      // Não permitir transferência para o próprio administrador atual
-      if (
-        administradorAtual &&
-        administradorAtual.pessoa_id === novoAdministradorId
-      ) {
-        return NextResponse.json(
-          {
-            erro: 'Esta pessoa já é o administrador da equipe',
-          },
-          { status: 400 },
-        );
-      }
-    }
 
     // Verificar se já existe outra equipe com mesmo nome (excluindo a atual)
     const equipeComMesmoNome =
@@ -148,58 +113,26 @@ export async function PUT(req: NextRequest) {
         },
       });
 
-      // 2. Processar TRANSFERÊNCIA DE ADMINISTRAÇÃO (se solicitado)
-      if (novoAdministradorId) {
-        // Remover privilégio de administrador do atual (se existir)
-        if (administradorAtual) {
-          await prisma.membroEquipe.update({
-            where: {
-              id: administradorAtual.id,
-            },
-            data: {
-              proprietario: false,
-            },
-          });
-        }
-
-        // Atribuir privilégio de administrador ao novo
-        await prisma.membroEquipe.updateMany({
-          where: {
-            equipe_id: id,
-            pessoa_id: novoAdministradorId,
-          },
-          data: {
-            proprietario: true,
-          },
-        });
-      }
-
-      // 3. Processar membros para REMOVER
+      // 2. Processar membros para REMOVER
       if (membrosRemover.length > 0) {
-        // Não remove o administrador atual (a menos que seja transferência)
-        const membrosParaRemover =
-          administradorAtual && !novoAdministradorId
-            ? membrosRemover.filter(
-                (membroId) =>
-                  membroId !== administradorAtual.pessoa_id,
-              )
-            : membrosRemover;
+        // NÃO remove o administrador atual (sempre protege o admin)
+        const membrosParaRemover = membrosRemover.filter(
+          (membroId) =>
+            membroId !== administradorAtual?.pessoa_id,
+        );
 
         if (membrosParaRemover.length > 0) {
           await prisma.membroEquipe.deleteMany({
             where: {
               equipe_id: id,
               pessoa_id: { in: membrosParaRemover },
-              // Se houver transferência, pode remover o administrador anterior
-              ...(novoAdministradorId
-                ? {}
-                : { proprietario: false }),
+              proprietario: false, // Garante que nunca remove administradores
             },
           });
         }
       }
 
-      // 4. Processar membros para ADICIONAR
+      // 3. Processar membros para ADICIONAR
       if (membrosAdicionar.length > 0) {
         const membrosUnicos = [
           ...new Set(membrosAdicionar),
@@ -225,7 +158,7 @@ export async function PUT(req: NextRequest) {
               data: {
                 equipe_id: id,
                 pessoa_id: membroId,
-                proprietario: false, // Novos membros não são administradores por padrão
+                proprietario: false, // Novos membros NUNCA são administradores
               },
             });
           }
@@ -237,9 +170,7 @@ export async function PUT(req: NextRequest) {
       {
         ResultadoOperacao: {
           sucesso: true,
-          mensagem: novoAdministradorId
-            ? 'Equipe atualizada e administração transferida com sucesso'
-            : 'Equipe atualizada com sucesso',
+          mensagem: 'Equipe atualizada com sucesso',
           id: id,
         },
       },

@@ -25,7 +25,7 @@ export async function GET(requisicao: NextRequest) {
     const limite = parseInt(
       searchParams.get('limite') || '10',
     ) as 10 | 20 | 30 | 50 | 100;
-    console.log({ inativo });
+
     // Construir cláusula where
     const onde: any = {};
 
@@ -57,7 +57,7 @@ export async function GET(requisicao: NextRequest) {
 
     // Filtro por status
     if (inativo !== null) {
-      onde.inativo = inativo;
+      onde.inativo = inativo === 'false' ? false : true;
     }
 
     // Calcular paginação
