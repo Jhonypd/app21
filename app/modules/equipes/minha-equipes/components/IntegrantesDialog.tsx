@@ -81,6 +81,7 @@ export const IntegrantesDialog: React.FC<
             ColumnsIntegrantesEquipesTable,
             unknown
           >
+            refreshFetch={async () => {}}
             columns={columns}
             data={mappedTable}
             selectedIds={[]}

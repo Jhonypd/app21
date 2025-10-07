@@ -99,7 +99,7 @@ export async function GET(requisicao: NextRequest) {
         id: membro.pessoa.id,
         nome: membro.pessoa.nome,
         inativo: membro.pessoa.inativo,
-        gerente: membro.role,
+        cargo: membro.role,
       })),
     }));
 

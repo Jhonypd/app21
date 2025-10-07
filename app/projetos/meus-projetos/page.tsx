@@ -20,7 +20,7 @@ import { FilterGrid } from '@/components/pages/filter-grid';
 import { FilterItem } from '@/components/pages/filter-item';
 import { Toolbar } from '@/components/toolbar';
 import DeleteButton from '@/components/pages/button-delete-page';
-
+import { ProjetoForm } from '@/app/modules/projetos/meus-projetos/components/projetos-form';
 import {
   DataTable,
   Limit,
@@ -32,15 +32,13 @@ import {
 } from '@/components/custom-toast';
 import { Option } from '@/components/inputs/input-multi-command';
 import { ComboBoxInput } from '@/components/inputs/input-combobox';
-import {
-  ColumnsEquipesTable,
-  Equipes,
-} from '@/app/modules/equipes/minha-equipes/interfaces';
-import { mapEquipeToTableData } from '@/app/modules/equipes/minha-equipes/helpers/map-data-to-table';
-import { equipesColumns } from '@/app/modules/equipes/minha-equipes/components/columns-equipes';
-import { EquipeForm } from './projetos-form';
 import { FaLaptopCode } from 'react-icons/fa';
-import { Projetos } from '@/app/modules/projetos/meus-projetos/interfaces';
+import {
+  ColumnsProjetosTable,
+  Projetos,
+} from '@/app/modules/projetos/meus-projetos/interfaces';
+import { projetosColumns } from '@/app/modules/projetos/meus-projetos/components/columns-projetos';
+import { mapProjetoToTableData } from '@/app/modules/projetos/meus-projetos/helpers/map-data-to-table';
 
 const PageProjetos = () => {
   // Estados de paginação
@@ -56,7 +54,7 @@ const PageProjetos = () => {
     useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [projetos, setProjetos] = useState<Projetos[]>([]);
-  const [editingEquipe, setEditingEquipe] =
+  const [editingProjeto, setEditingProjeto] =
     useState<CurrentEquipeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaginatedFetching, setIsPaginatedFetching] =
@@ -128,37 +126,37 @@ const PageProjetos = () => {
   };
 
   // Buscar dados para edição
-  const fetchEquipeParaEdicao = async (
-    equipeId: string,
+  const fetchProjetoParaEdicao = async (
+    projetoId: string,
   ) => {
     try {
       setIsLoading(true);
       const res = await fetch(
-        `/api/equipes/obter-dados-alterar/${equipeId}`,
+        `/api/projetos/obter-dados-alterar/${projetoId}`,
       );
 
       if (!res.ok) {
         throw new Error(
-          'Falha ao carregar os dados da equipe',
+          'Falha ao carregar os dados do projeto',
         );
       }
 
       const data = await res.json();
-      setEditingEquipe(data.ResultadoOperacao.equipe);
+      setEditingProjeto(data.ResultadoOperacao.projeto);
 
-      // Inicializar formData com os dados da equipe
-      if (data.ResultadoOperacao.equipe) {
+      // Inicializar formData com os dados da projeto
+      if (data.ResultadoOperacao.projeto) {
         setFormData({
           values: {
-            nome: data.ResultadoOperacao.equipe.nome || '',
+            nome: data.ResultadoOperacao.projeto.nome || '',
             inativo:
-              data.ResultadoOperacao.equipe.inativo ||
+              data.ResultadoOperacao.projeto.inativo ||
               false,
           },
           editData: {
-            id: data.ResultadoOperacao.equipe.id,
-            nome: data.ResultadoOperacao.equipe.nome,
-            inativo: data.ResultadoOperacao.equipe.inativo,
+            id: data.ResultadoOperacao.projeto.id,
+            nome: data.ResultadoOperacao.projeto.nome,
+            inativo: data.ResultadoOperacao.projeto.inativo,
             membrosAdicionar: [],
             membrosRemover: [],
           },
@@ -167,7 +165,7 @@ const PageProjetos = () => {
     } catch (error) {
       console.error(error);
       toastError({
-        description: 'Erro ao carregar dados da equipe',
+        description: 'Erro ao carregar dados do projeto',
       });
     } finally {
       setIsLoading(false);
@@ -235,13 +233,13 @@ const PageProjetos = () => {
     setIsFilterOpen(false); // Fecha o filtro após aplicar
   };
 
-  // Função para deletar equipes
+  // Função para deletar projetos
   const handleDelete = async (ids: string[]) => {
     try {
       setIsDeleteLoading(true);
 
       const response = await fetch(
-        '/api/equipes/delete-equipes',
+        '/api/projetos/delete-projetos',
         {
           method: 'DELETE',
           headers: {
@@ -254,7 +252,7 @@ const PageProjetos = () => {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.erro || 'Erro ao deletar equipes',
+          errorData.erro || 'Erro ao deletar projetos',
         );
       }
 
@@ -269,12 +267,12 @@ const PageProjetos = () => {
       // Limpar seleção
       setSelectedIds([]);
     } catch (error) {
-      console.error('Erro ao deletar equipes:', error);
+      console.error('Erro ao deletar projetos:', error);
       toastError({
         description:
           error instanceof Error
             ? error.message
-            : 'Erro ao deletar equipes',
+            : 'Erro ao deletar projetos',
       });
     } finally {
       setIsDeleteLoading(false);
@@ -284,22 +282,22 @@ const PageProjetos = () => {
   // Função para editar
   const handleEdit = useCallback(async (id: string) => {
     try {
-      await fetchEquipeParaEdicao(id);
+      await fetchProjetoParaEdicao(id);
       setIsEditMode(true);
       setIsSheetOpen(true);
     } catch (error) {
-      console.error('Erro ao buscar equipe:', error);
+      console.error('Erro ao buscar projeto:', error);
       toastError({
-        description: 'Erro ao carregar equipe para edição',
+        description: 'Erro ao carregar projeto para edição',
       });
     }
   }, []);
 
-  // Função para criar nova equipe
+  // Função para criar nova projeto
   const handleCreate = useCallback(async () => {
     try {
       setIsEditMode(false);
-      setEditingEquipe(null);
+      setEditingProjeto(null);
       // Resetar formData para modo criação
       setFormData({
         values: {
@@ -329,7 +327,7 @@ const PageProjetos = () => {
 
       if (
         isEditMode &&
-        editingEquipe &&
+        editingProjeto &&
         formData.editData
       ) {
         // Modo edição
@@ -339,7 +337,7 @@ const PageProjetos = () => {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              id: editingEquipe.id,
+              id: editingProjeto.id,
               nome: formData.values.nome,
               inativo: formData.values.inativo,
               membrosAdicionar:
@@ -408,7 +406,7 @@ const PageProjetos = () => {
   const handleCloseForm = useCallback((open: boolean) => {
     setIsSheetOpen(open);
     if (!open) {
-      setEditingEquipe(null);
+      setEditingProjeto(null);
       setIsEditMode(false);
       // Não resetar formData completamente, apenas remove referências específicas
       setFormData((prev) => ({
@@ -421,10 +419,10 @@ const PageProjetos = () => {
   // Colunas da tabela
   const columns = useMemo(
     () =>
-      equipesColumns({
+      projetosColumns({
         selectedIds,
         setSelectedIds,
-        data: projetos.map(mapEquipeToTableData),
+        data: projetos.map(mapProjetoToTableData),
         onEdit: handleEdit,
       }),
     [selectedIds, projetos, handleEdit],
@@ -432,7 +430,7 @@ const PageProjetos = () => {
 
   // Dados mapeados para a tabela
   const mappedTable = useMemo(
-    () => projetos.map(mapEquipeToTableData),
+    () => projetos.map(mapProjetoToTableData),
     [projetos],
   );
 
@@ -528,12 +526,12 @@ const PageProjetos = () => {
           onOpenChange={handleCloseForm}
           mode={isEditMode ? 'edit' : 'create'}
           title={
-            isEditMode ? 'Editar Equipe' : 'Nova Equipe'
+            isEditMode ? 'Editar Projeto' : 'Novo Projeto'
           }
           className="max-w-96 sm:max-w-2/4"
         >
-          <EquipeForm
-            initialData={editingEquipe || undefined}
+          <ProjetoForm
+            initialData={editingProjeto || undefined}
             isLoading={isLoading}
             isValidated={setIsValidForm}
             onDataChange={handleDataChange}
@@ -543,7 +541,7 @@ const PageProjetos = () => {
         </BasicForm>
       </Toolbar>
 
-      <DataTable<ColumnsEquipesTable, unknown>
+      <DataTable<ColumnsProjetosTable, unknown>
         columns={columns}
         data={mappedTable}
         isLoading={isPaginatedFetching || isDeleteLoading}

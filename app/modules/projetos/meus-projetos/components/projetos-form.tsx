@@ -16,32 +16,33 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-import {
-  equipeFormSchema,
-  EquipeFormValues,
-  CurrentEquipeData,
-  convertFormToCreateData,
-  convertFormToEditData,
-  convertCurrentDataToForm,
-  EquipeFormDataChange,
-} from '../../modules/equipes/minha-equipes/schema';
+
 import { TextInput } from '@/components/inputs/input-text';
 import {
   MultiSelectCommand,
   Option,
 } from '@/components/inputs/input-multi-command';
+import {
+  convertCurrentDataToForm,
+  convertFormToCreateData,
+  convertFormToEditData,
+  CurrentProjetoData,
+  ProjetoFormDataChange,
+  ProjetoFormSchema,
+  ProjetoFormValues,
+} from '@/app/modules/projetos/meus-projetos/schema';
 
-export interface EquipeFormRef {
+export interface ProjetoFormRef {
   reset: () => void;
   submit: () => void;
 }
 
-interface EquipeFormProps {
+interface ProjetoFormProps {
   isLoading: boolean;
   isValidated: (valid: boolean) => void;
-  onDataChange: (data: EquipeFormDataChange) => void;
-  initialData?: CurrentEquipeData;
-  onSubmit?: (data: EquipeFormValues) => void;
+  onDataChange: (data: ProjetoFormDataChange) => void;
+  initialData?: CurrentProjetoData;
+  onSubmit?: (data: ProjetoFormValues) => void;
   campoPesquisaUsuario?: (
     texto: string,
   ) => Promise<Option[]>;
@@ -65,9 +66,9 @@ const calcularDiferencas = (
   return { adicionar, remover };
 };
 
-const EquipeForm = forwardRef<
-  EquipeFormRef,
-  EquipeFormProps
+const ProjetoForm = forwardRef<
+  ProjetoFormRef,
+  ProjetoFormProps
 >(
   (
     {
@@ -87,12 +88,12 @@ const EquipeForm = forwardRef<
 
     // Usar useRef para manter uma referência estável dos dados iniciais
     const initialDataRef = useRef<
-      CurrentEquipeData | undefined
+      CurrentProjetoData | undefined
     >(initialData);
     const membrosIniciaisRef = useRef<Option[]>([]);
 
-    const form = useForm<EquipeFormValues>({
-      resolver: zodResolver(equipeFormSchema) as any,
+    const form = useForm<ProjetoFormValues>({
+      resolver: zodResolver(ProjetoFormSchema) as any,
       defaultValues: {
         nome: '',
         inativo: false,
@@ -112,7 +113,8 @@ const EquipeForm = forwardRef<
     // Função para atualizar os dados no pai
     const atualizarDadosNoPai = useCallback(() => {
       const formValues = form.getValues();
-      const result = equipeFormSchema.safeParse(formValues);
+      const result =
+        ProjetoFormSchema.safeParse(formValues);
 
       if (!result.success) {
         isValidated(false);
@@ -136,7 +138,7 @@ const EquipeForm = forwardRef<
           selecionados,
         );
 
-        const payload: EquipeFormDataChange = {
+        const payload: ProjetoFormDataChange = {
           values: validatedValues,
           editData: convertFormToEditData(
             validatedValues,
@@ -149,7 +151,7 @@ const EquipeForm = forwardRef<
         onDataChange(payload);
       } else {
         // Modo criação
-        const payload: EquipeFormDataChange = {
+        const payload: ProjetoFormDataChange = {
           values: validatedValues,
           createData: convertFormToCreateData(
             validatedValues,
@@ -226,7 +228,7 @@ const EquipeForm = forwardRef<
     }));
 
     // Submit handler
-    const handleSubmit = (data: EquipeFormValues) => {
+    const handleSubmit = (data: ProjetoFormValues) => {
       onSubmit?.(data);
     };
 
@@ -328,5 +330,5 @@ const EquipeForm = forwardRef<
   },
 );
 
-EquipeForm.displayName = 'EquipeForm';
-export { EquipeForm };
+ProjetoForm.displayName = 'ProjetoForm';
+export { ProjetoForm };

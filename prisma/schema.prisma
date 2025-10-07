@@ -14,111 +14,83 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model pessoa {
-  id           String   @id
-  nome         String?
+model Pessoa {
+  id           String   @id @default(uuid())
+  nome         String
+  email        String?
+  auth_id      String
   inativo      Boolean  @default(false)
-  user_id      String
   data_criacao DateTime @default(now())
 
-  salas               sala[]
-  participacoes       participantesSala[]
-  historia            historia[]
-  votos               votos[]
-  membroEquipe        membroEquipe[]
-  projetoParticipante projetoParticipante[]
+  // Relacionamentos
+  equipesMembro MembroEquipe[]
+  salasCriadas  Sala[]             @relation("SalasCriadasPorPessoa")
+  participacoes ParticipanteSala[]
+  historias     Historia[]         @relation("HistoriasCriadasPorPessoa")
+  votos         Voto[]
 }
 
-model equipe {
-  id            String         @id @default(uuid())
-  nome          String
-  inativo       Boolean        @default(false)
-  membrosEquipe membroEquipe[]
-  projetos      projeto[] @relation("EquipeProjeto")
+model Equipe {
+  id       String         @id @default(uuid())
+  nome     String
+  inativo  Boolean        @default(false)
+  membros  MembroEquipe[]
+  projetos Projeto[]
 }
 
-model membroEquipe {
+model MembroEquipe {
   id           String  @id @default(uuid())
   pessoa_id    String
   equipe_id    String
   proprietario Boolean @default(false)
 
-  pessoa pessoa @relation(fields: [pessoa_id], references: [id])
-  equipe equipe @relation(fields: [equipe_id], references: [id])
+  pessoa Pessoa @relation(fields: [pessoa_id], references: [id])
+  equipe Equipe @relation(fields: [equipe_id], references: [id])
 
   @@unique([pessoa_id, equipe_id])
 }
 
-model projeto {
-  id            String                @id @default(uuid())
-  nome          String
-  equipe_id     String
-  inativo       Boolean               @default(false)
-  equipe        equipe[]               @relation("EquipeProjeto")
-  participantes projetoParticipante[]
+model Projeto {
+  id         String  @id @default(uuid())
+  nome       String
+  equipe_id  String
+  inativo    Boolean @default(false)
+  gerente_id String?
+  equipe     Equipe  @relation(fields: [equipe_id], references: [id])
 }
 
-model projetoParticipante {
-  id         String @id @default(uuid())
-  projeto_id String
-  pessoa_id  String
-
-  role Int
-
-  projeto projeto @relation(fields: [projeto_id], references: [id])
-  pessoa  pessoa  @relation(fields: [pessoa_id], references: [id])
-
-  @@unique([projeto_id, pessoa_id])
-}
-
-model sala {
+model Sala {
   id             String   @id @default(uuid())
   codigo         Int      @unique @default(autoincrement())
   titulo         String
   criado_por     String
-  inativo        Boolean  @default(false)
   senha          String?
+  inativo        Boolean  @default(false)
   data_criacao   DateTime @default(now())
   data_alteracao DateTime @updatedAt()
 
-  participantes participantesSala[]
-  historia      historia[]
-  votos         votos[]
-
-  proprietario pessoa @relation(fields: [criado_por], references: [id])
+  // Relações
+  proprietario  Pessoa             @relation("SalasCriadasPorPessoa", fields: [criado_por], references: [id])
+  participantes ParticipanteSala[]
+  historias     Historia[]
+  Voto          Voto[]
 }
 
-model participantesSala {
+model ParticipanteSala {
   id         String   @id @default(uuid())
   sala_id    String
   pessoa_id  String
   adicionado DateTime @default(now())
-  pessoa     pessoa   @relation(fields: [pessoa_id], references: [id])
-  sala       sala     @relation(fields: [sala_id], references: [id])
+
+  pessoa Pessoa @relation(fields: [pessoa_id], references: [id])
+  sala   Sala   @relation(fields: [sala_id], references: [id])
 
   @@unique([sala_id, pessoa_id])
   @@index([sala_id])
   @@index([pessoa_id])
 }
 
-model votos {
-  id          String @id @default(uuid())
-  pessoa_id   String
-  sala_id     String
-  historia_id String
-  valor       Int
-
-  historia historia @relation(fields: [historia_id], references: [id])
-  pessoa   pessoa   @relation(fields: [pessoa_id], references: [id])
-  sala     sala     @relation(fields: [sala_id], references: [id])
-
-  @@unique([sala_id, historia_id, pessoa_id])
-  @@index([sala_id])
-  @@index([historia_id])
-  @@index([pessoa_id])
-}
-
-model historia {
+model Historia {
   id             String   @id @default(uuid())
   titulo         String
   descricao      String
@@ -126,10 +98,25 @@ model historia {
   criado_por     String
   data_criacao   DateTime @default(now())
   data_alteracao DateTime @updatedAt()
-  votos          votos[]
 
-  criador pessoa @relation(fields: [criado_por], references: [id])
-  sala    sala   @relation(fields: [sala_id], references: [id])
+  sala    Sala   @relation(fields: [sala_id], references: [id])
+  criador Pessoa @relation("HistoriasCriadasPorPessoa", fields: [criado_por], references: [id])
+  votos   Voto[]
+}
 
+model Voto {
+  id          String @id @default(uuid())
+  pessoa_id   String
+  sala_id     String
+  historia_id String
+  valor       Int
+
+  pessoa   Pessoa   @relation(fields: [pessoa_id], references: [id])
+  sala     Sala     @relation(fields: [sala_id], references: [id])
+  historia Historia @relation(fields: [historia_id], references: [id])
+
+  @@unique([sala_id, historia_id, pessoa_id])
   @@index([sala_id])
+  @@index([historia_id])
+  @@index([pessoa_id])
 }

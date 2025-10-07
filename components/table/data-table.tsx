@@ -39,7 +39,7 @@ interface DataTableProps<TData, TValue> {
   isLoading?: boolean;
   error?: boolean;
   errorDescription?: string;
-  refreshFetch: () => Promise<void>;
+  refreshFetch?: () => Promise<void>;
   selectedIds: string[];
 }
 
@@ -50,7 +50,6 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   refreshFetch,
   error,
-  selectedIds,
   errorDescription,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);

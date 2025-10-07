@@ -1,27 +1,34 @@
-export interface participantes {
+export enum cargosProjeto {
+  gerente = 0,
+  analista = 1,
+  desenvolvedor = 2,
+  designer = 3,
+}
+
+export interface ParticipantesProjetos {
   id: string;
   nome: string;
   inativo: boolean;
-  proprietario: boolean;
+  cargo: number;
 }
 export interface Projetos {
   id: string;
   nome: string;
   inativo: boolean;
-  integrantes: participantes[];
+  participantes: ParticipantesProjetos[];
 }
 
 export interface ColumnsProjetosTable {
   id: string;
   editar: React.ReactNode;
   nome: string;
-  administrador: string;
-  integrantes: React.ReactNode;
+  gerente: string;
+  participantes: React.ReactNode;
   inativo: 'ativo' | 'inativo';
 }
-export interface ColumnsParticipantesTable {
+export interface ColumnsParticipantesProjetosTable {
   id: string;
   nome: string;
-  administrador: 'Administrador' | '';
+  cargo: string;
   inativo: 'ativo' | 'inativo';
 }

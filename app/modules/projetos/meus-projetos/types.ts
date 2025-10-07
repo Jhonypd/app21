@@ -1,6 +1,6 @@
-import { ColumnsParticipantesTable } from './interfaces';
+import { ColumnsParticipantesProjetosTable } from './interfaces';
 import { ColumnsProjetosTable } from './interfaces';
 
 export type ColumnsProjetos = ColumnsProjetosTable;
-export type ColumnsParticipantes =
-  ColumnsParticipantesTable;
+export type ColumnsParticipantesProjetos =
+  ColumnsParticipantesProjetosTable;

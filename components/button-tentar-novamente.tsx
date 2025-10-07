@@ -1,4 +1,3 @@
-import { RefreshCcwIcon } from 'lucide-react';
 import { GiTerror } from 'react-icons/gi';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +11,7 @@ import {
 interface ErrosProps {
   titleError?: string;
   descriptionErro: string;
-  refreshFunction: () => Promise<void>;
+  refreshFunction?: () => Promise<void>;
 }
 export function ButtonTentarNovamente({
   titleError,
