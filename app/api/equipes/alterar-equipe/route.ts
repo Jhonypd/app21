@@ -49,7 +49,7 @@ export async function PUT(req: NextRequest) {
       await prismaClient.equipe.findUnique({
         where: { id },
         include: {
-          membrosEquipe: {
+          membros: {
             include: {
               pessoa: true,
             },
@@ -66,7 +66,7 @@ export async function PUT(req: NextRequest) {
 
     // Verificar se o usuário atual é o administrador da equipe
     const usuarioEhAdministrador =
-      equipeExistente.membrosEquipe.some(
+      equipeExistente.membros.some(
         (m) => m.proprietario && m.pessoa_id === idUsuario,
       );
 
@@ -80,10 +80,9 @@ export async function PUT(req: NextRequest) {
     }
 
     // Encontrar o administrador atual
-    const administradorAtual =
-      equipeExistente.membrosEquipe.find(
-        (m) => m.proprietario,
-      );
+    const administradorAtual = equipeExistente.membros.find(
+      (m) => m.proprietario,
+    );
 
     // Verificar se já existe outra equipe com mesmo nome (excluindo a atual)
     const equipeComMesmoNome =
@@ -158,7 +157,7 @@ export async function PUT(req: NextRequest) {
               data: {
                 equipe_id: id,
                 pessoa_id: membroId,
-                proprietario: false, // Novos membros NUNCA são administradores
+                proprietario: false,
               },
             });
           }

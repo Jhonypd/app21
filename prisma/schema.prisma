@@ -18,16 +18,15 @@ model Pessoa {
   id           String   @id @default(uuid())
   nome         String
   email        String?
-  auth_id      String
+  auth_id      String   @unique
   inativo      Boolean  @default(false)
   data_criacao DateTime @default(now())
 
-  // Relacionamentos
-  equipesMembro MembroEquipe[]
-  salasCriadas  Sala[]             @relation("SalasCriadasPorPessoa")
-  participacoes ParticipanteSala[]
-  historias     Historia[]         @relation("HistoriasCriadasPorPessoa")
-  votos         Voto[]
+  equipesMembro    MembroEquipe[]
+  salasCriadas     Sala[]             @relation("SalasCriadasPorPessoa")
+  participacoes    ParticipanteSala[]
+  historiasCriadas Historia[]         @relation("HistoriasCriadasPorPessoa")
+  votos            Voto[]
 }
 
 model Equipe {
@@ -44,8 +43,8 @@ model MembroEquipe {
   equipe_id    String
   proprietario Boolean @default(false)
 
-  pessoa Pessoa @relation(fields: [pessoa_id], references: [id])
-  equipe Equipe @relation(fields: [equipe_id], references: [id])
+  pessoa Pessoa @relation(fields: [pessoa_id], references: [id], onDelete: Restrict)
+  equipe Equipe @relation(fields: [equipe_id], references: [id], onDelete: Restrict)
 
   @@unique([pessoa_id, equipe_id])
 }
@@ -56,12 +55,13 @@ model Projeto {
   equipe_id  String
   inativo    Boolean @default(false)
   gerente_id String?
-  equipe     Equipe  @relation(fields: [equipe_id], references: [id])
+
+  equipe Equipe @relation(fields: [equipe_id], references: [id], onDelete: Restrict)
 }
 
 model Sala {
   id             String   @id @default(uuid())
-  codigo         Int      @unique @default(autoincrement())
+  codigo         Int
   titulo         String
   criado_por     String
   senha          String?
@@ -69,11 +69,10 @@ model Sala {
   data_criacao   DateTime @default(now())
   data_alteracao DateTime @updatedAt()
 
-  // Relações
-  proprietario  Pessoa             @relation("SalasCriadasPorPessoa", fields: [criado_por], references: [id])
+  proprietario  Pessoa             @relation("SalasCriadasPorPessoa", fields: [criado_por], references: [id], onDelete: Restrict)
   participantes ParticipanteSala[]
   historias     Historia[]
-  Voto          Voto[]
+  votos         Voto[]
 }
 
 model ParticipanteSala {
@@ -82,8 +81,8 @@ model ParticipanteSala {
   pessoa_id  String
   adicionado DateTime @default(now())
 
-  pessoa Pessoa @relation(fields: [pessoa_id], references: [id])
-  sala   Sala   @relation(fields: [sala_id], references: [id])
+  pessoa Pessoa @relation(fields: [pessoa_id], references: [id], onDelete: Restrict)
+  sala   Sala   @relation(fields: [sala_id], references: [id], onDelete: Restrict)
 
   @@unique([sala_id, pessoa_id])
   @@index([sala_id])
@@ -93,27 +92,29 @@ model ParticipanteSala {
 model Historia {
   id             String   @id @default(uuid())
   titulo         String
-  descricao      String
+  descricao      String?
   sala_id        String
   criado_por     String
   data_criacao   DateTime @default(now())
   data_alteracao DateTime @updatedAt()
+  finalizada     Boolean  @default(false)
 
-  sala    Sala   @relation(fields: [sala_id], references: [id])
-  criador Pessoa @relation("HistoriasCriadasPorPessoa", fields: [criado_por], references: [id])
+  sala    Sala   @relation(fields: [sala_id], references: [id], onDelete: Restrict)
+  criador Pessoa @relation("HistoriasCriadasPorPessoa", fields: [criado_por], references: [id], onDelete: Restrict)
   votos   Voto[]
 }
 
 model Voto {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   pessoa_id   String
   sala_id     String
   historia_id String
   valor       Int
+  data_voto   DateTime @default(now())
 
-  pessoa   Pessoa   @relation(fields: [pessoa_id], references: [id])
-  sala     Sala     @relation(fields: [sala_id], references: [id])
-  historia Historia @relation(fields: [historia_id], references: [id])
+  pessoa   Pessoa   @relation(fields: [pessoa_id], references: [id], onDelete: Restrict)
+  sala     Sala     @relation(fields: [sala_id], references: [id], onDelete: Restrict)
+  historia Historia @relation(fields: [historia_id], references: [id], onDelete: Restrict)
 
   @@unique([sala_id, historia_id, pessoa_id])
   @@index([sala_id])

@@ -1,4 +1,3 @@
-// app/api/equipes/nova-equipe/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prismaClient } from '@/lib/prisma';
 

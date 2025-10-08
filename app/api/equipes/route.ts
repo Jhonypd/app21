@@ -77,7 +77,7 @@ export async function GET(requisicao: NextRequest) {
         id: 'desc',
       },
       include: {
-        membrosEquipe: {
+        membros: {
           include: {
             pessoa: {
               select: {
@@ -96,7 +96,7 @@ export async function GET(requisicao: NextRequest) {
       id: equipe.id,
       nome: equipe.nome,
       inativo: equipe.inativo,
-      membrosEquipe: equipe.membrosEquipe.map((membro) => ({
+      membrosEquipe: equipe.membros.map((membro) => ({
         id: membro.pessoa.id,
         nome: membro.pessoa.nome,
         inativo: membro.pessoa.inativo,

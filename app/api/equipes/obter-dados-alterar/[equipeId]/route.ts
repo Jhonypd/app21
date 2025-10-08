@@ -29,7 +29,7 @@ export async function GET(
       await prismaClient.equipe.findUnique({
         where: { id: equipeId },
         include: {
-          membrosEquipe: {
+          membros: {
             where: {
               proprietario: true,
               pessoa_id: idUsuario,
@@ -49,7 +49,7 @@ export async function GET(
     // Verificar se o usuário é o proprietário
     if (
       !equipeComProprietario ||
-      equipeComProprietario.membrosEquipe.length === 0
+      equipeComProprietario.membros.length === 0
     ) {
       return NextResponse.json(
         {
@@ -63,7 +63,7 @@ export async function GET(
     const equipe = await prismaClient.equipe.findUnique({
       where: { id: equipeId },
       include: {
-        membrosEquipe: {
+        membros: {
           include: {
             pessoa: {
               select: {
@@ -93,7 +93,7 @@ export async function GET(
       id: equipe.id,
       nome: equipe.nome,
       inativo: equipe.inativo,
-      membrosEquipe: equipe.membrosEquipe.map((m) => ({
+      membrosEquipe: equipe.membros.map((m) => ({
         id: m.pessoa.id,
         nome: m.pessoa.nome,
         inativo: m.pessoa.inativo,
