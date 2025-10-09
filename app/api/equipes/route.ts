@@ -32,7 +32,7 @@ export async function GET(requisicao: NextRequest) {
     // Filtro por proprietário ou participação
     if (dono) {
       // Buscar apenas equipes onde o usuário é proprietário
-      onde.membrosEquipe = {
+      onde.membros = {
         some: {
           pessoa_id: idUsuario,
           proprietario: true,
@@ -40,7 +40,7 @@ export async function GET(requisicao: NextRequest) {
       };
     } else {
       // Buscar equipes onde o usuário é membro (proprietário ou não)
-      onde.membrosEquipe = {
+      onde.membros = {
         some: {
           pessoa_id: idUsuario,
         },

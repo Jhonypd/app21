@@ -45,7 +45,7 @@ interface ComboBoxInputProps {
   id?: string;
   name?: string;
   placeholder?: string;
-  value: string;
+  value?: string;
   icone?: IconType;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -76,7 +76,7 @@ export const ComboBoxInput: React.FC<
 
   const IconComponent = icone;
 
-  const shouldLabelBeOnTop = value.length > 0 || isOpen;
+  const shouldLabelBeOnTop = (value?.length ?? 0) > 0 || isOpen;
 
   const selectedOption = options.find(
     (item) => item.id === value,

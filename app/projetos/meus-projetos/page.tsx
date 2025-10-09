@@ -7,12 +7,6 @@ import {
   useState,
 } from 'react';
 import Loading from '@/components/loading';
-import {
-  CreateEquipeData,
-  CurrentEquipeData,
-  EditEquipeData,
-  EquipeFormValues,
-} from '../../modules/equipes/minha-equipes/schema';
 import BasicForm from '@/components/forms/basic-form';
 import TitlePage from '@/components/pages/title-page';
 import FilterPage from '@/components/pages/filter-page';
@@ -39,6 +33,12 @@ import {
 } from '@/app/modules/projetos/meus-projetos/interfaces';
 import { projetosColumns } from '@/app/modules/projetos/meus-projetos/components/columns-projetos';
 import { mapProjetoToTableData } from '@/app/modules/projetos/meus-projetos/helpers/map-data-to-table';
+import {
+  CreateProjetoData,
+  CurrentProjetoData,
+  EditProjetoData,
+  ProjetoFormValues,
+} from '@/app/modules/projetos/meus-projetos/schema';
 
 const PageProjetos = () => {
   // Estados de paginação
@@ -55,7 +55,7 @@ const PageProjetos = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [projetos, setProjetos] = useState<Projetos[]>([]);
   const [editingProjeto, setEditingProjeto] =
-    useState<CurrentEquipeData | null>(null);
+    useState<CurrentProjetoData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaginatedFetching, setIsPaginatedFetching] =
     useState(false);
@@ -67,63 +67,27 @@ const PageProjetos = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isValidForm, setIsValidForm] =
     useState<boolean>(false);
+  const [equipes, setEquipes] = useState<Option[]>([]);
+  const [membrosDaEquipe, setMembrosDaEquipe] = useState<
+    Option[]
+  >([]);
   const [selectedIds, setSelectedIds] = useState<string[]>(
     [],
   );
 
   // Estado do formData com valor padrão
   const [formData, setFormData] = useState<{
-    values: EquipeFormValues;
-    createData?: CreateEquipeData;
-    editData?: EditEquipeData;
+    values: ProjetoFormValues;
+    createData?: CreateProjetoData;
+    editData?: EditProjetoData;
   }>({
     values: {
       nome: '',
       inativo: false,
+      idEquipe: '',
+      idGerente: '',
     },
   });
-
-  const buscarUsuarios = async (
-    texto: string,
-    excludeIds: string[] = [],
-  ): Promise<Option[]> => {
-    if (!texto.trim()) return [];
-
-    try {
-      const params = new URLSearchParams({
-        pesquisa: texto,
-        ...(excludeIds.length > 0 && {
-          excluirIds: excludeIds.join(','),
-        }),
-      });
-
-      const response = await fetch(
-        `/api/pessoas/pesquisar?${params}`,
-      );
-
-      if (!response.ok) {
-        throw new Error('Erro ao buscar usuários');
-      }
-
-      const data = await response.json();
-      const pessoas = data.ResultadoOperacao?.pessoas || [];
-
-      return pessoas.map(
-        (pessoa: {
-          id: string;
-          nome: string;
-          inativo: boolean;
-        }) => ({
-          id: pessoa.id,
-          nome: pessoa.nome,
-          inativo: pessoa.inativo,
-        }),
-      );
-    } catch (error) {
-      console.error('Erro na busca de usuários:', error);
-      return [];
-    }
-  };
 
   // Buscar dados para edição
   const fetchProjetoParaEdicao = async (
@@ -152,13 +116,19 @@ const PageProjetos = () => {
             inativo:
               data.ResultadoOperacao.projeto.inativo ||
               false,
+            idEquipe:
+              data.ResultadoOperacao.projeto.equipe_id,
+            idGerente:
+              data.ResultadoOperacao.projeto.idGerente,
           },
           editData: {
             id: data.ResultadoOperacao.projeto.id,
             nome: data.ResultadoOperacao.projeto.nome,
             inativo: data.ResultadoOperacao.projeto.inativo,
-            membrosAdicionar: [],
-            membrosRemover: [],
+            idEquipe:
+              data.ResultadoOperacao.projeto.equipe_id,
+            idGerente:
+              data.ResultadoOperacao.projeto.gerente_id,
           },
         });
       }
@@ -293,31 +263,144 @@ const PageProjetos = () => {
     }
   }, []);
 
-  // Função para criar nova projeto
+  // Buscar lista de equipes para o combo
+  const buscarEquipes = async () => {
+    try {
+      const response = await fetch('/api/equipes/combo');
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar equipes');
+      }
+
+      const data = await response.json();
+      const equipesData =
+        data.ResultadoOperacao?.equipe || [];
+
+      setEquipes(
+        equipesData.map(
+          (equipe: {
+            id: string;
+            nome: string;
+            inativo: boolean;
+          }) => ({
+            id: equipe.id,
+            nome: equipe.nome,
+            inativo: equipe.inativo,
+          }),
+        ),
+      );
+    } catch (error) {
+      console.error('Erro ao buscar equipes:', error);
+      toastError({
+        description: 'Erro ao carregar lista de equipes',
+      });
+    }
+  };
+
+  // Buscar membros da equipe selecionada
+  const buscarMembrosDaEquipe = async (
+    equipeId: string,
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/equipes/combo/membros/${equipeId}?id=${equipeId}`,
+      );
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar membros da equipe');
+      }
+
+      const data = await response.json();
+      const membros = data.ResultadoOperacao?.pessoas || [];
+
+      setMembrosDaEquipe(
+        membros.map(
+          (membro: {
+            pessoa: {
+              id: string;
+              nome: string;
+              inativo: boolean;
+            };
+          }) => ({
+            id: membro.pessoa.id,
+            nome: membro.pessoa.nome,
+            inativo: membro.pessoa.inativo,
+          }),
+        ),
+      );
+    } catch (error) {
+      console.error('Erro ao buscar membros:', error);
+      toastError({
+        description: 'Erro ao carregar membros da equipe',
+      });
+    }
+  };
+
+  // Função para criar novo projeto
   const handleCreate = useCallback(async () => {
     try {
+      setIsLoading(true);
+
+      // Carregar lista de equipes primeiro
+      const response = await fetch('/api/equipes/combo');
+
+      if (!response.ok) {
+        throw new Error(
+          'Erro ao carregar lista de equipes',
+        );
+      }
+
+      const data = await response.json();
+      const equipesData =
+        data.ResultadoOperacao?.equipe || [];
+
+      setEquipes(
+        equipesData.map(
+          (equipe: {
+            id: string;
+            nome: string;
+            inativo: boolean;
+          }) => ({
+            id: equipe.id,
+            nome: equipe.nome,
+            inativo: equipe.inativo,
+          }),
+        ),
+      );
+
+      // Só continua se carregar as equipes com sucesso
       setIsEditMode(false);
       setEditingProjeto(null);
+
       // Resetar formData para modo criação
       setFormData({
         values: {
           nome: '',
           inativo: false,
+          idEquipe: '',
+          idGerente: '',
         },
         createData: {
           nome: '',
-          membrosAdicionar: [],
+          idEquipe: '',
+          idGerente: '',
         },
       });
+
+      // Abre o formulário apenas após carregar as equipes com sucesso
       setIsSheetOpen(true);
     } catch (error) {
       console.error('Erro ao preparar criação:', error);
       toastError({
-        description: 'Erro ao preparar criação da equipe',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Erro ao preparar criação do projeto',
       });
+    } finally {
+      setIsLoading(false);
     }
   }, []);
-
   const handleSubmitForm = useCallback(async () => {
     // Agora formData nunca será null porque tem valor padrão
     console.log('Dados para envio:', formData);
@@ -332,7 +415,7 @@ const PageProjetos = () => {
       ) {
         // Modo edição
         const response = await fetch(
-          `/api/equipes/alterar-equipe`,
+          `/api/projeto/alterar-projeto`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -340,10 +423,6 @@ const PageProjetos = () => {
               id: editingProjeto.id,
               nome: formData.values.nome,
               inativo: formData.values.inativo,
-              membrosAdicionar:
-                formData.editData.membrosAdicionar || [],
-              membrosRemover:
-                formData.editData.membrosRemover || [],
             }),
           },
         );
@@ -361,14 +440,14 @@ const PageProjetos = () => {
       } else if (formData.createData) {
         // Modo criação
         const response = await fetch(
-          '/api/equipes/nova-equipe',
+          '/api/projetos/novo-projeto',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               nome: formData.values.nome,
-              membros:
-                formData.createData.membrosAdicionar || [],
+              idEquipe: formData.values.idEquipe,
+              idGerente: formData.values.idGerente,
             }),
           },
         );
@@ -454,9 +533,9 @@ const PageProjetos = () => {
 
   const handleDataChange = useCallback(
     (data: {
-      values: EquipeFormValues;
-      createData?: CreateEquipeData;
-      editData?: EditEquipeData;
+      values: ProjetoFormValues;
+      createData?: CreateProjetoData;
+      editData?: EditProjetoData;
     }) => {
       setFormData(data);
     },
@@ -531,12 +610,14 @@ const PageProjetos = () => {
           className="max-w-96 sm:max-w-2/4"
         >
           <ProjetoForm
-            initialData={editingProjeto || undefined}
             isLoading={isLoading}
             isValidated={setIsValidForm}
             onDataChange={handleDataChange}
+            initialData={editingProjeto || undefined}
             onSubmit={handleSubmitForm}
-            campoPesquisaUsuario={buscarUsuarios}
+            equipes={equipes}
+            usuarios={membrosDaEquipe}
+            onEquipeChange={buscarMembrosDaEquipe}
           />
         </BasicForm>
       </Toolbar>

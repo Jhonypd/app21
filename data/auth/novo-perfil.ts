@@ -24,7 +24,7 @@ export async function NovoPerfil({
   }
 
   const pessoa = await prismaClient.pessoa.create({
-    data: { id: user_id, user_id: user_id, nome: nome },
+    data: { id: user_id, auth_id: user_id, nome: nome },
   });
 
   if (!pessoa) {

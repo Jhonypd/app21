@@ -24,33 +24,36 @@ export async function GET(
       );
     }
 
-    // Primeiro verificar se o usuário é o proprietário do projeto
-    const equipeComProprietario =
-      await prismaClient.projeto.findUnique({
-        where: { id: projetoId },
-        include: {
-          participantes: {
-            where: {
-              role: { in: [0, 1] },
-              pessoa_id: idUsuario,
-            },
-            include: {
-              pessoa: {
-                select: {
-                  id: true,
-                  nome: true,
-                },
-              },
-            },
+    // Verificar se o usuário tem acesso ao projeto
+    const projeto = await prismaClient.projeto.findUnique({
+      where: { id: projetoId },
+      select: {
+        id: true,
+        nome: true,
+        inativo: true,
+        equipe_id: true,
+        gerente_id: true,
+        equipe: {
+          select: {
+            id: true,
+            nome: true,
+            inativo: true,
           },
         },
-      });
+      },
+    });
 
-    // Verificar se o usuário é o proprietário
-    if (
-      !equipeComProprietario ||
-      equipeComProprietario.participantes.length === 0
-    ) {
+    if (!projeto) {
+      return NextResponse.json(
+        { erro: 'Projeto não encontrado' },
+        { status: 404 },
+      );
+    }
+
+    // Verificar se o usuário tem acesso ao projeto (é gerente)
+    const temAcesso = projeto.gerente_id === idUsuario;
+
+    if (!temAcesso) {
       return NextResponse.json(
         {
           erro: 'Acesso negado. Usuário sem permissão para visualizar os dados do projeto.',
@@ -59,46 +62,18 @@ export async function GET(
       );
     }
 
-    // Agora buscar a equipe completa (sem o usuário atual na lista de membros)
-    const equipe = await prismaClient.projeto.findUnique({
-      where: { id: projetoId },
-      include: {
-        participantes: {
-          include: {
-            pessoa: {
-              select: {
-                id: true,
-                nome: true,
-                inativo: true,
-              },
-            },
-          },
-          where: {
-            // Remove o usuário atual da lista de membros
-            pessoa_id: { not: idUsuario },
-          },
-        },
-      },
-    });
-
-    if (!equipe) {
-      return NextResponse.json(
-        { erro: 'Equipe não encontrada' },
-        { status: 404 },
-      );
-    }
-
-    // Formatar equipe
+    // Formatar o projeto no mesmo formato da listagem
     const projetoFormatado = {
-      id: equipe.id,
-      nome: equipe.nome,
-      inativo: equipe.inativo,
-      membrosEquipe: equipe.participantes.map((m) => ({
-        id: m.pessoa.id,
-        nome: m.pessoa.nome,
-        inativo: m.pessoa.inativo,
-        cargo: m.role,
-      })),
+      id: projeto.id,
+      nome: projeto.nome,
+      inativo: projeto.inativo,
+      equipe_id: projeto.equipe_id,
+      gerente_id: projeto.gerente_id,
+      equipe: {
+        id: projeto.equipe.id,
+        nome: projeto.equipe.nome,
+        inativo: projeto.equipe.inativo,
+      },
     };
 
     return NextResponse.json({

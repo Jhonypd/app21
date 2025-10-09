@@ -2,7 +2,6 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import {
-  Zap,
   Users,
   Target,
   ArrowRight,

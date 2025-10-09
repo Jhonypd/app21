@@ -18,10 +18,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 
 import { TextInput } from '@/components/inputs/input-text';
-import {
-  MultiSelectCommand,
-  Option,
-} from '@/components/inputs/input-multi-command';
+import { Option } from '@/components/inputs/input-multi-command';
 import {
   convertCurrentDataToForm,
   convertFormToCreateData,
@@ -31,6 +28,9 @@ import {
   ProjetoFormSchema,
   ProjetoFormValues,
 } from '@/app/modules/projetos/meus-projetos/schema';
+import { ComboBoxInput } from '@/components/inputs/input-combobox';
+import { HiOutlineUserGroup } from 'react-icons/hi';
+import { RiAdminFill } from 'react-icons/ri';
 
 export interface ProjetoFormRef {
   reset: () => void;
@@ -43,28 +43,10 @@ interface ProjetoFormProps {
   onDataChange: (data: ProjetoFormDataChange) => void;
   initialData?: CurrentProjetoData;
   onSubmit?: (data: ProjetoFormValues) => void;
-  campoPesquisaUsuario?: (
-    texto: string,
-  ) => Promise<Option[]>;
+  equipes: Option[];
+  usuarios: Option[];
+  onEquipeChange: (equipeId: string) => void;
 }
-
-// Função para calcular diferenças entre arrays
-const calcularDiferencas = (
-  atual: Option[],
-  novo: Option[],
-): { adicionar: string[]; remover: string[] } => {
-  const idsAtual = atual.map((item) => item.id);
-  const idsNovo = novo.map((item) => item.id);
-
-  const adicionar = idsNovo.filter(
-    (id) => !idsAtual.includes(id),
-  );
-  const remover = idsAtual.filter(
-    (id) => !idsNovo.includes(id),
-  );
-
-  return { adicionar, remover };
-};
 
 const ProjetoForm = forwardRef<
   ProjetoFormRef,
@@ -77,14 +59,15 @@ const ProjetoForm = forwardRef<
       onDataChange,
       initialData,
       onSubmit,
-      campoPesquisaUsuario,
+      equipes,
+      usuarios,
+      onEquipeChange,
     },
     ref,
   ) => {
     const isEditMode = !!initialData;
-    const [selecionados, setSelecionados] = useState<
-      Option[]
-    >([]);
+    const [selectedEquipe, setSelectedEquipe] =
+      useState<string>('');
 
     // Usar useRef para manter uma referência estável dos dados iniciais
     const initialDataRef = useRef<
@@ -105,8 +88,6 @@ const ProjetoForm = forwardRef<
     useEffect(() => {
       if (initialData) {
         initialDataRef.current = initialData;
-        membrosIniciaisRef.current =
-          initialData.membrosEquipe || [];
       }
     }, [initialData]);
 
@@ -127,24 +108,12 @@ const ProjetoForm = forwardRef<
 
       if (isEditMode && initialDataRef.current) {
         // Usar a referência estável dos membros iniciais
-        const membrosIniciais = membrosIniciaisRef.current;
-
-        // Calcular diferenças para membros
-        const {
-          adicionar: membrosAdicionar,
-          remover: membrosRemover,
-        } = calcularDiferencas(
-          membrosIniciais,
-          selecionados,
-        );
 
         const payload: ProjetoFormDataChange = {
           values: validatedValues,
           editData: convertFormToEditData(
             validatedValues,
             initialDataRef.current.id,
-            membrosAdicionar,
-            membrosRemover,
           ),
         };
 
@@ -153,52 +122,27 @@ const ProjetoForm = forwardRef<
         // Modo criação
         const payload: ProjetoFormDataChange = {
           values: validatedValues,
-          createData: convertFormToCreateData(
-            validatedValues,
-            selecionados.map((m) => m.id),
-          ),
+          createData:
+            convertFormToCreateData(validatedValues),
         };
 
         onDataChange(payload);
       }
-    }, [
-      form,
-      isEditMode,
-      selecionados,
-      isValidated,
-      onDataChange,
-    ]);
-
-    // Handler para mudança de membros
-    const handleMembrosChange = useCallback(
-      (novosSelecionados: Option[]) => {
-        setSelecionados(novosSelecionados);
-      },
-      [],
-    );
+    }, [form, isEditMode, isValidated, onDataChange]);
 
     // Converter dados da tabela para valores do formulário
     useEffect(() => {
       if (initialData) {
         const formValues =
           convertCurrentDataToForm(initialData);
-        const membrosIniciais =
-          initialData.membrosEquipe || [];
 
-        setSelecionados(membrosIniciais);
         form.reset(formValues);
         isValidated(true);
 
         // Atualizar referências
         initialDataRef.current = initialData;
-        membrosIniciaisRef.current = membrosIniciais;
       }
     }, [initialData, form, isValidated]);
-
-    // Atualizar dados no pai quando selecionados mudarem
-    useEffect(() => {
-      atualizarDadosNoPai();
-    }, [selecionados, atualizarDadosNoPai]);
 
     // Atualizar validação e dados ao mudar o formulário
     useEffect(() => {
@@ -215,8 +159,10 @@ const ProjetoForm = forwardRef<
         form.reset({
           nome: '',
           inativo: false,
+          idEquipe: '',
+          idGerente: '',
         });
-        setSelecionados([]);
+        setSelectedEquipe('');
         initialDataRef.current = undefined;
         membrosIniciaisRef.current = [];
       },
@@ -264,18 +210,55 @@ const ProjetoForm = forwardRef<
               )}
             />
 
-            {/* Membros da Equipe */}
-            <FormItem>
-              <FormControl>
-                <MultiSelectCommand
-                  value={selecionados}
-                  onChange={handleMembrosChange}
-                  onSearch={campoPesquisaUsuario}
-                  placeholder="Pesquisar usuário"
-                  label="Integrantes da equipe"
-                />
-              </FormControl>
-            </FormItem>
+            {/* Equipe */}
+            <FormField
+              control={form.control}
+              name="idEquipe"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <ComboBoxInput
+                      name="idEquipe"
+                      label="Equipe"
+                      placeholder="Selecione a equipe"
+                      options={equipes}
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setSelectedEquipe(value);
+                        onEquipeChange(value);
+                      }}
+                      icone={HiOutlineUserGroup}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Gerente */}
+            <FormField
+              control={form.control}
+              name="idGerente"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <ComboBoxInput
+                      name="idGerente"
+                      label="Gerente do Projeto"
+                      placeholder="Selecione o gerente"
+                      options={usuarios}
+                      value={field.value ?? ''}
+                      onChange={(value) =>
+                        field.onChange(value || undefined)
+                      }
+                      icone={RiAdminFill}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {isEditMode && (
               <FormField
@@ -299,30 +282,6 @@ const ProjetoForm = forwardRef<
                 )}
               />
             )}
-
-            {/* Informações de contexto */}
-            <div className="bg-muted/50 grid rounded-lg p-4">
-              <h4 className="mb-2 text-sm font-medium">
-                Informações
-              </h4>
-              <div className="text-muted-foreground w-full space-y-1 text-sm text-wrap">
-                <p className="w-full text-wrap">
-                  • Equipes inativas não aparecerão para
-                  novos projetos
-                </p>
-                <p className="w-full text-wrap">
-                  • Membros podem ser adicionados após a
-                  criação
-                </p>
-                <p className="w-full text-wrap">
-                  • O nome da equipe deve ser único
-                </p>
-                <p className="w-full text-wrap">
-                  • Apenas o administrador da equipe pode
-                  realizar alterações
-                </p>
-              </div>
-            </div>
           </form>
         </FormProvider>
       </div>

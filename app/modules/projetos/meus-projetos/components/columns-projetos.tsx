@@ -6,7 +6,7 @@ import { HeaderTable } from '@/components/table/data-header-table';
 import CheckboxHeader from '@/components/table/checkbox-header';
 import DataTableEditCell from '@/components/table/row-cell-edit';
 import {
-  ColumnsParticipantesProjetos,
+  ColumnsIntegrantesProjetos,
   ColumnsProjetos,
 } from '../types';
 
@@ -19,8 +19,8 @@ interface ProjetosColumnsProps {
   onEdit: (id: string) => void;
 }
 
-interface ParticipantesProjetosColumnsProps {
-  data: ColumnsParticipantesProjetos[];
+interface IntegrantesProjetosColumnsProps {
+  data: ColumnsIntegrantesProjetos[];
 }
 
 export const projetosColumns = ({
@@ -134,11 +134,11 @@ export const projetosColumns = ({
     filterFn: 'includesString',
   },
   {
-    accessorKey: 'participantes',
+    accessorKey: 'integrantes',
     header: ({ column }) => {
       return (
         <HeaderTable
-          label="Participantes"
+          label="Integrantes"
           column={column}
           sortable={false}
         />
@@ -149,8 +149,8 @@ export const projetosColumns = ({
   },
 ];
 
-export const ParticipantesProjetosColumns =
-  ({}: ParticipantesProjetosColumnsProps): ColumnDef<ColumnsParticipantesProjetos>[] => [
+export const IntegrantesProjetosColumns =
+  ({}: IntegrantesProjetosColumnsProps): ColumnDef<ColumnsIntegrantesProjetos>[] => [
     {
       accessorKey: 'nome',
       header: ({ column }) => {

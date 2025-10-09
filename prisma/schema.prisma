@@ -15,7 +15,7 @@ datasource db {
 }
 
 model Pessoa {
-  id           String   @id @default(uuid())
+  id           String   @id
   nome         String
   email        String?
   auth_id      String   @unique

@@ -5,17 +5,26 @@ export enum cargosProjeto {
   designer = 3,
 }
 
-export interface ParticipantesProjetos {
+export interface Pessoas {
   id: string;
   nome: string;
   inativo: boolean;
-  cargo: number;
+  proprietario: boolean;
+}
+
+export interface Equipe {
+  id: string;
+  nome: string;
+  inativo: boolean;
+  pessoas: Pessoas[];
 }
 export interface Projetos {
   id: string;
   nome: string;
   inativo: boolean;
-  participantes: ParticipantesProjetos[];
+  equipeId: string;
+  gerenteId?: string;
+  equipe: Equipe;
 }
 
 export interface ColumnsProjetosTable {
@@ -23,10 +32,10 @@ export interface ColumnsProjetosTable {
   editar: React.ReactNode;
   nome: string;
   gerente: string;
-  participantes: React.ReactNode;
+  integrantes: React.ReactNode;
   inativo: 'ativo' | 'inativo';
 }
-export interface ColumnsParticipantesProjetosTable {
+export interface ColumnsIntegrantesProjetosTable {
   id: string;
   nome: string;
   cargo: string;

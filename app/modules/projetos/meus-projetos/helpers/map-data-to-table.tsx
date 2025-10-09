@@ -7,8 +7,8 @@ import { ParticipantesDialog } from '../components/participantesDialog';
 export const mapProjetoToTableData = (
   projeto: Projetos,
 ): ColumnsProjetosTable => {
-  const gerente = projeto.participantes.find(
-    (m) => m.cargo === 0,
+  const gerente = projeto.equipe.pessoas.find(
+    (m) => m.proprietario === true,
   );
 
   return {
@@ -16,9 +16,7 @@ export const mapProjetoToTableData = (
     editar: null,
     nome: projeto.nome,
     gerente: gerente?.nome || 'N/A',
-    participantes: (
-      <ParticipantesDialog projeto={projeto} />
-    ),
+    integrantes: <ParticipantesDialog projeto={projeto} />,
     inativo: projeto.inativo ? 'inativo' : 'ativo',
   };
 };

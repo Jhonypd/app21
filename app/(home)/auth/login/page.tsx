@@ -21,6 +21,8 @@ import { FcGoogle } from 'react-icons/fc';
 import { Separator } from '@/components/ui/separator';
 import { GiCardRandom } from 'react-icons/gi';
 import { login, signup } from '@/app/actions/login';
+import { toastError } from '@/components/custom-toast';
+import Loading from '@/components/loading';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -30,13 +32,10 @@ const Auth = () => {
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      setEmail('jesihow205@gddcorp.com');
+      setEmail('majebi4327@bllibl.com');
       setPassword('123456');
     }
   }, []);
-
-  // Remove o handleSignUp e handleSignIn antigos
-  // As Server Actions serão chamadas diretamente no formAction
 
   const handleAction = async (
     formData: FormData,
@@ -54,7 +53,7 @@ const Auth = () => {
     } catch (error: unknown) {
       console.error('Auth error:', error);
       if (error instanceof Error) {
-        toast('Erro na autenticação', {
+        toastError({
           description:
             error.message || 'Tente novamente mais tarde.',
         });
@@ -63,6 +62,13 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    <Loading
+      active
+      type="transaction"
+    />;
+  }
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center p-4">

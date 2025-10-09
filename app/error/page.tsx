@@ -1,4 +1,6 @@
 'use client';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 const ErrorPage = () => {
@@ -7,17 +9,18 @@ const ErrorPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
+      <div className="flex flex-col gap-2 text-center">
         <h1 className="mb-4 text-2xl font-bold text-red-600">
           Erro
         </h1>
         <p>{message || 'Ocorreu um erro inesperado'}</p>
-        <a
-          href="/auth/login"
-          className="mt-4 inline-block text-blue-500 underline"
+
+        <Link
+          href={'/auth/login'}
+          className="mt-4"
         >
-          Voltar para o login
-        </a>
+          <Button>Voltar para o login</Button>
+        </Link>
       </div>
     </div>
   );

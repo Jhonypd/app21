@@ -118,7 +118,7 @@ CREATE INDEX "Voto_pessoa_id_idx" ON "Voto"("pessoa_id");
 CREATE UNIQUE INDEX "Voto_sala_id_historia_id_pessoa_id_key" ON "Voto"("sala_id", "historia_id", "pessoa_id");
 
 -- AddForeignKey
-ALTER TABLE "MembroEquipe" ADD CONSTRAINT "MembroEquipe_pessoa_id_fkey" FOREIGN KEY ("pessoa_id") REFERENCES "Pessoa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "MembroEquipe" ADD CONSTRAINT "MembroEquipe_pessoa_id_fkey" FOREIGN KEY ("pessoa_id") REFERENCES "Pessoa"("auth_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "MembroEquipe" ADD CONSTRAINT "MembroEquipe_equipe_id_fkey" FOREIGN KEY ("equipe_id") REFERENCES "Equipe"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -127,10 +127,10 @@ ALTER TABLE "MembroEquipe" ADD CONSTRAINT "MembroEquipe_equipe_id_fkey" FOREIGN 
 ALTER TABLE "Projeto" ADD CONSTRAINT "Projeto_equipe_id_fkey" FOREIGN KEY ("equipe_id") REFERENCES "Equipe"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Sala" ADD CONSTRAINT "Sala_criado_por_fkey" FOREIGN KEY ("criado_por") REFERENCES "Pessoa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Sala" ADD CONSTRAINT "Sala_criado_por_fkey" FOREIGN KEY ("criado_por") REFERENCES "Pessoa"("auth_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "ParticipanteSala" ADD CONSTRAINT "ParticipanteSala_pessoa_id_fkey" FOREIGN KEY ("pessoa_id") REFERENCES "Pessoa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ParticipanteSala" ADD CONSTRAINT "ParticipanteSala_pessoa_id_fkey" FOREIGN KEY ("pessoa_id") REFERENCES "Pessoa"("auth_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ParticipanteSala" ADD CONSTRAINT "ParticipanteSala_sala_id_fkey" FOREIGN KEY ("sala_id") REFERENCES "Sala"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -139,10 +139,10 @@ ALTER TABLE "ParticipanteSala" ADD CONSTRAINT "ParticipanteSala_sala_id_fkey" FO
 ALTER TABLE "Historia" ADD CONSTRAINT "Historia_sala_id_fkey" FOREIGN KEY ("sala_id") REFERENCES "Sala"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Historia" ADD CONSTRAINT "Historia_criado_por_fkey" FOREIGN KEY ("criado_por") REFERENCES "Pessoa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Historia" ADD CONSTRAINT "Historia_criado_por_fkey" FOREIGN KEY ("criado_por") REFERENCES "Pessoa"("auth_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Voto" ADD CONSTRAINT "Voto_pessoa_id_fkey" FOREIGN KEY ("pessoa_id") REFERENCES "Pessoa"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Voto" ADD CONSTRAINT "Voto_pessoa_id_fkey" FOREIGN KEY ("pessoa_id") REFERENCES "Pessoa"("auth_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Voto" ADD CONSTRAINT "Voto_sala_id_fkey" FOREIGN KEY ("sala_id") REFERENCES "Sala"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -14,7 +14,7 @@ export async function GET(requisicao: NextRequest) {
 
     // Obter parâmetros da query string
     const { searchParams } = new URL(requisicao.url);
-    const dono = searchParams.get('dono') === '0';
+    const dono = searchParams.get('dono') === 'true'; // ajustado para boolean
     const campoPesquisa = searchParams.get('campoPesquisa');
     const inativo = searchParams.get('inativo');
 
@@ -25,28 +25,43 @@ export async function GET(requisicao: NextRequest) {
       searchParams.get('limite') || '10',
     ) as 10 | 20 | 30 | 50 | 100;
 
-    // Construir cláusula where
-    const onde: any = {};
+    // Construir cláusula where para projetos
+    const onde: any = {
+      OR: [
+        // Projetos onde o usuário é gerente
+        { gerente_id: idUsuario },
+        // Projetos onde o usuário é membro da equipe
+        {
+          equipe: {
+            membros: {
+              some: {
+                pessoa_id: idUsuario,
+              },
+            },
+          },
+        },
+      ],
+    };
 
-    // Filtro por proprietário ou participação
+    // Filtro por proprietário (dono)
     if (dono) {
-      // Buscar apenas equipes onde o usuário é proprietário
-      onde.participantes = {
-        some: {
-          pessoa_id: idUsuario,
-          role: 1,
+      // Se dono=true, buscar apenas projetos onde o usuário é gerente OU é proprietário da equipe
+      onde.OR = [
+        { gerente_id: idUsuario },
+        {
+          equipe: {
+            membros: {
+              some: {
+                pessoa_id: idUsuario,
+                proprietario: true,
+              },
+            },
+          },
         },
-      };
-    } else {
-      // Buscar equipes onde o usuário é membro (proprietário ou não)
-      onde.participantes = {
-        some: {
-          pessoa_id: idUsuario,
-        },
-      };
+      ];
     }
 
-    // Filtro por nome (campoPesquisa)
+    // Filtro por nome do projeto (campoPesquisa)
     if (campoPesquisa) {
       onde.nome = {
         contains: campoPesquisa,
@@ -54,9 +69,9 @@ export async function GET(requisicao: NextRequest) {
       };
     }
 
-    // Filtro por status
+    // Filtro por status inativo
     if (inativo !== null) {
-      onde.inativo = inativo === 'false' ? false : true;
+      onde.inativo = inativo === 'true';
     }
 
     // Calcular paginação
@@ -67,7 +82,7 @@ export async function GET(requisicao: NextRequest) {
       where: onde,
     });
 
-    // Buscar equipes com paginação
+    // Buscar projetos com paginação
     const projetos = await prismaClient.projeto.findMany({
       where: onde,
       skip: pular,
@@ -75,14 +90,27 @@ export async function GET(requisicao: NextRequest) {
       orderBy: {
         id: 'desc',
       },
-      include: {
-        participantes: {
-          include: {
-            pessoa: {
+      select: {
+        id: true,
+        nome: true,
+        inativo: true,
+        equipe_id: true,
+        gerente_id: true,
+        equipe: {
+          select: {
+            id: true,
+            nome: true,
+            inativo: true,
+            membros: {
               select: {
-                id: true,
-                nome: true,
-                inativo: true,
+                pessoa: {
+                  select: {
+                    id: true,
+                    nome: true,
+                    inativo: true,
+                  },
+                },
+                proprietario: true,
               },
             },
           },
@@ -90,18 +118,27 @@ export async function GET(requisicao: NextRequest) {
       },
     });
 
-    // Formatar as equipes no formato desejado
-    const projetosFormatadas = projetos.map((equipe) => ({
-      id: equipe.id,
-      nome: equipe.nome,
-      inativo: equipe.inativo,
-      participantes: equipe.participantes.map((membro) => ({
-        id: membro.pessoa.id,
-        nome: membro.pessoa.nome,
-        inativo: membro.pessoa.inativo,
-        cargo: membro.role,
-      })),
-    }));
+    // Formatar os projetos no formato desejado
+    const projetosFormatados = projetos.map((projeto) => {
+      return {
+        id: projeto.id,
+        nome: projeto.nome,
+        inativo: projeto.inativo,
+        equipe_id: projeto.equipe_id,
+        gerente_id: projeto.gerente_id,
+        equipe: {
+          id: projeto.equipe.id,
+          nome: projeto.equipe.nome,
+          inativo: projeto.equipe.inativo,
+          pessoas: projeto.equipe.membros.map((membro) => ({
+            id: membro.pessoa.id,
+            nome: membro.pessoa.nome,
+            inativo: false,
+            proprietario: membro.proprietario,
+          })),
+        },
+      };
+    });
 
     // Calcular totais de páginas
     const totalPaginas = Math.ceil(totalItens / limite);
@@ -109,11 +146,7 @@ export async function GET(requisicao: NextRequest) {
 
     const resposta = {
       ResultadoOperacao: {
-        ListaGrid: [
-          {
-            projetos: projetosFormatadas,
-          },
-        ],
+        ListaGrid: projetosFormatados,
         paginacao: {
           totalItens,
           paginaAtual,
@@ -127,7 +160,7 @@ export async function GET(requisicao: NextRequest) {
 
     return NextResponse.json(resposta, { status: 200 });
   } catch (erro) {
-    console.error('Erro ao buscar equipes:', erro);
+    console.error('Erro ao buscar projetos:', erro);
     return NextResponse.json(
       { erro: 'Erro interno do servidor' },
       { status: 500 },

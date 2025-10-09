@@ -9,6 +9,8 @@ export const ProjetoFormSchema = z.object({
       'O nome da equipe precisa ter no mínimo 3 caracteres',
     )
     .max(100, 'O nome deve ter no máximo 100 caracteres'),
+  idEquipe: z.uuid(),
+  idGerente: z.string().uuid().optional(),
   inativo: z.boolean().default(false),
 });
 
@@ -20,26 +22,23 @@ export interface CurrentProjetoData {
   id: string;
   nome: string;
   inativo: boolean;
-  membrosEquipe: Array<{
-    id: string;
-    nome: string;
-    inativo: boolean;
-    administrador: boolean;
-  }>;
+  idEquipe: string;
+  idGerente?: string;
 }
 
 // Tipos para criação e edição
 export type CreateProjetoData = {
   nome: string;
-  membrosAdicionar: string[];
+  idEquipe: string;
+  idGerente?: string;
 };
 
 export type EditProjetoData = {
   id: string;
   nome: string;
   inativo: boolean;
-  membrosAdicionar: string[];
-  membrosRemover: string[];
+  idEquipe: string;
+  idGerente?: string;
 };
 
 // Interface para o onDataChange
@@ -52,23 +51,21 @@ export interface ProjetoFormDataChange {
 // Funções de conversão
 export const convertFormToCreateData = (
   formData: ProjetoFormValues,
-  membrosAdicionar: string[] = [],
 ): CreateProjetoData => ({
   nome: formData.nome,
-  membrosAdicionar,
+  idEquipe: formData.idEquipe,
+  idGerente: formData.idGerente,
 });
 
 export const convertFormToEditData = (
   formData: ProjetoFormValues,
   id: string,
-  membrosAdicionar: string[] = [],
-  membrosRemover: string[] = [],
 ): EditProjetoData => ({
   id,
   nome: formData.nome,
   inativo: formData.inativo,
-  membrosAdicionar,
-  membrosRemover,
+  idEquipe: formData.idEquipe,
+  idGerente: formData.idGerente,
 });
 
 export const convertCurrentDataToForm = (
@@ -76,4 +73,6 @@ export const convertCurrentDataToForm = (
 ): ProjetoFormValues => ({
   nome: currentData.nome,
   inativo: currentData.inativo,
+  idEquipe: currentData.idEquipe,
+  idGerente: currentData.idGerente,
 });
