@@ -203,8 +203,7 @@ const PageEquipes = () => {
 
       const data = await res.json();
       const equipesData =
-        data.ResultadoOperacao?.ListaGrid?.[0]?.equipes ||
-        [];
+        data.ResultadoOperacao?.ListaGrid?.equipes || [];
 
       setEquipes(equipesData);
       setTotalCount(

@@ -110,11 +110,10 @@ export async function GET(requisicao: NextRequest) {
 
     const resposta = {
       ResultadoOperacao: {
-        ListaGrid: [
-          {
-            equipes: equipesFormatadas,
-          },
-        ],
+        ListaGrid: {
+          equipes: equipesFormatadas,
+        },
+
         paginacao: {
           totalItens,
           paginaAtual,

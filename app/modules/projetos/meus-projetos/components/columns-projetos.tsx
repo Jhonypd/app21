@@ -32,6 +32,7 @@ export const projetosColumns = ({
   {
     accessorKey: 'selected',
     header: () => {
+      // console.log({ data });
       const allRowIds = data.map((row) => row.id);
       const isAllSelected =
         selectedIds.length === allRowIds.length;

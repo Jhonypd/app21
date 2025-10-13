@@ -10,27 +10,29 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/table/data-table';
-import { ParticipantesProjetosColumns } from './columns-projetos';
 import {
-  ColumnsParticipantesProjetosTable,
-  ParticipantesProjetos,
   Projetos,
+  ColumnsIntegrantesProjetosTable,
+  Pessoas,
 } from '../interfaces';
 import { obterCargoLabelProjetos } from '../helpers/map-cargos-projetos';
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
+import { IntegrantesProjetosColumns } from './columns-projetos';
 
 interface ParticipantesDialogProps {
   projeto: Projetos;
 }
 
 export const mapParticipantesProjetosToTable = (
-  integrantes: ParticipantesProjetos,
-): ColumnsParticipantesProjetosTable => ({
-  id: integrantes.id,
-  nome: integrantes.nome,
-  cargo: obterCargoLabelProjetos(integrantes.cargo),
-  inativo: integrantes.inativo ? 'inativo' : 'ativo',
+  pessoas: Pessoas,
+): ColumnsIntegrantesProjetosTable => ({
+  id: pessoas.id,
+  nome: pessoas.nome,
+  cargo: obterCargoLabelProjetos(
+    pessoas.proprietario ? 0 : 2,
+  ),
+  inativo: pessoas.inativo ? 'inativo' : 'ativo',
 });
 
 export const ParticipantesDialog: React.FC<
@@ -49,12 +51,12 @@ export const ParticipantesDialog: React.FC<
     };
   }, [isOverlay, open]);
 
-  const mappedTable = projeto.participantes.map(
+  const mappedTable = projeto.equipe.pessoas.map(
     mapParticipantesProjetosToTable,
   );
 
-  const columns = ParticipantesProjetosColumns({
-    data: projeto.participantes.map(
+  const columns = IntegrantesProjetosColumns({
+    data: projeto.equipe.pessoas.map(
       mapParticipantesProjetosToTable,
     ),
   });
@@ -65,7 +67,7 @@ export const ParticipantesDialog: React.FC<
         type="button"
         onClick={() => setOpen(true)}
       >
-        {projeto.participantes.length}
+        {projeto.equipe.pessoas.length}
       </Button>
       <div
         className={clsx(
@@ -87,7 +89,7 @@ export const ParticipantesDialog: React.FC<
               variant={'neutral'}
               onClick={() => setOpen(true)}
             >
-              {projeto.participantes.length}
+              {projeto.equipe.pessoas.length}
             </Badge>
           </DialogTrigger>
           <DialogContent
@@ -117,7 +119,7 @@ export const ParticipantesDialog: React.FC<
             </DialogHeader>
             <div className={`grow overflow-y-auto px-3`}>
               <DataTable<
-                ColumnsParticipantesProjetosTable,
+                ColumnsIntegrantesProjetosTable,
                 unknown
               >
                 columns={columns}

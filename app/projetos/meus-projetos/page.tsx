@@ -173,8 +173,7 @@ const PageProjetos = () => {
 
       const data = await res.json();
       const projetosData =
-        data.ResultadoOperacao?.ListaGrid?.[0]?.projetos ||
-        [];
+        data.ResultadoOperacao?.ListaGrid?.projetos || [];
 
       setProjetos(projetosData);
       setTotalCount(
@@ -495,6 +494,7 @@ const PageProjetos = () => {
     }
   }, []);
 
+  console.log('Projetos carregados:', projetos);
   // Colunas da tabela
   const columns = useMemo(
     () =>

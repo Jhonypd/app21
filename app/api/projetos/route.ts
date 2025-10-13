@@ -146,7 +146,7 @@ export async function GET(requisicao: NextRequest) {
 
     const resposta = {
       ResultadoOperacao: {
-        ListaGrid: projetosFormatados,
+        ListaGrid: { projetos: projetosFormatados },
         paginacao: {
           totalItens,
           paginaAtual,
