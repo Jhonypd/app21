@@ -14,7 +14,7 @@ import { FilterGrid } from '@/components/pages/filter-grid';
 import { FilterItem } from '@/components/pages/filter-item';
 import { Toolbar } from '@/components/toolbar';
 import DeleteButton from '@/components/pages/button-delete-page';
-import { ProjetoForm } from '@/app/modules/projetos/meus-projetos/components/projetos-form';
+import { ProjetoForm } from '@/modules/projetos/meus-projetos/components/projetos-form';
 import {
   DataTable,
   Limit,
@@ -30,15 +30,15 @@ import { FaLaptopCode } from 'react-icons/fa';
 import {
   ColumnsProjetosTable,
   Projetos,
-} from '@/app/modules/projetos/meus-projetos/interfaces';
-import { projetosColumns } from '@/app/modules/projetos/meus-projetos/components/columns-projetos';
-import { mapProjetoToTableData } from '@/app/modules/projetos/meus-projetos/helpers/map-data-to-table';
+} from '@/modules/projetos/meus-projetos/interfaces';
+import { projetosColumns } from '@/modules/projetos/meus-projetos/components/columns-projetos';
+import { mapProjetoToTableData } from '@/modules/projetos/meus-projetos/helpers/map-data-to-table';
 import {
   CreateProjetoData,
   CurrentProjetoData,
   EditProjetoData,
   ProjetoFormValues,
-} from '@/app/modules/projetos/meus-projetos/schema';
+} from '@/modules/projetos/meus-projetos/schema';
 
 const PageProjetos = () => {
   // Estados de paginação

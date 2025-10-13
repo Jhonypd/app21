@@ -27,7 +27,7 @@ import {
   ProjetoFormDataChange,
   ProjetoFormSchema,
   ProjetoFormValues,
-} from '@/app/modules/projetos/meus-projetos/schema';
+} from '@/modules/projetos/meus-projetos/schema';
 import { ComboBoxInput } from '@/components/inputs/input-combobox';
 import { HiOutlineUserGroup } from 'react-icons/hi';
 import { RiAdminFill } from 'react-icons/ri';

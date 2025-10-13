@@ -24,7 +24,7 @@ import {
   convertFormToEditData,
   convertCurrentDataToForm,
   EquipeFormDataChange,
-} from '../../modules/equipes/minha-equipes/schema';
+} from '../../../modules/equipes/minha-equipes/schema';
 import { TextInput } from '@/components/inputs/input-text';
 import {
   MultiSelectCommand,

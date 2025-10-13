@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/table/data-table';
-import { IntegrantesEquipesColumns } from '../components/columns-equipes';
+import { IntegrantesEquipesColumns } from './columns-equipes';
 import {
   ColumnsIntegrantesEquipesTable,
   Equipes,

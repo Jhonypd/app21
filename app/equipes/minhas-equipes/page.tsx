@@ -14,7 +14,7 @@ import {
   CurrentEquipeData,
   EditEquipeData,
   EquipeFormValues,
-} from '../../modules/equipes/minha-equipes/schema';
+} from '../../../modules/equipes/minha-equipes/schema';
 import BasicForm from '@/components/forms/basic-form';
 import TitlePage from '@/components/pages/title-page';
 import FilterPage from '@/components/pages/filter-page';
@@ -37,9 +37,9 @@ import { ComboBoxInput } from '@/components/inputs/input-combobox';
 import {
   ColumnsEquipesTable,
   Equipes,
-} from '@/app/modules/equipes/minha-equipes/interfaces';
-import { mapEquipeToTableData } from '@/app/modules/equipes/minha-equipes/helpers/map-data-to-table';
-import { equipesColumns } from '@/app/modules/equipes/minha-equipes/components/columns-equipes';
+} from '@/modules/equipes/minha-equipes/interfaces';
+import { mapEquipeToTableData } from '@/modules/equipes/minha-equipes/helpers/map-data-to-table';
+import { equipesColumns } from '@/modules/equipes/minha-equipes/components/columns-equipes';
 
 const PageEquipes = () => {
   const [pagination, setPagination] = useState({

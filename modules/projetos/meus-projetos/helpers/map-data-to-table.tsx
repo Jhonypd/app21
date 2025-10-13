@@ -1,7 +1,7 @@
 import {
   ColumnsProjetosTable,
   Projetos,
-} from '@/app/modules/projetos/meus-projetos/interfaces';
+} from '@/modules/projetos/meus-projetos/interfaces';
 import { ParticipantesDialog } from '../components/participantesDialog';
 
 export const mapProjetoToTableData = (
