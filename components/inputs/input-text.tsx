@@ -78,7 +78,7 @@ export const TextInput: React.FC<TextInputProps> = ({
   const shouldLabelBeOnTop = value.length > 0 || isFocused;
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex w-full items-center justify-center">
       <div className="relative w-full">
         {/* Input */}
         <Input

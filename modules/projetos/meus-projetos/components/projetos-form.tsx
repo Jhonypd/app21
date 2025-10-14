@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-
 import { TextInput } from '@/components/inputs/input-text';
 import { Option } from '@/components/inputs/input-multi-command';
 import {
@@ -31,7 +30,6 @@ import {
 import { ComboBoxInput } from '@/components/inputs/input-combobox';
 import { HiOutlineUserGroup } from 'react-icons/hi';
 import { RiAdminFill } from 'react-icons/ri';
-
 export interface ProjetoFormRef {
   reset: () => void;
   submit: () => void;
@@ -179,112 +177,124 @@ const ProjetoForm = forwardRef<
     };
 
     return (
-      <div className="h-full px-2">
-        <FormProvider {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="grid grid-cols-1 gap-4 py-2"
-          >
-            {/* Nome da Equipe */}
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormControl>
-                    <TextInput
-                      label="Nome"
-                      value={field.value}
-                      onChange={field.onChange}
-                      disabled={isLoading}
-                      name={field.name}
-                      placeholder="Digite o nome da equipe"
-                      error={
-                        fieldState.error ? true : false
-                      }
-                      autoFocus={false}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Equipe */}
-            <FormField
-              control={form.control}
-              name="idEquipe"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <ComboBoxInput
-                      name="idEquipe"
-                      label="Equipe"
-                      placeholder="Selecione a equipe"
-                      options={equipes}
-                      value={field.value}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setSelectedEquipe(value);
-                        onEquipeChange(value);
-                      }}
-                      icone={HiOutlineUserGroup}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Gerente */}
-            <FormField
-              control={form.control}
-              name="idGerente"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <ComboBoxInput
-                      name="idGerente"
-                      label="Gerente do Projeto"
-                      placeholder="Selecione o gerente"
-                      options={usuarios}
-                      value={field.value ?? ''}
-                      onChange={(value) =>
-                        field.onChange(value || undefined)
-                      }
-                      icone={RiAdminFill}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {isEditMode && (
+      <FormProvider {...form}>
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="h-full w-full"
+        >
+          <div className="grid w-full grid-cols-[150px_1fr_150px] gap-4">
+            {/* Nome - ocupa linha inteira */}
+            <div className="col-span-full">
               <FormField
                 control={form.control}
-                name="inativo"
-                render={({ field }) => (
-                  <FormItem className="col-span-full sm:col-span-1">
+                name="nome"
+                render={({ field, fieldState }) => (
+                  <FormItem>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          id="inativo"
-                        />
-                        <label htmlFor="inativo">
-                          Inativo
-                        </label>
-                      </div>
+                      <TextInput
+                        label="Nome"
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={isLoading}
+                        name={field.name}
+                        placeholder="Digite o nome do projeto"
+                        error={
+                          fieldState.error ? true : false
+                        }
+                        autoFocus={false}
+                      />
                     </FormControl>
+                    <FormMessage className="text-wrap" />
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Equipe - ocupa linha inteira */}
+            <div className="col-span-full">
+              <FormField
+                control={form.control}
+                name="idEquipe"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <ComboBoxInput
+                        name="idEquipe"
+                        label="Equipe"
+                        placeholder="Selecione a equipe"
+                        options={equipes}
+                        value={field.value}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setSelectedEquipe(value);
+                          onEquipeChange(value);
+                        }}
+                        icone={HiOutlineUserGroup}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Gerente - ocupa linha inteira */}
+            <div className="col-span-full">
+              <FormField
+                control={form.control}
+                name="idGerente"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <ComboBoxInput
+                        name="idGerente"
+                        label="Gerente do Projeto"
+                        placeholder="Selecione o gerente"
+                        options={usuarios}
+                        value={field.value ?? ''}
+                        onChange={(value) =>
+                          field.onChange(value || undefined)
+                        }
+                        icone={RiAdminFill}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Status - ocupa meia linha no final */}
+            {isEditMode && (
+              <div className="col-span-1 col-start-1">
+                <FormField
+                  control={form.control}
+                  name="inativo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="flex h-[42px] items-center gap-2">
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            id="inativo"
+                          />
+                          <label
+                            htmlFor="inativo"
+                            className="text-sm font-medium"
+                          >
+                            Inativo
+                          </label>
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
-          </form>
-        </FormProvider>
-      </div>
+          </div>
+        </form>
+      </FormProvider>
     );
   },
 );

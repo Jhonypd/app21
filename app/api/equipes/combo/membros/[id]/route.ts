@@ -18,12 +18,12 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const equipeId = params.id;
+    const { id } = await params;
 
     // Buscar todos os membros da equipe onde a pessoa não está inativa
     const equipe = (await prismaClient.equipe.findUnique({
       where: {
-        id: equipeId,
+        id: id,
       },
       select: {
         id: true,
@@ -56,12 +56,10 @@ export async function GET(
     }
 
     const pessoas = equipe.membros.map((membro) => ({
-      pessoa: {
-        id: membro.pessoa.id,
-        nome: membro.pessoa.nome,
-        inativo: membro.pessoa.inativo,
-      },
-    })) as MembroResponse[];
+      id: membro.pessoa.id,
+      nome: membro.pessoa.nome,
+      inativo: membro.pessoa.inativo,
+    }));
 
     return NextResponse.json({
       ResultadoOperacao: {

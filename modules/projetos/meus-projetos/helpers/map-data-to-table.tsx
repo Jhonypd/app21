@@ -10,7 +10,7 @@ export const mapProjetoToTableData = (
   const gerente = projeto.equipe.pessoas.find(
     (m) => m.proprietario === true,
   );
-  console.log({ gerente });
+
   return {
     id: projeto.id,
     editar: null,

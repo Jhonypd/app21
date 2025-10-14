@@ -39,6 +39,8 @@ import {
   EditProjetoData,
   ProjetoFormValues,
 } from '@/modules/projetos/meus-projetos/schema';
+// import 'react-grid-layout/css/styles.css';
+// import 'react-resizable/css/styles.css';
 
 const PageProjetos = () => {
   // Estados de paginação
@@ -302,36 +304,23 @@ const PageProjetos = () => {
   ) => {
     try {
       const response = await fetch(
-        `/api/equipes/combo/membros/${equipeId}?id=${equipeId}`,
+        `/api/equipes/combo/membros/${equipeId}`,
       );
-
-      if (!response.ok) {
-        throw new Error('Erro ao buscar membros da equipe');
-      }
-
       const data = await response.json();
-      const membros = data.ResultadoOperacao?.pessoas || [];
 
-      setMembrosDaEquipe(
-        membros.map(
-          (membro: {
-            pessoa: {
-              id: string;
-              nome: string;
-              inativo: boolean;
-            };
-          }) => ({
-            id: membro.pessoa.id,
-            nome: membro.pessoa.nome,
-            inativo: membro.pessoa.inativo,
-          }),
-        ),
-      );
+      if (data.ResultadoOperacao?.sucesso) {
+        setMembrosDaEquipe(
+          data.ResultadoOperacao.pessoas.map(
+            (p: Option) => ({
+              id: p.id,
+              nome: p.nome,
+              inativo: p.inativo,
+            }),
+          ),
+        );
+      }
     } catch (error) {
       console.error('Erro ao buscar membros:', error);
-      toastError({
-        description: 'Erro ao carregar membros da equipe',
-      });
     }
   };
 
@@ -494,7 +483,6 @@ const PageProjetos = () => {
     }
   }, []);
 
-  console.log('Projetos carregados:', projetos);
   // Colunas da tabela
   const columns = useMemo(
     () =>

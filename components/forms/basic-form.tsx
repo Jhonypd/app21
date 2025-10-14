@@ -108,7 +108,7 @@ const BasicForm = ({
           </SheetHeader>
 
           <div
-            className={`grow overflow-y-auto px-3 ${contentClassName}`}
+            className={`grow overflow-y-auto px-3 py-3 ${contentClassName}`}
           >
             {children}
           </div>
