@@ -64,20 +64,25 @@ const ProjetoForm = forwardRef<
     ref,
   ) => {
     const isEditMode = !!initialData;
+
     const [selectedEquipe, setSelectedEquipe] =
       useState<string>('');
 
+    console.log({ initialData });
     // Usar useRef para manter uma referência estável dos dados iniciais
     const initialDataRef = useRef<
       CurrentProjetoData | undefined
     >(initialData);
-    const membrosIniciaisRef = useRef<Option[]>([]);
 
+    const membrosIniciaisRef = useRef<Option[]>([]);
+    console.log({ membrosIniciaisRef });
     const form = useForm<ProjetoFormValues>({
       resolver: zodResolver(ProjetoFormSchema) as any,
       defaultValues: {
         nome: '',
         inativo: false,
+        idEquipe: '',
+        idGerente: '',
       },
       mode: 'onChange',
     });

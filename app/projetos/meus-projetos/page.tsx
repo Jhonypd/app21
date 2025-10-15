@@ -108,29 +108,29 @@ const PageProjetos = () => {
       }
 
       const data = await res.json();
-      setEditingProjeto(data.ResultadoOperacao.projeto);
+      setEditingProjeto(data.ResultadoOperacao.Projeto);
 
       // Inicializar formData com os dados da projeto
-      if (data.ResultadoOperacao.projeto) {
+      if (data.ResultadoOperacao.Projeto) {
         setFormData({
           values: {
-            nome: data.ResultadoOperacao.projeto.nome || '',
+            nome: data.ResultadoOperacao.Projeto.nome || '',
             inativo:
-              data.ResultadoOperacao.projeto.inativo ||
+              data.ResultadoOperacao.Projeto.inativo ||
               false,
             idEquipe:
-              data.ResultadoOperacao.projeto.equipe_id,
+              data.ResultadoOperacao.Projeto.equipe_id,
             idGerente:
-              data.ResultadoOperacao.projeto.idGerente,
+              data.ResultadoOperacao.Projeto.idGerente,
           },
           editData: {
-            id: data.ResultadoOperacao.projeto.id,
-            nome: data.ResultadoOperacao.projeto.nome,
-            inativo: data.ResultadoOperacao.projeto.inativo,
+            id: data.ResultadoOperacao.Projeto.id,
+            nome: data.ResultadoOperacao.Projeto.nome,
+            inativo: data.ResultadoOperacao.Projeto.inativo,
             idEquipe:
-              data.ResultadoOperacao.projeto.equipe_id,
+              data.ResultadoOperacao.Projeto.equipe_id,
             idGerente:
-              data.ResultadoOperacao.projeto.gerente_id,
+              data.ResultadoOperacao.Projeto.gerente_id,
           },
         });
       }

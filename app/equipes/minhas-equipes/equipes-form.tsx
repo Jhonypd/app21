@@ -89,6 +89,7 @@ const EquipeForm = forwardRef<
     const initialDataRef = useRef<
       CurrentEquipeData | undefined
     >(initialData);
+
     const membrosIniciaisRef = useRef<Option[]>([]);
 
     const form = useForm<EquipeFormValues>({

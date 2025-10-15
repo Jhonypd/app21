@@ -33,13 +33,13 @@ export async function GET(
         inativo: true,
         equipe_id: true,
         gerente_id: true,
-        equipe: {
-          select: {
-            id: true,
-            nome: true,
-            inativo: true,
-          },
-        },
+        // equipe: {
+        //   select: {
+        //     id: true,
+        //     nome: true,
+        //     inativo: true,
+        //   },
+        // },
       },
     });
 
@@ -49,6 +49,23 @@ export async function GET(
         { status: 404 },
       );
     }
+
+    const equipes = await prismaClient.equipe.findMany({
+      where: {
+        inativo: false,
+        membros: {
+          some: {
+            pessoa_id: idUsuario,
+          },
+        },
+      },
+      select: {
+        id: true,
+        nome: true,
+        inativo: true,
+      },
+      orderBy: { nome: 'asc' },
+    });
 
     // Verificar se o usuário tem acesso ao projeto (é gerente)
     const temAcesso = projeto.gerente_id === idUsuario;
@@ -69,17 +86,19 @@ export async function GET(
       inativo: projeto.inativo,
       equipe_id: projeto.equipe_id,
       gerente_id: projeto.gerente_id,
-      equipe: {
-        id: projeto.equipe.id,
-        nome: projeto.equipe.nome,
-        inativo: projeto.equipe.inativo,
-      },
     };
 
     return NextResponse.json({
       ResultadoOperacao: {
-        projeto: projetoFormatado,
+        Projeto: projetoFormatado,
+        ComboEquipes: equipes,
+        ComboGerentes: [],
       },
+      sucesso: true,
+      codigo: 200, //tentar sempre colocar o erro da exception aqui
+      detalhes: null, // detalhes adicionais, se houver como erros de banco de dados
+      mensagem: 'Operação realizada com sucesso', // se der erro colocar a mensagem do erro amigável
+      tipoRetorno: 0, // 0 - sucesso, 1 - parcial, 2 - erro
     });
   } catch (erro) {
     console.error('Erro ao buscar projeto:', erro);
