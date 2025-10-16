@@ -86,8 +86,8 @@ const PageProjetos = () => {
     values: {
       nome: '',
       inativo: false,
-      idEquipe: '',
-      idGerente: '',
+      equipeId: '',
+      gerenteId: '',
     },
   });
 
@@ -118,21 +118,25 @@ const PageProjetos = () => {
             inativo:
               data.ResultadoOperacao.Projeto.inativo ||
               false,
-            idEquipe:
-              data.ResultadoOperacao.Projeto.equipe_id,
-            idGerente:
-              data.ResultadoOperacao.Projeto.idGerente,
+            equipeId:
+              data.ResultadoOperacao.Projeto.equipeId,
+            gerenteId:
+              data.ResultadoOperacao.Projeto.gerenteId,
           },
           editData: {
             id: data.ResultadoOperacao.Projeto.id,
             nome: data.ResultadoOperacao.Projeto.nome,
             inativo: data.ResultadoOperacao.Projeto.inativo,
-            idEquipe:
-              data.ResultadoOperacao.Projeto.equipe_id,
-            idGerente:
-              data.ResultadoOperacao.Projeto.gerente_id,
+            equipeId:
+              data.ResultadoOperacao.Projeto.equipeId,
+            gerenteId:
+              data.ResultadoOperacao.Projeto.gerenteId,
           },
         });
+        setEquipes(data.ResultadoOperacao.ComboEquipes);
+        setMembrosDaEquipe(
+          data.ResultadoOperacao.ComboGerentes,
+        );
       }
     } catch (error) {
       console.error(error);
@@ -365,13 +369,13 @@ const PageProjetos = () => {
         values: {
           nome: '',
           inativo: false,
-          idEquipe: '',
-          idGerente: '',
+          equipeId: '',
+          gerenteId: '',
         },
         createData: {
           nome: '',
-          idEquipe: '',
-          idGerente: '',
+          equipeId: '',
+          gerenteId: '',
         },
       });
 
@@ -434,8 +438,8 @@ const PageProjetos = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               nome: formData.values.nome,
-              idEquipe: formData.values.idEquipe,
-              idGerente: formData.values.idGerente,
+              equipeId: formData.values.equipeId,
+              gerenteId: formData.values.gerenteId,
             }),
           },
         );
@@ -604,7 +608,7 @@ const PageProjetos = () => {
             initialData={editingProjeto || undefined}
             onSubmit={handleSubmitForm}
             equipes={equipes}
-            usuarios={membrosDaEquipe}
+            pessoas={membrosDaEquipe}
             onEquipeChange={buscarMembrosDaEquipe}
           />
         </BasicForm>

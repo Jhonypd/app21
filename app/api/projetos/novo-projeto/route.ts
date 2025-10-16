@@ -3,8 +3,8 @@ import { prismaClient } from '@/lib/prisma';
 
 interface NovoProjetoProps {
   nome: string;
-  idEquipe: string;
-  idGerente?: string;
+  equipeId: string;
+  gerenteId?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -13,13 +13,13 @@ export async function POST(req: NextRequest) {
 
     if (!idUsuario) {
       return NextResponse.json(
-        { erro: 'ID do usuário não fornecido' },
+        { erro: 'Id do usuário não fornecido' },
         { status: 400 },
       );
     }
 
     const body: NovoProjetoProps = await req.json();
-    const { nome, idEquipe, idGerente } = body;
+    const { nome, equipeId, gerenteId } = body;
 
     // Validar dados obrigatórios
     if (!nome || !nome.trim()) {
@@ -29,9 +29,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!idEquipe) {
+    if (!equipeId) {
       return NextResponse.json(
-        { erro: 'ID da equipe é obrigatório' },
+        { erro: 'Id da equipe é obrigatório' },
         { status: 400 },
       );
     }
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     // Verificar se a equipe existe
     const equipeExiste =
       await prismaClient.equipe.findUnique({
-        where: { id: idEquipe },
+        where: { id: equipeId },
       });
 
     if (!equipeExiste) {
@@ -63,12 +63,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Se houver gerente, verificar se ele existe e é membro da equipe
-    if (idGerente) {
+    if (gerenteId) {
       const gerenteNaEquipe =
         await prismaClient.membroEquipe.findFirst({
           where: {
-            pessoa_id: idGerente,
-            equipe_id: idEquipe,
+            pessoa_id: gerenteId,
+            equipe_id: equipeId,
           },
         });
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       await prismaClient.projeto.findFirst({
         where: {
           nome: nome.trim(),
-          equipe_id: idEquipe,
+          equipe_id: equipeId,
           inativo: false,
         },
       });
@@ -108,9 +108,9 @@ export async function POST(req: NextRequest) {
         const projeto = await prisma.projeto.create({
           data: {
             nome: nome.trim(),
-            equipe_id: idEquipe,
+            equipe_id: equipeId,
             inativo: false,
-            gerente_id: idGerente,
+            gerente_id: gerenteId,
           },
         });
 

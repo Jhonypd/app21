@@ -9,8 +9,13 @@ export const ProjetoFormSchema = z.object({
       'O nome da equipe precisa ter no mínimo 3 caracteres',
     )
     .max(100, 'O nome deve ter no máximo 100 caracteres'),
-  idEquipe: z.uuid(),
-  idGerente: z.string().uuid().optional(),
+  equipeId: z.uuid({
+    message: 'Selecione uma equipe válida',
+  }),
+  gerenteId: z
+    .string()
+    .uuid({ message: 'Selecione um gerente válido' })
+    .optional(),
   inativo: z.boolean().default(false),
 });
 
@@ -22,23 +27,23 @@ export interface CurrentProjetoData {
   id: string;
   nome: string;
   inativo: boolean;
-  idEquipe: string;
-  idGerente?: string;
+  equipeId: string;
+  gerenteId?: string;
 }
 
 // Tipos para criação e edição
 export type CreateProjetoData = {
   nome: string;
-  idEquipe: string;
-  idGerente?: string;
+  equipeId: string;
+  gerenteId?: string;
 };
 
 export type EditProjetoData = {
   id: string;
   nome: string;
   inativo: boolean;
-  idEquipe: string;
-  idGerente?: string;
+  equipeId: string;
+  gerenteId?: string;
 };
 
 // Interface para o onDataChange
@@ -53,8 +58,8 @@ export const convertFormToCreateData = (
   formData: ProjetoFormValues,
 ): CreateProjetoData => ({
   nome: formData.nome,
-  idEquipe: formData.idEquipe,
-  idGerente: formData.idGerente,
+  equipeId: formData.equipeId,
+  gerenteId: formData.gerenteId,
 });
 
 export const convertFormToEditData = (
@@ -64,8 +69,8 @@ export const convertFormToEditData = (
   id,
   nome: formData.nome,
   inativo: formData.inativo,
-  idEquipe: formData.idEquipe,
-  idGerente: formData.idGerente,
+  equipeId: formData.equipeId,
+  gerenteId: formData.gerenteId,
 });
 
 export const convertCurrentDataToForm = (
@@ -73,6 +78,6 @@ export const convertCurrentDataToForm = (
 ): ProjetoFormValues => ({
   nome: currentData.nome,
   inativo: currentData.inativo,
-  idEquipe: currentData.idEquipe,
-  idGerente: currentData.idGerente,
+  equipeId: currentData.equipeId,
+  gerenteId: currentData.gerenteId,
 });

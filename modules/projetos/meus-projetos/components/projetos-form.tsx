@@ -3,7 +3,6 @@ import React, {
   useEffect,
   forwardRef,
   useImperativeHandle,
-  useState,
   useCallback,
   useRef,
 } from 'react';
@@ -42,7 +41,7 @@ interface ProjetoFormProps {
   initialData?: CurrentProjetoData;
   onSubmit?: (data: ProjetoFormValues) => void;
   equipes: Option[];
-  usuarios: Option[];
+  pessoas: Option[];
   onEquipeChange: (equipeId: string) => void;
 }
 
@@ -58,41 +57,42 @@ const ProjetoForm = forwardRef<
       initialData,
       onSubmit,
       equipes,
-      usuarios,
+      pessoas,
       onEquipeChange,
     },
     ref,
   ) => {
     const isEditMode = !!initialData;
 
-    const [selectedEquipe, setSelectedEquipe] =
-      useState<string>('');
-
-    console.log({ initialData });
     // Usar useRef para manter uma referência estável dos dados iniciais
     const initialDataRef = useRef<
       CurrentProjetoData | undefined
     >(initialData);
 
-    const membrosIniciaisRef = useRef<Option[]>([]);
-    console.log({ membrosIniciaisRef });
     const form = useForm<ProjetoFormValues>({
       resolver: zodResolver(ProjetoFormSchema) as any,
       defaultValues: {
         nome: '',
         inativo: false,
-        idEquipe: '',
-        idGerente: '',
+        equipeId: '',
+        gerenteId: '',
       },
       mode: 'onChange',
     });
 
-    // Atualizar as referências quando initialData mudar
+    // Atualizar as referências e valores iniciais quando initialData mudar
     useEffect(() => {
       if (initialData) {
         initialDataRef.current = initialData;
+        // Define os valores do formulário com os dados iniciais
+        form.reset({
+          nome: initialData.nome,
+          inativo: initialData.inativo,
+          equipeId: initialData.equipeId,
+          gerenteId: initialData.gerenteId,
+        });
       }
-    }, [initialData]);
+    }, [initialData, form]);
 
     // Função para atualizar os dados no pai
     const atualizarDadosNoPai = useCallback(() => {
@@ -110,8 +110,6 @@ const ProjetoForm = forwardRef<
       const validatedValues = result.data;
 
       if (isEditMode && initialDataRef.current) {
-        // Usar a referência estável dos membros iniciais
-
         const payload: ProjetoFormDataChange = {
           values: validatedValues,
           editData: convertFormToEditData(
@@ -122,7 +120,6 @@ const ProjetoForm = forwardRef<
 
         onDataChange(payload);
       } else {
-        // Modo criação
         const payload: ProjetoFormDataChange = {
           values: validatedValues,
           createData:
@@ -162,12 +159,10 @@ const ProjetoForm = forwardRef<
         form.reset({
           nome: '',
           inativo: false,
-          idEquipe: '',
-          idGerente: '',
+          equipeId: '',
+          gerenteId: '',
         });
-        setSelectedEquipe('');
         initialDataRef.current = undefined;
-        membrosIniciaisRef.current = [];
       },
       submit: () => {
         form.handleSubmit((data) => {
@@ -219,20 +214,36 @@ const ProjetoForm = forwardRef<
             <div className="col-span-full">
               <FormField
                 control={form.control}
-                name="idEquipe"
+                name="equipeId"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
                       <ComboBoxInput
-                        name="idEquipe"
+                        name="equipeId"
                         label="Equipe"
                         placeholder="Selecione a equipe"
                         options={equipes}
-                        value={field.value}
+                        value={
+                          initialData?.equipeId
+                            ? initialData.equipeId
+                            : field.value
+                        }
                         onChange={(value) => {
-                          field.onChange(value);
-                          setSelectedEquipe(value);
-                          onEquipeChange(value);
+                          // Garante que o valor seja '' quando o campo for limpo
+                          const newValue = value || '';
+                          field.onChange(newValue);
+                          console.log(
+                            initialData?.equipeId,
+                          );
+                          console.log(field.value);
+                          // Só chama onEquipeChange se houver um valor válido
+                          if (
+                            newValue !== '' &&
+                            newValue !==
+                              initialData?.equipeId
+                          ) {
+                            onEquipeChange(newValue);
+                          }
                         }}
                         icone={HiOutlineUserGroup}
                       />
@@ -247,18 +258,22 @@ const ProjetoForm = forwardRef<
             <div className="col-span-full">
               <FormField
                 control={form.control}
-                name="idGerente"
+                name="gerenteId"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
                       <ComboBoxInput
-                        name="idGerente"
+                        name="gerenteId"
                         label="Gerente do Projeto"
                         placeholder="Selecione o gerente"
-                        options={usuarios}
-                        value={field.value ?? ''}
+                        options={pessoas}
+                        value={
+                          initialData?.gerenteId
+                            ? initialData.gerenteId
+                            : field.value
+                        }
                         onChange={(value) =>
-                          field.onChange(value || undefined)
+                          field.onChange(value)
                         }
                         icone={RiAdminFill}
                       />

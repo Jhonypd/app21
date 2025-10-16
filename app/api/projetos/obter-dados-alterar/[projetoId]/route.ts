@@ -67,6 +67,47 @@ export async function GET(
       orderBy: { nome: 'asc' },
     });
 
+    const membrosEquipe =
+      await prismaClient.equipe.findUnique({
+        where: {
+          id: projeto.equipe_id,
+        },
+        select: {
+          id: true,
+          membros: {
+            where: {
+              pessoa: {
+                inativo: false,
+              },
+            },
+            select: {
+              pessoa: {
+                select: {
+                  id: true,
+                  nome: true,
+                  inativo: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+    if (!membrosEquipe) {
+      return NextResponse.json(
+        {
+          erro: 'Equipe não encontrada',
+        },
+        { status: 404 },
+      );
+    }
+
+    const pessoas = membrosEquipe.membros.map((membro) => ({
+      id: membro.pessoa.id,
+      nome: membro.pessoa.nome,
+      inativo: membro.pessoa.inativo,
+    }));
+
     // Verificar se o usuário tem acesso ao projeto (é gerente)
     const temAcesso = projeto.gerente_id === idUsuario;
 
@@ -84,15 +125,15 @@ export async function GET(
       id: projeto.id,
       nome: projeto.nome,
       inativo: projeto.inativo,
-      equipe_id: projeto.equipe_id,
-      gerente_id: projeto.gerente_id,
+      equipeId: projeto.equipe_id,
+      gerenteId: projeto.gerente_id,
     };
 
     return NextResponse.json({
       ResultadoOperacao: {
         Projeto: projetoFormatado,
         ComboEquipes: equipes,
-        ComboGerentes: [],
+        ComboGerentes: pessoas,
       },
       sucesso: true,
       codigo: 200, //tentar sempre colocar o erro da exception aqui
