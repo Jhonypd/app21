@@ -12,8 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Users } from 'lucide-react';
 import { CustomButton } from '../ui/custom-button';
-import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Rooms {
   privateRoom: boolean;

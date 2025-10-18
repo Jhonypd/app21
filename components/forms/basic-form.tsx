@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-
+import React, { useEffect, useCallback, memo } from 'react';
 import { Button } from '../ui/button';
 import {
   Sheet,
@@ -31,7 +30,7 @@ interface Props {
   isOverlay?: boolean;
 }
 
-const BasicForm = ({
+const BasicForm = memo(function BasicForm({
   mode = 'create',
   open,
   onOpenChange,
@@ -47,37 +46,64 @@ const BasicForm = ({
   contentClassName = '',
   isOverlay = true,
   resetForm,
-}: Props) => {
+}: Props) {
+  // Efeito para controlar overflow do body - otimizado
   useEffect(() => {
-    if (isOverlay && open) {
-      document.body.classList.add('overflow-hidden');
-    }
+    if (!isOverlay || !open) return;
+
+    document.body.classList.add('overflow-hidden');
 
     return () => {
       document.body.classList.remove('overflow-hidden');
     };
   }, [isOverlay, open]);
 
-  const handleSubmit = async () => {
+  // Handlers memoizados para evitar recriações
+  const handleSubmit = useCallback(async () => {
     await onSubmit?.();
-  };
+  }, [onSubmit]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     onCancel?.();
     onOpenChange?.(false);
     resetForm?.();
-  };
+  }, [onCancel, onOpenChange, resetForm]);
 
-  return (
-    <div
-      className={clsx(
+  // Prevenir eventos externos - memoizado
+  const handlePreventInteraction = useCallback(
+    (event: Event) => {
+      event.preventDefault();
+    },
+    [],
+  );
+
+  // Classes memoizadas para evitar recálculos
+  const containerClasses = useCallback(
+    (isOpen: boolean) =>
+      clsx(
         'fixed inset-0 z-50 flex h-full w-full items-center justify-center sm:max-w-full',
-        isOverlay && open
+        isOverlay && isOpen
           ? 'pointer-events-auto bg-black/60'
           : 'pointer-events-none',
-        !open && 'hidden',
-      )}
-    >
+        !isOpen && 'hidden',
+      ),
+    [isOverlay],
+  );
+
+  const sheetContentClasses = useCallback(
+    () =>
+      `flex h-full w-full flex-col overflow-hidden rounded-tl-lg border-l-0 p-0 outline-0 sm:w-auto ${className}`,
+    [className],
+  );
+
+  const contentClasses = useCallback(
+    () =>
+      `grow overflow-y-auto px-3 py-3 ${contentClassName}`,
+    [contentClassName],
+  );
+
+  return (
+    <div className={containerClasses(!!open)}>
       <Sheet
         open={open}
         onOpenChange={onOpenChange}
@@ -85,19 +111,11 @@ const BasicForm = ({
       >
         <SheetContent
           aria-describedby={'form-basic'}
-          onPointerDownOutside={(event) => {
-            event.preventDefault();
-          }}
-          onInteractOutside={(event) => {
-            event.preventDefault();
-          }}
-          onEscapeKeyDown={(event) =>
-            event.preventDefault()
-          }
-          onCloseAutoFocus={(event) =>
-            event.preventDefault()
-          }
-          className={`flex h-full w-full flex-col overflow-hidden rounded-tl-lg border-l-0 p-0 outline-0 sm:w-auto ${className}`}
+          onPointerDownOutside={handlePreventInteraction}
+          onInteractOutside={handlePreventInteraction}
+          onEscapeKeyDown={handlePreventInteraction}
+          onCloseAutoFocus={handlePreventInteraction}
+          className={sheetContentClasses()}
           role="dialog"
         >
           <SheetTitle className="sr-only">
@@ -107,11 +125,7 @@ const BasicForm = ({
             <h2 className="text-xl text-white">{title}</h2>
           </SheetHeader>
 
-          <div
-            className={`grow overflow-y-auto px-3 py-3 ${contentClassName}`}
-          >
-            {children}
-          </div>
+          <div className={contentClasses()}>{children}</div>
 
           <SheetFooter className="w-full flex-row flex-nowrap justify-end gap-3 border-t-2 border-b-gray-600 p-4">
             <SheetClose
@@ -141,6 +155,8 @@ const BasicForm = ({
       </Sheet>
     </div>
   );
-};
+});
+
+BasicForm.displayName = 'BasicForm';
 
 export default BasicForm;

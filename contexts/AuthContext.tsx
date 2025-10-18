@@ -1,10 +1,16 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client'; // Use seu cliente próprio
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  ReactNode,
+} from 'react';
+import { createClient } from '@/utils/supabase/client';
 import { ObterPerfil } from '@/data/auth/obter-perfil';
 import type { Session, User } from '@supabase/supabase-js';
 
-export interface perfil
+export interface Perfil
   extends Pick<
     User,
     | 'email'
@@ -17,14 +23,32 @@ export interface perfil
   nome: string;
 }
 
-export const useAuth = () => {
+interface AuthContextType {
+  session: Session | null;
+  user: Perfil | null;
+  loading: boolean;
+  isAuthenticated: boolean;
+  signOut: () => Promise<{ error: any }>;
+}
+
+const AuthContext = createContext<
+  AuthContextType | undefined
+>(undefined);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({
+  children,
+}: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(
     null,
   );
-  const [user, setUser] = useState<perfil | null>(null);
+  const [user, setUser] = useState<Perfil | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient(); // Use sua função createClient
+  const supabase = createClient();
 
   useEffect(() => {
     const init = async () => {
@@ -81,11 +105,27 @@ export const useAuth = () => {
     return { error };
   };
 
-  return {
+  const value: AuthContextType = {
     session,
     user,
     loading,
     isAuthenticated: !!user,
     signOut,
   };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error(
+      'useAuth deve ser usado dentro de um AuthProvider',
+    );
+  }
+  return context;
 };

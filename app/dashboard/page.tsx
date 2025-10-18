@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
 import {
   Zap,
   Users,
@@ -35,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Loading from '@/components/loading';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mock data - em produção viria da API
 const mockRooms = [

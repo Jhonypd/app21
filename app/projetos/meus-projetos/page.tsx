@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from 'react';
 import Loading from '@/components/loading';
 import BasicForm from '@/components/forms/basic-form';
@@ -39,11 +40,8 @@ import {
   EditProjetoData,
   ProjetoFormValues,
 } from '@/modules/projetos/meus-projetos/schema';
-// import 'react-grid-layout/css/styles.css';
-// import 'react-resizable/css/styles.css';
 
 const PageProjetos = () => {
-  // Estados de paginação
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 20 as Limit,
@@ -77,7 +75,6 @@ const PageProjetos = () => {
     [],
   );
 
-  // Estado do formData com valor padrão
   const [formData, setFormData] = useState<{
     values: ProjetoFormValues;
     createData?: CreateProjetoData;
@@ -91,65 +88,75 @@ const PageProjetos = () => {
     },
   });
 
-  // Buscar dados para edição
-  const fetchProjetoParaEdicao = async (
-    projetoId: string,
-  ) => {
-    try {
-      setIsLoading(true);
-      const res = await fetch(
-        `/api/projetos/obter-dados-alterar/${projetoId}`,
-      );
+  const formDataRef = useRef(formData);
+  const isEditModeRef = useRef(isEditMode);
+  const editingProjetoRef = useRef(editingProjeto);
 
-      if (!res.ok) {
-        throw new Error(
-          'Falha ao carregar os dados do projeto',
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+
+  useEffect(() => {
+    isEditModeRef.current = isEditMode;
+  }, [isEditMode]);
+
+  useEffect(() => {
+    editingProjetoRef.current = editingProjeto;
+  }, [editingProjeto]);
+
+  const fetchProjetoParaEdicao = useCallback(
+    async (projetoId: string) => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(
+          `/api/projetos/obter-dados-alterar/${projetoId}`,
         );
-      }
 
-      const data = await res.json();
-      setEditingProjeto(data.ResultadoOperacao.Projeto);
+        if (!res.ok) {
+          throw new Error(
+            'Falha ao carregar os dados do projeto',
+          );
+        }
 
-      // Inicializar formData com os dados da projeto
-      if (data.ResultadoOperacao.Projeto) {
-        setFormData({
-          values: {
-            nome: data.ResultadoOperacao.Projeto.nome || '',
-            inativo:
-              data.ResultadoOperacao.Projeto.inativo ||
-              false,
-            equipeId:
-              data.ResultadoOperacao.Projeto.equipeId,
-            gerenteId:
-              data.ResultadoOperacao.Projeto.gerenteId,
-          },
-          editData: {
-            id: data.ResultadoOperacao.Projeto.id,
-            nome: data.ResultadoOperacao.Projeto.nome,
-            inativo: data.ResultadoOperacao.Projeto.inativo,
-            equipeId:
-              data.ResultadoOperacao.Projeto.equipeId,
-            gerenteId:
-              data.ResultadoOperacao.Projeto.gerenteId,
-          },
+        const data = await res.json();
+        const projetoData = data.ResultadoOperacao.Projeto;
+
+        setEditingProjeto(projetoData);
+
+        if (projetoData) {
+          setFormData({
+            values: {
+              nome: projetoData.nome || '',
+              inativo: projetoData.inativo || false,
+              equipeId: projetoData.equipeId,
+              gerenteId: projetoData.gerenteId,
+            },
+            editData: {
+              id: projetoData.id,
+              nome: projetoData.nome,
+              inativo: projetoData.inativo,
+              equipeId: projetoData.equipeId,
+              gerenteId: projetoData.gerenteId,
+            },
+          });
+          setEquipes(data.ResultadoOperacao.ComboEquipes);
+          setMembrosDaEquipe(
+            data.ResultadoOperacao.ComboGerentes,
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        toastError({
+          description: 'Erro ao carregar dados do projeto',
         });
-        setEquipes(data.ResultadoOperacao.ComboEquipes);
-        setMembrosDaEquipe(
-          data.ResultadoOperacao.ComboGerentes,
-        );
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-      toastError({
-        description: 'Erro ao carregar dados do projeto',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [],
+  );
 
-  // Buscar equipes com paginação e filtro
-  const fetchProjetos = async () => {
+  const fetchProjetos = useCallback(async () => {
     try {
       const isPaginated =
         pagination.pageIndex > 0 ||
@@ -174,7 +181,7 @@ const PageProjetos = () => {
       const res = await fetch(url);
 
       if (!res.ok) {
-        throw new Error('Falha ao carregar as projetos');
+        throw new Error('Falha ao carregar os projetos');
       }
 
       const data = await res.json();
@@ -199,141 +206,111 @@ const PageProjetos = () => {
       setIsLoading(false);
       setIsPaginatedFetching(false);
     }
-  };
+  }, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    statusFiltroAplicado,
+  ]);
 
-  // Função para aplicar filtros
-  const aplicarFiltros = () => {
+  const aplicarFiltros = useCallback(() => {
     setStatusFiltroAplicado(statusFiltro);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 })); // Reset para primeira página
-    setIsFilterOpen(false); // Fecha o filtro após aplicar
-  };
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setIsFilterOpen(false);
+  }, [statusFiltro]);
 
-  // Função para deletar projetos
-  const handleDelete = async (ids: string[]) => {
-    try {
-      setIsDeleteLoading(true);
+  const handleDelete = useCallback(
+    async (ids: string[]) => {
+      try {
+        setIsDeleteLoading(true);
 
-      const response = await fetch(
-        '/api/projetos/delete-projetos',
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            ids: ids.join(','),
+        const response = await fetch(
+          '/api/projetos/delete-projetos',
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              ids: ids.join(','),
+            },
           },
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.erro || 'Erro ao deletar projetos',
         );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.erro || 'Erro ao deletar projetos',
+          );
+        }
+
+        const result = await response.json();
+
+        toastSuccess({
+          description: result.ResultadoOperacao.mensagem,
+        });
+
+        fetchProjetos();
+        setSelectedIds([]);
+      } catch (error) {
+        console.error('Erro ao deletar projetos:', error);
+        toastError({
+          description:
+            error instanceof Error
+              ? error.message
+              : 'Erro ao deletar projetos',
+        });
+      } finally {
+        setIsDeleteLoading(false);
       }
+    },
+    [fetchProjetos],
+  );
 
-      const result = await response.json();
-
-      toastSuccess({
-        description: result.ResultadoOperacao.mensagem,
-      });
-
-      // Recarregar a lista
-      fetchProjetos();
-      // Limpar seleção
-      setSelectedIds([]);
-    } catch (error) {
-      console.error('Erro ao deletar projetos:', error);
-      toastError({
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Erro ao deletar projetos',
-      });
-    } finally {
-      setIsDeleteLoading(false);
-    }
-  };
-
-  // Função para editar
-  const handleEdit = useCallback(async (id: string) => {
-    try {
-      await fetchProjetoParaEdicao(id);
-      setIsEditMode(true);
-      setIsSheetOpen(true);
-    } catch (error) {
-      console.error('Erro ao buscar projeto:', error);
-      toastError({
-        description: 'Erro ao carregar projeto para edição',
-      });
-    }
-  }, []);
-
-  // Buscar lista de equipes para o combo
-  const buscarEquipes = async () => {
-    try {
-      const response = await fetch('/api/equipes/combo');
-
-      if (!response.ok) {
-        throw new Error('Erro ao buscar equipes');
+  const handleEdit = useCallback(
+    async (id: string) => {
+      try {
+        await fetchProjetoParaEdicao(id);
+        setIsEditMode(true);
+        setIsSheetOpen(true);
+      } catch (error) {
+        console.error('Erro ao buscar projeto:', error);
+        toastError({
+          description:
+            'Erro ao carregar projeto para edição',
+        });
       }
+    },
+    [fetchProjetoParaEdicao],
+  );
 
-      const data = await response.json();
-      const equipesData =
-        data.ResultadoOperacao?.equipe || [];
-
-      setEquipes(
-        equipesData.map(
-          (equipe: {
-            id: string;
-            nome: string;
-            inativo: boolean;
-          }) => ({
-            id: equipe.id,
-            nome: equipe.nome,
-            inativo: equipe.inativo,
-          }),
-        ),
-      );
-    } catch (error) {
-      console.error('Erro ao buscar equipes:', error);
-      toastError({
-        description: 'Erro ao carregar lista de equipes',
-      });
-    }
-  };
-
-  // Buscar membros da equipe selecionada
-  const buscarMembrosDaEquipe = async (
-    equipeId: string,
-  ) => {
-    try {
-      const response = await fetch(
-        `/api/equipes/combo/membros/${equipeId}`,
-      );
-      const data = await response.json();
-
-      if (data.ResultadoOperacao?.sucesso) {
-        setMembrosDaEquipe(
-          data.ResultadoOperacao.pessoas.map(
-            (p: Option) => ({
-              id: p.id,
-              nome: p.nome,
-              inativo: p.inativo,
-            }),
-          ),
+  const buscarMembrosDaEquipe = useCallback(
+    async (equipeId: string) => {
+      try {
+        const response = await fetch(
+          `/api/equipes/combo/membros/${equipeId}`,
         );
-      }
-    } catch (error) {
-      console.error('Erro ao buscar membros:', error);
-    }
-  };
+        const data = await response.json();
 
-  // Função para criar novo projeto
+        if (data.ResultadoOperacao?.sucesso) {
+          setMembrosDaEquipe(
+            data.ResultadoOperacao.pessoas.map(
+              (p: Option) => ({
+                id: p.id,
+                nome: p.nome,
+                inativo: p.inativo,
+              }),
+            ),
+          );
+        }
+      } catch (error) {
+        console.error('Erro ao buscar membros:', error);
+      }
+    },
+    [],
+  );
+
   const handleCreate = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      // Carregar lista de equipes primeiro
       const response = await fetch('/api/equipes/combo');
 
       if (!response.ok) {
@@ -360,11 +337,9 @@ const PageProjetos = () => {
         ),
       );
 
-      // Só continua se carregar as equipes com sucesso
       setIsEditMode(false);
       setEditingProjeto(null);
 
-      // Resetar formData para modo criação
       setFormData({
         values: {
           nome: '',
@@ -379,7 +354,6 @@ const PageProjetos = () => {
         },
       });
 
-      // Abre o formulário apenas após carregar as equipes com sucesso
       setIsSheetOpen(true);
     } catch (error) {
       console.error('Erro ao preparar criação:', error);
@@ -393,17 +367,21 @@ const PageProjetos = () => {
       setIsLoading(false);
     }
   }, []);
+
   const handleSubmitForm = useCallback(async () => {
-    // Agora formData nunca será null porque tem valor padrão
-    console.log('Dados para envio:', formData);
+    const currentFormData = formDataRef.current;
+    const currentIsEditMode = isEditModeRef.current;
+    const currentEditingProjeto = editingProjetoRef.current;
+
+    console.log('Dados para envio:', currentFormData);
 
     try {
       setIsLoading(true);
 
       if (
-        isEditMode &&
-        editingProjeto &&
-        formData.editData
+        currentIsEditMode &&
+        currentEditingProjeto &&
+        currentFormData.editData
       ) {
         // Modo edição
         const response = await fetch(
@@ -412,9 +390,11 @@ const PageProjetos = () => {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              id: editingProjeto.id,
-              nome: formData.values.nome,
-              inativo: formData.values.inativo,
+              id: currentEditingProjeto.id,
+              nome: currentFormData.values.nome,
+              inativo: currentFormData.values.inativo,
+              equipeId: currentFormData.values.equipeId,
+              gerenteId: currentFormData.values.gerenteId,
             }),
           },
         );
@@ -422,14 +402,14 @@ const PageProjetos = () => {
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.erro || 'Erro ao atualizar equipe',
+            errorData.erro || 'Erro ao atualizar projeto',
           );
         }
 
         toastSuccess({
-          description: 'Equipe atualizada com sucesso!',
+          description: 'Projeto atualizado com sucesso!',
         });
-      } else if (formData.createData) {
+      } else if (currentFormData.createData) {
         // Modo criação
         const response = await fetch(
           '/api/projetos/novo-projeto',
@@ -437,9 +417,9 @@ const PageProjetos = () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              nome: formData.values.nome,
-              equipeId: formData.values.equipeId,
-              gerenteId: formData.values.gerenteId,
+              nome: currentFormData.values.nome,
+              equipeId: currentFormData.values.equipeId,
+              gerenteId: currentFormData.values.gerenteId,
             }),
           },
         );
@@ -447,47 +427,60 @@ const PageProjetos = () => {
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.erro || 'Erro ao criar equipe',
+            errorData.erro || 'Erro ao criar projeto',
           );
         }
 
         toastSuccess({
-          description: 'Equipe criada com sucesso!',
+          description: 'Projeto criado com sucesso!',
         });
       } else {
         throw new Error('Dados inválidos para envio');
       }
 
       setIsSheetOpen(false);
-      fetchProjetos(); // Recarregar a lista
+      fetchProjetos();
     } catch (error) {
-      console.error('Erro ao salvar equipe:', error);
+      console.error('Erro ao salvar projeto:', error);
       toastError({
         description:
           error instanceof Error
             ? error.message
-            : 'Erro ao salvar equipe',
+            : 'Erro ao salvar projeto',
       });
     } finally {
       setIsLoading(false);
     }
-  }, [formData, isEditMode, fetchProjetos]);
+  }, [fetchProjetos]);
 
-  // Fechar formulário
   const handleCloseForm = useCallback((open: boolean) => {
     setIsSheetOpen(open);
     if (!open) {
       setEditingProjeto(null);
       setIsEditMode(false);
-      // Não resetar formData completamente, apenas remove referências específicas
-      setFormData((prev) => ({
-        values: prev.values,
-        // Mantém a estrutura mas limpa dados específicos
+      // Reset mais suave do formData
+      setFormData(() => ({
+        values: {
+          nome: '',
+          inativo: false,
+          equipeId: '',
+          gerenteId: '',
+        },
       }));
     }
   }, []);
 
-  // Colunas da tabela
+  const handleDataChange = useCallback(
+    (data: {
+      values: ProjetoFormValues;
+      createData?: CreateProjetoData;
+      editData?: EditProjetoData;
+    }) => {
+      setFormData(data);
+    },
+    [],
+  );
+
   const columns = useMemo(
     () =>
       projetosColumns({
@@ -499,39 +492,33 @@ const PageProjetos = () => {
     [selectedIds, projetos, handleEdit],
   );
 
-  // Dados mapeados para a tabela
   const mappedTable = useMemo(
     () => projetos.map(mapProjetoToTableData),
     [projetos],
   );
 
-  // Handlers de paginação
-  const handlePageChange = (pageIndex: number) => {
-    setPagination((prev) => ({ ...prev, pageIndex }));
-  };
-
-  const handlePageSizeChange = (pageSize: Limit) => {
-    setPagination({ pageIndex: 0, pageSize });
-  };
-
-  // Buscar equipes quando a paginação ou filtro aplicado mudar
-  useEffect(() => {
-    fetchProjetos();
-  }, [
-    pagination.pageIndex,
-    pagination.pageSize,
-    statusFiltroAplicado,
-  ]);
-
-  const handleDataChange = useCallback(
-    (data: {
-      values: ProjetoFormValues;
-      createData?: CreateProjetoData;
-      editData?: EditProjetoData;
-    }) => {
-      setFormData(data);
+  const handlePageChange = useCallback(
+    (pageIndex: number) => {
+      setPagination((prev) => ({ ...prev, pageIndex }));
     },
     [],
+  );
+
+  const handlePageSizeChange = useCallback(
+    (pageSize: Limit) => {
+      setPagination({ pageIndex: 0, pageSize });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    fetchProjetos();
+  }, [fetchProjetos]);
+
+  const memoizedEquipes = useMemo(() => equipes, [equipes]);
+  const memoizedMembrosDaEquipe = useMemo(
+    () => membrosDaEquipe,
+    [membrosDaEquipe],
   );
 
   return (
@@ -585,7 +572,7 @@ const PageProjetos = () => {
           <DeleteButton
             onSubmit={() => handleDelete(selectedIds)}
             description="Esta ação não pode ser desfeita."
-            title="Você tem certeza que deseja excluir a(s) equipe(s) selecionada(s)?"
+            title="Você tem certeza que deseja excluir a(s) projeto(s) selecionada(s)?"
             disabled={selectedIds.length === 0}
           />
         }
@@ -607,8 +594,8 @@ const PageProjetos = () => {
             onDataChange={handleDataChange}
             initialData={editingProjeto || undefined}
             onSubmit={handleSubmitForm}
-            equipes={equipes}
-            pessoas={membrosDaEquipe}
+            equipes={memoizedEquipes}
+            pessoas={memoizedMembrosDaEquipe}
             onEquipeChange={buscarMembrosDaEquipe}
           />
         </BasicForm>

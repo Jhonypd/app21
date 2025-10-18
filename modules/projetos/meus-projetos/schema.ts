@@ -9,9 +9,13 @@ export const ProjetoFormSchema = z.object({
       'O nome da equipe precisa ter no mínimo 3 caracteres',
     )
     .max(100, 'O nome deve ter no máximo 100 caracteres'),
-  equipeId: z.uuid({
-    message: 'Selecione uma equipe válida',
-  }),
+  equipeId: z
+    .uuid({
+      message: 'Selecione uma equipe válida',
+    })
+    .nonempty({
+      message: 'A equipe é obrigatória',
+    }),
   gerenteId: z
     .string()
     .uuid({ message: 'Selecione um gerente válido' })

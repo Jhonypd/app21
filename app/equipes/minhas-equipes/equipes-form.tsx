@@ -93,6 +93,7 @@ const EquipeForm = forwardRef<
     const membrosIniciaisRef = useRef<Option[]>([]);
 
     const form = useForm<EquipeFormValues>({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       resolver: zodResolver(equipeFormSchema) as any,
       defaultValues: {
         nome: '',

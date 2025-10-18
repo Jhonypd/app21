@@ -1,32 +1,28 @@
 'use client';
 import * as React from 'react';
-
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { NavMain } from './nav-main';
 import { menus } from '@/constants/menus';
 import { NavUser } from './nav-user';
-import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { CollapsibleTrigger } from './collapsible';
-import { MdDashboard } from 'react-icons/md';
+import { useAuth } from '@/contexts/AuthContext';
 
-export function AppSidebar({
+// Memoizar o componente para evitar re-renderizações desnecessárias
+export const AppSidebar = React.memo(function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const { user, signOut } = useAuth();
   const navigate = useRouter();
 
-  const handleSignOut = async () => {
+  // Memoizar a função de logout para evitar recriações desnecessárias
+  const handleSignOut = React.useCallback(async () => {
     const { error } = await signOut();
     if (!error) {
       toast('Logout realizado', {
@@ -34,7 +30,10 @@ export function AppSidebar({
       });
       navigate.replace('/auth');
     }
-  };
+  }, [signOut, navigate]);
+
+  // Memoizar o array de menus se for estático
+  const menuItems = React.useMemo(() => menus.menuList, []);
 
   return (
     <Sidebar
@@ -45,8 +44,7 @@ export function AppSidebar({
         {/* <TeamSwitcher teams={data.teams} /> */}
       </SidebarHeader>
       <SidebarContent>
-        <NavMain menus={menus.menuList} />
-
+        <NavMain menus={menuItems} />
         {/* <NavProjects projects={menus.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
@@ -58,4 +56,7 @@ export function AppSidebar({
       <SidebarRail />
     </Sidebar>
   );
-}
+});
+
+// Definir display name para melhor debugging
+AppSidebar.displayName = 'AppSidebar';
