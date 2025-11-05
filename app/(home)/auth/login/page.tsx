@@ -16,18 +16,19 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Mail, Lock } from 'lucide-react';
-import { toast } from 'sonner';
 import { FcGoogle } from 'react-icons/fc';
 import { Separator } from '@/components/ui/separator';
 import { GiCardRandom } from 'react-icons/gi';
 import { login, signup } from '@/app/actions/login';
 import { toastError } from '@/components/custom-toast';
 import Loading from '@/components/loading';
+import { TabsCustom } from '@/components/tabs';
+import AuthForm from '@/modules/auth/components/auth-form';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
-  const [nome, setNome] = useState('');
   const [password, setPassword] = useState('');
+  const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -97,189 +98,38 @@ const Auth = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs
+            <TabsCustom
               defaultValue="login"
-              className="w-full"
-            >
-              <TabsList className="bg-background grid h-fit w-full grid-cols-2 items-center border p-2">
-                <TabsTrigger
-                  value="login"
-                  className="data-[state=active]:bg-primary"
-                >
-                  Login
-                </TabsTrigger>
-                <TabsTrigger
-                  value="signup"
-                  className="data-[state=active]:bg-primary"
-                >
-                  Cadastro
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="mb-4 w-full">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full cursor-pointer"
-                >
-                  <FcGoogle /> Continuar com Google
-                </Button>
-              </div>
-
-              <div className="text-primary-foreground mb-4 flex w-full flex-row items-center justify-between gap-2 font-semibold">
-                <Separator className="max-w-36" />
-                <span>ou</span>
-                <Separator className="max-w-36" />
-              </div>
-
-              <TabsContent
-                value="login"
-                className="space-y-4"
-              >
-                <form className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="email"
-                      className="flex items-center gap-2"
-                    >
-                      <Mail className="h-4 w-4" />
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) =>
-                        setEmail(e.target.value)
-                      }
-                      required
+              tabsTrigger={[
+                { label: 'login', value: 'login' },
+                { label: 'signup', value: 'signup' },
+              ]}
+              tabsContent={[
+                {
+                  value: 'login',
+                  content: (
+                    <AuthForm
+                      isLoading={false}
+                      isValidated={() => true}
+                      onDataChange={() => {}}
+                      onSubmit={() => {}}
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="password"
-                      className="flex items-center gap-2"
-                    >
-                      <Lock className="h-4 w-4" />
-                      Senha
-                    </Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Sua senha"
-                      value={password}
-                      onChange={(e) =>
-                        setPassword(e.target.value)
-                      }
-                      required
+                  ),
+                },
+                {
+                  value: 'signup',
+                  content: (
+                    <AuthForm
+                      authType="cadastro"
+                      isLoading={false}
+                      isValidated={() => true}
+                      onDataChange={() => {}}
+                      onSubmit={() => {}}
                     />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    formAction={(formData) =>
-                      handleAction(formData, 'login')
-                    }
-                    className="w-full"
-                    disabled={
-                      loading || !email || !password
-                    }
-                  >
-                    {loading ? 'Entrando...' : 'Entrar'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent
-                value="signup"
-                className="space-y-4"
-              >
-                <form className="space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="signup-email"
-                      className="flex items-center gap-2"
-                    >
-                      <Mail className="h-4 w-4" />
-                      Email
-                    </Label>
-                    <Input
-                      id="signup-email"
-                      name="email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={email}
-                      onChange={(e) =>
-                        setEmail(e.target.value)
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="nome"
-                      className="flex items-center gap-2"
-                    >
-                      <Mail className="h-4 w-4" />
-                      Nome
-                    </Label>
-                    <Input
-                      id="nome"
-                      name="nome"
-                      type="text"
-                      placeholder="Seu nome"
-                      value={nome}
-                      onChange={(e) =>
-                        setNome(e.target.value)
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="signup-password"
-                      className="flex items-center gap-2"
-                    >
-                      <Lock className="h-4 w-4" />
-                      Senha
-                    </Label>
-                    <Input
-                      id="signup-password"
-                      name="password"
-                      type="password"
-                      placeholder="Mínimo 6 caracteres"
-                      value={password}
-                      onChange={(e) =>
-                        setPassword(e.target.value)
-                      }
-                      required
-                      minLength={6}
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    formAction={(formData) =>
-                      handleAction(formData, 'signup')
-                    }
-                    className="w-full"
-                    disabled={
-                      loading || !email || !password
-                    }
-                  >
-                    {loading
-                      ? 'Criando conta...'
-                      : 'Criar conta'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                  ),
+                },
+              ]}
+            />
           </CardContent>
         </Card>
       </div>
