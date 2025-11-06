@@ -26,7 +26,7 @@ const LandingPage = () => {
     if (isAuthenticated) {
       router.push('/dashboard');
     } else {
-      router.push('/auth');
+      router.push('/auth/login');
     }
   };
 
