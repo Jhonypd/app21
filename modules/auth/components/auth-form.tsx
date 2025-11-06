@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import {
   useCallback,
@@ -17,6 +19,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PasswordInput } from '@/components/inputs/input-password';
 import { EmailInput } from '@/components/inputs/input-email';
 import { TextInput } from '@/components/inputs/input-text';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/form';
 
 interface LoginFormProps {
   isLoading: boolean;
@@ -127,77 +135,90 @@ const AuthForm = ({
   return (
     <FormProvider {...form}>
       <form
-        className="space-y-4"
+        className="mt-2 space-y-4"
         onSubmit={form.handleSubmit(handleSubmit)}
       >
         {authType === 'cadastro' && (
           <div className="space-y-2">
-            <TextInput
-              id="nome"
+            <FormField
+              control={form.control}
               name="nome"
-              placeholder="Seu nome"
-              label="Nome"
-              value={form.watch('nome') ?? ''}
-              onChange={(e) =>
-                form.setValue('nome', e.target.value, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                })
-              }
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TextInput
+                      id="nome"
+                      label="Nome"
+                      placeholder="Seu nome"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
         )}
 
         <div className="space-y-2">
-          <EmailInput
-            id="email"
+          <FormField
+            control={form.control}
             name="email"
-            placeholder="seu@email.com"
-            label="Email"
-            value={form.watch('email') ?? ''}
-            onChange={(e) =>
-              form.setValue('email', e.target.value, {
-                shouldValidate: true,
-                shouldDirty: true,
-              })
-            }
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <EmailInput
+                    id="email"
+                    placeholder="seu@email.com"
+                    {...field}
+                    value={field.value ?? ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
 
         <div className="space-y-2">
-          <PasswordInput
-            id="senha"
+          <FormField
+            control={form.control}
             name="senha"
-            placeholder="Sua senha"
-            label="Senha"
-            value={form.watch('senha') ?? ''}
-            onChange={(e) =>
-              form.setValue('senha', e.target.value, {
-                shouldValidate: true,
-                shouldDirty: true,
-              })
-            }
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <PasswordInput
+                    id="senha"
+                    placeholder="Sua senha"
+                    {...field}
+                    value={field.value ?? ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
 
         {authType === 'cadastro' && (
           <div className="space-y-2">
-            <PasswordInput
-              id="confirmarSenha"
+            <FormField
+              control={form.control}
               name="confirmarSenha"
-              placeholder="Confirme sua senha"
-              label="Confirmar Senha"
-              value={form.watch('confirmarSenha') ?? ''}
-              onChange={(e) =>
-                form.setValue(
-                  'confirmarSenha',
-                  e.target.value,
-                  {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  },
-                )
-              }
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <PasswordInput
+                      id="confirmarSenha"
+                      placeholder="Confirme sua senha"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
         )}

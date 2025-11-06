@@ -1,5 +1,5 @@
 export interface ApiOptions extends RequestInit {
-  revalidate?: number; // permite configurar cache em segundos
+  revalidate?: number;
 }
 
 export async function api<T>(
@@ -7,7 +7,7 @@ export async function api<T>(
   options: ApiOptions = {},
 ): Promise<T> {
   const res = await fetch(
-    `${process.env.BACKEND_URL}${path}`,
+    `${process.env.NEXT_PUBLIC_API_URL}${path}`,
     {
       ...options,
       headers: {

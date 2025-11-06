@@ -1,4 +1,5 @@
 'use client';
+
 import {
   useState,
   useEffect,
@@ -6,29 +7,21 @@ import {
   useContext,
   ReactNode,
 } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { ObterPerfil } from '@/data/auth/obter-perfil';
-import type { Session, User } from '@supabase/supabase-js';
 
-export interface Perfil
-  extends Pick<
-    User,
-    | 'email'
-    | 'id'
-    | 'aud'
-    | 'action_link'
-    | 'phone'
-    | 'user_metadata'
-  > {
-  nome: string;
+export interface Perfil {
+  id?: string;
+  nome?: string;
+  email?: string;
 }
 
 interface AuthContextType {
-  session: Session | null;
   user: Perfil | null;
   loading: boolean;
   isAuthenticated: boolean;
-  signOut: () => Promise<{ error: any }>;
+  token: string | null;
+  setToken: (t: string | null) => void;
+  refresh: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<
@@ -42,74 +35,104 @@ interface AuthProviderProps {
 export const AuthProvider = ({
   children,
 }: AuthProviderProps) => {
-  const [session, setSession] = useState<Session | null>(
-    null,
-  );
   const [user, setUser] = useState<Perfil | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const supabase = createClient();
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setSession(session);
+    let mounted = true;
 
-      if (session) {
-        const perfil = await ObterPerfil({
-          user_id: session.user.id,
+    const fetchMe = async () => {
+      try {
+        const res = await fetch('/api/auth/me', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          cache: 'no-store',
         });
-        setUser({
-          ...session.user,
-          nome: perfil?.nome ?? '',
-        });
-      }
 
-      setLoading(false);
-    };
+        if (!mounted) return;
 
-    init();
-
-    const { data: listener } =
-      supabase.auth.onAuthStateChange(
-        async (_event, newSession) => {
-          setSession(newSession);
-
-          if (newSession) {
-            const perfil = await ObterPerfil({
-              user_id: newSession.user.id,
-            });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.authenticated && json.user) {
             setUser({
-              ...newSession.user,
-              nome: perfil?.nome ?? '',
+              id: json.user.id as string | undefined,
+              nome: json.user.nome as string | undefined,
+              email: json.user.email as string | undefined,
             });
           } else {
             setUser(null);
           }
+        } else {
+          setUser(null);
+        }
+      } catch (err) {
+        console.error(
+          'Erro ao obter sessão (/api/auth/me):',
+          err,
+        );
+        setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-          setLoading(false);
-        },
-      );
+  fetchMe();
 
     return () => {
-      listener.subscription.unsubscribe();
+      mounted = false;
     };
-  }, [supabase]);
+  }, []);
+
+  const refresh = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.authenticated && json.user) {
+          setUser({
+            id: json.user.id as string | undefined,
+            nome: json.user.nome as string | undefined,
+            email: json.user.email as string | undefined,
+          });
+          return;
+        }
+      }
+      setUser(null);
+    } catch (err) {
+      console.error('Erro ao atualizar sessão (/api/auth/me):', err);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    return { error };
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.error('Erro ao deslogar:', err);
+    } finally {
+      setUser(null);
+    }
   };
 
   const value: AuthContextType = {
-    session,
     user,
     loading,
     isAuthenticated: !!user,
+    token,
+    setToken,
+    refresh,
     signOut,
   };
 

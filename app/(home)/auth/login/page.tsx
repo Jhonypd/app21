@@ -1,56 +1,109 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import { Mail, Lock } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
-import { Separator } from '@/components/ui/separator';
 import { GiCardRandom } from 'react-icons/gi';
-import { login, signup } from '@/app/actions/login';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  LoginFormValues,
+  CadastroFormValues,
+} from '@/modules/auth/schema';
 import { toastError } from '@/components/custom-toast';
 import Loading from '@/components/loading';
 import { TabsCustom } from '@/components/tabs';
 import AuthForm from '@/modules/auth/components/auth-form';
+import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      setEmail('majebi4327@bllibl.com');
-      setPassword('123456');
-    }
-  }, []);
+  const router = useRouter();
+  const auth = useAuth();
 
   const handleAction = async (
-    formData: FormData,
+    data: LoginFormValues | CadastroFormValues,
     action: 'login' | 'signup',
   ) => {
     setLoading(true);
-
+    const { setToken, refresh } = auth;
     try {
       if (action === 'login') {
-        await login(formData);
+        // Log do payload antes de enviar
+        const payload = {
+          email: (data as LoginFormValues).email,
+          senha: (data as LoginFormValues).senha,
+        };
+        console.log('Enviando login:', payload);
+
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          cache: 'no-store',
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+
+        // Log da resposta
+        console.log('Status:', res.status);
+        console.log(
+          'Headers:',
+          Object.fromEntries(res.headers),
+        );
+
+        const text = await res.text();
+        console.log('Resposta raw:', text);
+
+        const json = text ? JSON.parse(text) : {};
+        console.log('Resposta JSON:', json);
+
+        if (!res.ok) {
+          toastError({
+            description: json?.error || 'Erro no login',
+          });
+          return;
+        }
+
+        // se a API retornar token (apenas em dev quando habilitado), salva no contexto
+        if (json?.token) {
+          setToken(json.token as string);
+          console.log('Token salvo no contexto');
+        }
+
+        // atualiza sessão via /api/auth/me
+        await refresh();
+        console.log('Sessão atualizada');
+
+        // redireciona para dashboard
+        router.push('/');
       } else {
-        await signup(formData);
+        // signup via API proxy
+        const payload = data as CadastroFormValues;
+        const res = await fetch('/api/auth/criarConta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toastError({
+            description: json?.error || 'Erro no cadastro',
+          });
+          return;
+        }
+        // se backend indicar redirect para confirmação de email
+        const redirectTo =
+          json?.redirect ?? '/confirmacao-email';
+        router.push(redirectTo);
       }
-      // O redirect acontece nas Server Actions, então não precisamos fazer nada aqui
     } catch (error: unknown) {
       console.error('Auth error:', error);
       if (error instanceof Error) {
@@ -109,10 +162,12 @@ const Auth = () => {
                   value: 'login',
                   content: (
                     <AuthForm
-                      isLoading={false}
+                      isLoading={loading}
                       isValidated={() => true}
                       onDataChange={() => {}}
-                      onSubmit={() => {}}
+                      onSubmit={(data) =>
+                        handleAction(data, 'login')
+                      }
                     />
                   ),
                 },
@@ -121,15 +176,33 @@ const Auth = () => {
                   content: (
                     <AuthForm
                       authType="cadastro"
-                      isLoading={false}
+                      isLoading={loading}
                       isValidated={() => true}
                       onDataChange={() => {}}
-                      onSubmit={() => {}}
+                      onSubmit={(data) =>
+                        handleAction(data, 'signup')
+                      }
                     />
                   ),
                 },
               ]}
             />
+            <div className="mt-4 grid w-full grid-cols-3 items-center justify-between overflow-hidden">
+              <Separator />
+              <span className="text-card-foreground mx-auto">
+                Ou
+              </span>
+              <Separator />
+            </div>
+
+            <Button
+              variant="outline"
+              className="bg-background text-foreground hover:bg-accent hover:text-foreground mt-4 w-full justify-center"
+              disabled // implementar lógica de login com Google
+            >
+              <FcGoogle className="mr-2 h-5 w-5" />
+              Continue com o Google
+            </Button>
           </CardContent>
         </Card>
       </div>
