@@ -37,76 +37,193 @@ export const AuthProvider = ({
 }: AuthProviderProps) => {
   const [user, setUser] = useState<Perfil | null>(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const fetchMe = async () => {
+  console.log({ user });
+  // inicializa token a partir do localStorage (client-side)
+  const [token, setTokenState] = useState<string | null>(
+    () => {
       try {
-        const res = await fetch('/api/auth/me', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          cache: 'no-store',
-        });
+        if (typeof window !== 'undefined') {
+          return localStorage.getItem('access_token');
+        }
+      } catch {
+        // ignore
+      }
+      return null;
+    },
+  );
 
-        if (!mounted) return;
-
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.authenticated && json.user) {
-            setUser({
-              id: json.user.id as string | undefined,
-              nome: json.user.nome as string | undefined,
-              email: json.user.email as string | undefined,
-            });
-          } else {
-            setUser(null);
-          }
+  // functor para setar token e persistir em localStorage
+  const setToken = (t: string | null) => {
+    try {
+      if (typeof window !== 'undefined') {
+        if (t) {
+          localStorage.setItem('access_token', t);
         } else {
+          localStorage.removeItem('access_token');
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+    setTokenState(t);
+  };
+
+  // Helper: decodifica payload de JWT (sem verificar assinatura)
+  const decodeJwt = (jwt: string | null) => {
+    if (!jwt) return null;
+    try {
+      const parts = jwt.split('.');
+      if (parts.length < 2) return null;
+      const payload = parts[1];
+      // add padding se necessário
+      const pad = payload.length % 4;
+      const padded =
+        pad === 0 ? payload : payload + '='.repeat(4 - pad);
+      const decoded = atob(
+        padded.replace(/-/g, '+').replace(/_/g, '/'),
+      );
+      return JSON.parse(
+        decodeURIComponent(
+          decoded
+            .split('')
+            .map(function (c) {
+              return (
+                '%' +
+                ('00' + c.charCodeAt(0).toString(16)).slice(
+                  -2,
+                )
+              );
+            })
+            .join(''),
+        ),
+      );
+    } catch {
+      console.error('Erro ao decodificar JWT:');
+      return null;
+    }
+  };
+
+  // Ao montar, se houver token no storage, popula user a partir do token
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (token) {
+          const payload = decodeJwt(token);
+          if (payload) {
+            setUser({
+              id:
+                (payload['Usu_Id'] as string) ||
+                (payload.sub as string) ||
+                (payload.id as string) ||
+                undefined,
+              nome:
+                (payload['Usu_na'] as string) ||
+                (payload.name as string) ||
+                (payload.nome as string) ||
+                undefined,
+              email: (payload.email as string) || undefined,
+            });
+            return;
+          }
+          setUser(null);
+          return;
+        }
+
+        // se não tem token local, tenta obter sessão do servidor via cookie HttpOnly
+        try {
+          const res = await fetch('/api/auth/session', {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store',
+          });
+          if (res.ok) {
+            const json = await res.json();
+            // ApiResponse wrapper
+            if (json?.Sucesso && json?.Resultado) {
+              setUser({
+                id: json.Resultado.id || undefined,
+                nome: json.Resultado.nome || undefined,
+                email: json.Resultado.email || undefined,
+              });
+              return;
+            }
+          }
+          setUser(null);
+        } catch (err) {
+          console.error(
+            'Erro ao obter sessão via /api/auth/session:',
+            err,
+          );
           setUser(null);
         }
-      } catch (err) {
-        console.error(
-          'Erro ao obter sessão (/api/auth/me):',
-          err,
-        );
-        setUser(null);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
-
-  fetchMe();
-
-    return () => {
-      mounted = false;
-    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresh agora deriva do token (se existir). Caso queira implementar refresh token
+  // no backend, adapte aqui para chamar o endpoint apropriado e atualizar o token.
   const refresh = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/auth/me', {
-        method: 'GET',
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.authenticated && json.user) {
+      if (token) {
+        const payload = decodeJwt(token);
+        if (payload) {
           setUser({
-            id: json.user.id as string | undefined,
-            nome: json.user.nome as string | undefined,
-            email: json.user.email as string | undefined,
+            id:
+              (payload['Usu_Id'] as string) ||
+              (payload.sub as string) ||
+              (payload.id as string) ||
+              undefined,
+            nome:
+              (payload['Usu_na'] as string) ||
+              (payload.name as string) ||
+              (payload.nome as string) ||
+              undefined,
+            email: (payload.email as string) || undefined,
           });
           return;
         }
+        setUser(null);
+        return;
       }
-      setUser(null);
+
+      // se não tem token local, tenta obter sessão do servidor via cookie HttpOnly
+      try {
+        const res = await fetch('/api/auth/session', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.Sucesso && json?.Resultado) {
+            setUser({
+              id: json.Resultado.id || undefined,
+              nome: json.Resultado.nome || undefined,
+              email: json.Resultado.email || undefined,
+            });
+            return;
+          }
+        }
+        setUser(null);
+        return;
+      } catch (err) {
+        console.error(
+          'Erro ao atualizar sessão via /api/auth/session:',
+          err,
+        );
+        setUser(null);
+        return;
+      }
     } catch (err) {
-      console.error('Erro ao atualizar sessão (/api/auth/me):', err);
+      console.error(
+        'Erro ao atualizar sessão via token:',
+        err,
+      );
       setUser(null);
     } finally {
       setLoading(false);
@@ -115,13 +232,20 @@ export const AuthProvider = ({
 
   const signOut = async () => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      // opcional: informar backend sobre logout se existir endpoint
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch {
+        // ignore erro se rota não existir
+      }
     } catch (err) {
       console.error('Erro ao deslogar:', err);
     } finally {
+      // limpa token e usuário localmente
+      setToken(null);
       setUser(null);
     }
   };

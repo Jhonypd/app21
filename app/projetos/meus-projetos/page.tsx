@@ -25,6 +25,7 @@ import {
   toastInfo,
   toastSuccess,
 } from '@/components/custom-toast';
+import obterMensagemApi from '@/services/api/response-utils';
 import { Option } from '@/components/inputs/input-multi-command';
 import { ComboBoxInput } from '@/components/inputs/input-combobox';
 import { FaLaptopCode } from 'react-icons/fa';
@@ -244,7 +245,10 @@ const PageProjetos = () => {
         const result = await response.json();
 
         toastSuccess({
-          description: result.ResultadoOperacao.mensagem,
+          description:
+            obterMensagemApi(result) ||
+            result.ResultadoOperacao?.mensagem ||
+            'Operação concluída',
         });
 
         fetchProjetos();

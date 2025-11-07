@@ -32,6 +32,7 @@ import {
   toastInfo,
   toastSuccess,
 } from '@/components/custom-toast';
+import obterMensagemApi from '@/services/api/response-utils';
 import { Option } from '@/components/inputs/input-multi-command';
 import { ComboBoxInput } from '@/components/inputs/input-combobox';
 import {
@@ -173,7 +174,7 @@ const PageEquipes = () => {
   };
 
   // Buscar equipes com paginação e filtro
-  const fetchEquipes = async () => {
+  const fetchEquipes = useCallback(async () => {
     try {
       const isPaginated =
         pagination.pageIndex > 0 ||
@@ -223,7 +224,11 @@ const PageEquipes = () => {
       setIsLoading(false);
       setIsPaginatedFetching(false);
     }
-  };
+  }, [
+    pagination.pageIndex,
+    pagination.pageSize,
+    statusFiltroAplicado,
+  ]);
 
   // Função para aplicar filtros
   const aplicarFiltros = () => {
@@ -258,7 +263,10 @@ const PageEquipes = () => {
       const result = await response.json();
 
       toastSuccess({
-        description: result.ResultadoOperacao.mensagem,
+        description:
+          obterMensagemApi(result) ||
+          result.ResultadoOperacao?.mensagem ||
+          'Operação concluída',
       });
 
       fetchEquipes();
@@ -393,7 +401,7 @@ const PageEquipes = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, isEditMode, editingEquipe]);
+  }, [formData, isEditMode, editingEquipe, fetchEquipes]);
 
   // Fechar formulário
   const handleCloseForm = useCallback((open: boolean) => {
@@ -441,6 +449,7 @@ const PageEquipes = () => {
     pagination.pageIndex,
     pagination.pageSize,
     statusFiltroAplicado,
+    fetchEquipes,
   ]);
 
   const handleDataChange = useCallback(

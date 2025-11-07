@@ -6,12 +6,18 @@ export interface LoginPayload {
   senha: string;
 }
 
-interface ResponseLogin {
+export interface CriarContaPayload {
+  nome: string;
+  email: string;
+  senha: string;
+}
+
+export interface ResponseLogin {
   token: string;
   dataExpiracao: Date;
 }
 
-interface ResponseCriarConta {
+export interface ResponseCriarConta {
   id: string;
 }
 
@@ -27,9 +33,10 @@ export const AuthApi = apiSlice.injectEndpoints({
         body: credentials,
       }),
     }),
+
     criarConta: builder.mutation<
       ApiResponse<ResponseCriarConta>,
-      LoginPayload
+      CriarContaPayload
     >({
       query: (userData) => ({
         url: '/auth/criarConta',
