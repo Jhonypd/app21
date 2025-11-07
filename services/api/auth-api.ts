@@ -6,16 +6,31 @@ export interface LoginPayload {
   senha: string;
 }
 
+interface ResponseLogin {
+  token: string;
+  dataExpiracao: Date;
+}
+
+interface ResponseCriarConta {
+  id: string;
+}
+
 export const AuthApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    login: builder.mutation<ApiResponse, LoginPayload>({
+    login: builder.mutation<
+      ApiResponse<ResponseLogin>,
+      LoginPayload
+    >({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
         body: credentials,
       }),
     }),
-    register: builder.mutation<ApiResponse, LoginPayload>({
+    criarConta: builder.mutation<
+      ApiResponse<ResponseCriarConta>,
+      LoginPayload
+    >({
       query: (userData) => ({
         url: '/auth/criarConta',
         method: 'POST',
@@ -24,3 +39,6 @@ export const AuthApi = apiSlice.injectEndpoints({
     }),
   }),
 });
+
+export const { useLoginMutation, useCriarContaMutation } =
+  AuthApi;

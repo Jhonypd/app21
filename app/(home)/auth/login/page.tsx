@@ -20,11 +20,18 @@ import Loading from '@/components/loading';
 import { TabsCustom } from '@/components/tabs';
 import AuthForm from '@/modules/auth/components/auth-form';
 import { Separator } from '@/components/ui/separator';
+import {
+  useCriarContaMutation,
+  useLoginMutation,
+} from '@/services/api/auth-api';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const auth = useAuth();
+
+  const [login] = useLoginMutation();
+  const [criarConta] = useCriarContaMutation();
 
   const handleAction = async (
     data: LoginFormValues | CadastroFormValues,
@@ -41,40 +48,19 @@ const Auth = () => {
         };
         console.log('Enviando login:', payload);
 
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          cache: 'no-store',
-          credentials: 'include',
-          body: JSON.stringify(payload),
-        });
+        const res = await login(payload).unwrap();
 
-        // Log da resposta
-        console.log('Status:', res.status);
-        console.log(
-          'Headers:',
-          Object.fromEntries(res.headers),
-        );
-
-        const text = await res.text();
-        console.log('Resposta raw:', text);
-
-        const json = text ? JSON.parse(text) : {};
-        console.log('Resposta JSON:', json);
-
-        if (!res.ok) {
+        if (!res.Sucesso) {
           toastError({
-            description: json?.error || 'Erro no login',
+            description:
+              res?.Mensagem || 'Erro durante login',
           });
           return;
         }
 
         // se a API retornar token (apenas em dev quando habilitado), salva no contexto
-        if (json?.token) {
-          setToken(json.token as string);
+        if (res.Resultado?.token) {
+          setToken(res.Resultado.token as string);
           console.log('Token salvo no contexto');
         }
 
@@ -87,21 +73,18 @@ const Auth = () => {
       } else {
         // signup via API proxy
         const payload = data as CadastroFormValues;
-        const res = await fetch('/api/auth/criarConta', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) {
+        const res = await criarConta(payload).unwrap();
+
+        if (!res.Sucesso) {
           toastError({
-            description: json?.error || 'Erro no cadastro',
+            description:
+              res?.Mensagem || 'Erro no cadastro',
           });
           return;
         }
         // se backend indicar redirect para confirmação de email
         const redirectTo =
-          json?.redirect ?? '/confirmacao-email';
+          res?.Resultado?.id ?? '/confirmacao-email';
         router.push(redirectTo);
       }
     } catch (error: unknown) {
