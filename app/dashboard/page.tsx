@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  Zap,
   Users,
   Clock,
   TrendingUp,
@@ -93,7 +92,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      navigate.replace('/auth');
+      navigate.replace('/auth/login');
     }
   }, [loading, isAuthenticated, navigate]);
 
@@ -185,7 +184,7 @@ const Dashboard = () => {
             </h2>
             <p className="text-muted-foreground">
               Bem-vindo de volta,{' '}
-              {user?.email?.split('@')[0]}! 👋
+              {user?.Usu_na.split(' ')[0]}! 👋
             </p>
           </div>
           <div className="flex items-center gap-2">

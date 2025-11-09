@@ -29,10 +29,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { perfil } from '@/hooks/useAuth';
+import { Perfil } from '@/contexts/AuthContext';
+// import { perfil } from '@/hooks/useAuth';
 
 interface NavUserProps {
-  user?: perfil | null;
+  user?: Perfil | null;
   onLogout?: () => void;
 }
 
@@ -43,13 +44,12 @@ export function NavUser({
   const { isMobile } = useSidebar();
 
   // Função para extrair iniciais do email ou nome
-  const getUserInitials = (user: perfil | null) => {
-    if (!user?.email) return 'U';
+  const getUserInitials = (user: Perfil | null) => {
+    if (!user?.Email) return 'U';
 
     // Se tiver user_metadata com nome, usa as iniciais do nome
-    if (user.nome) {
-      return user.nome
-        .split(' ')
+    if (user.Usu_na) {
+      return user.Usu_na.split(' ')
         .map((name: string) => name.charAt(0))
         .join('')
         .toUpperCase()
@@ -57,24 +57,22 @@ export function NavUser({
     }
 
     // Senão, usa as duas primeiras letras do email antes do @
-    return user.email
-      .split('@')[0]
+    return user.Email.split('@')[0]
       .slice(0, 2)
       .toUpperCase();
   };
 
   // Função para obter o nome de exibição
-  const getDisplayName = (user: perfil | null) => {
+  const getDisplayName = (user: Perfil | null) => {
     if (!user) return 'Guest User';
-    return user.nome || user.email?.split('@')[0] || 'User';
+    return (
+      user.Usu_na || user.Email?.split('@')[0] || 'User'
+    );
   };
 
   // Função para obter avatar URL
-  const getAvatarUrl = (user: perfil | null) => {
-    return (
-      user?.user_metadata?.avatar_url ||
-      user?.user_metadata?.picture
-    );
+  const getAvatarUrl = (user: Perfil | null) => {
+    return user?.Idp;
   };
 
   const handleLogout = () => {
@@ -108,7 +106,7 @@ export function NavUser({
                   {getDisplayName(user)}
                 </span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {user?.email || 'No email'}
+                  {user?.Email || 'No email'}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -138,7 +136,7 @@ export function NavUser({
                     {getDisplayName(user)}
                   </span>
                   <span className="text-muted-foreground truncate text-xs">
-                    {user?.email || 'No email'}
+                    {user?.Email || 'No email'}
                   </span>
                 </div>
               </div>

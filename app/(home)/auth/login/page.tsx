@@ -28,7 +28,7 @@ import {
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { setToken, refresh } = useAuth();
+  const { refresh } = useAuth();
 
   const [login] = useLoginMutation();
   const [criarConta] = useCriarContaMutation();
@@ -50,26 +50,70 @@ const Auth = () => {
         const result = res.data;
 
         // Se o interceptor já tratou o erro, apenas encerra
-        if (!result?.Sucesso) return;
-
-        if (result.Resultado?.token) {
-          setToken(result.Resultado.token);
+        if (!result?.Sucesso) {
+          setLoading(false);
+          return;
         }
 
-        await refresh();
-        router.push('/');
+        if (result.Resultado?.token) {
+          console.log('Token recebido no login');
+
+          // Aguarda o token ser salvo no cookie
+          const setTokenResponse = await fetch(
+            '/api/auth/set-token',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                token: result.Resultado.token,
+              }),
+            },
+          );
+
+          if (!setTokenResponse.ok) {
+            console.error('Erro ao salvar token');
+            setLoading(false);
+            return;
+          }
+
+          console.log(
+            'Token salvo no cookie, atualizando sessão...',
+          );
+
+          // Pequeno delay para garantir que o cookie foi setado
+          await new Promise((resolve) =>
+            setTimeout(resolve, 100),
+          );
+
+          // Atualiza a sessão para pegar os dados do usuário do cookie
+          await refresh();
+
+          console.log(
+            'Sessão atualizada, redirecionando...',
+          );
+
+          // Redireciona para o dashboard
+          router.push('/dashboard');
+        }
       } else {
         const payload = data as CadastroFormValues;
         const res = await criarConta(payload);
         const result = res.data;
 
-        if (!result?.Sucesso) return;
+        if (!result?.Sucesso) {
+          setLoading(false);
+          return;
+        }
 
-        const redirectTo =
-          result?.Resultado?.id ?? '/confirmacao-email';
-        router.push(redirectTo);
+        if (result?.Resultado?.id) {
+          router.push('/confirmacao-email');
+        }
       }
-    } finally {
+    } catch (error) {
+      console.error('Erro na autenticação:', error);
       setLoading(false);
     }
   };

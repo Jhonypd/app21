@@ -1,21 +1,20 @@
 import { ApiResponse } from '@/services/interfaces';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
-export async function GET(req: Request) {
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const match = cookieHeader
-      .split(';')
-      .map((c) => c.trim())
-      .find((c) => c.startsWith('access_token='));
-
-    const token = match ? match.split('=')[1] : null;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('access_token')?.value;
 
     if (!token) {
       const body: ApiResponse = {
         Resultado: null,
         Sucesso: false,
-        Mensagem: 'Sem sessão',
+        Mensagem: 'Sem sessão ativa',
         CodigoRetorno: 401,
         TipoRetorno: 0,
       };
@@ -58,18 +57,12 @@ export async function GET(req: Request) {
     }
 
     const perfil = {
-      id:
-        (payload && (payload['Usu_Id'] as string)) ||
-        (payload && (payload['sub'] as string)) ||
-        (payload && (payload['id'] as string)) ||
-        null,
-      nome:
-        (payload && (payload['Usu_na'] as string)) ||
-        (payload && (payload['name'] as string)) ||
-        (payload && (payload['nome'] as string)) ||
-        null,
-      email:
-        (payload && (payload['email'] as string)) || null,
+      id: payload && (payload['Usu_Id'] as string),
+      nome: payload && (payload['Usu_na'] as string),
+      email: payload && (payload['Email'] as string),
+      idp: payload && (payload['Idp'] as string),
+      dt_ex:
+        payload && new Date(payload['Dt_Ex'] as string),
     };
 
     const body: ApiResponse<typeof perfil> = {
@@ -79,7 +72,7 @@ export async function GET(req: Request) {
       CodigoRetorno: 200,
       TipoRetorno: 0,
     };
-
+    debugger;
     return NextResponse.json(body, { status: 200 });
   } catch (err) {
     const body: ApiResponse = {

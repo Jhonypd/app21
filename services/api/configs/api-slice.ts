@@ -11,15 +11,10 @@ import { toastError } from '@/components/custom-toast';
 
 // Base query com interceptação global de erros
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL,
+  baseUrl: process.env.NEXT_PUBLIC_API_URL, // Volta para o backend
+  credentials: 'include',
   prepareHeaders: (headers) => {
-    // Recupera token JWT do localStorage (de forma segura)
-    const token =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('access_token')
-        : null;
-    if (token)
-      headers.set('Authorization', `Bearer ${token}`);
+    headers.set('Content-Type', 'application/json');
     return headers;
   },
 });
@@ -36,8 +31,13 @@ const baseQueryWithInterceptor: BaseQueryFn<
   );
 
   if (result.error) {
-    const status = result.error.status;
-    const data: any = result.error.data;
+    const data = result.error.data as
+      | {
+          Mensagem?: string;
+          message?: string;
+          Detalhe?: string;
+        }
+      | undefined;
 
     // Extrai mensagem padronizada do backend
     const mensagem =
@@ -46,19 +46,12 @@ const baseQueryWithInterceptor: BaseQueryFn<
       ? ` (${data.Detalhe})`
       : '';
 
-    // Evita toasts múltiplos em chamadas simultâneas (você pode aprimorar isso se quiser)
+    // Evita toasts múltiplos em chamadas simultâneas
     toastError({
       description: `${mensagem}${detalhe}`,
     });
 
-    // Retorna erro padronizado
-    return {
-      error: {
-        ...result.error,
-        message: mensagem,
-        status,
-      },
-    };
+    return result;
   }
 
   return result;

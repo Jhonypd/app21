@@ -38,12 +38,12 @@ const LandingPage = () => {
           <div className="mx-auto max-w-4xl space-y-8 text-center">
             {/* User Welcome (if logged in) */}
             {isAuthenticated && user && (
-              <div className="mb-8 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 p-4 dark:from-indigo-950/20 dark:to-purple-950/20">
-                <p className="text-muted-foreground text-sm">
+              <div className="mb-8 flex w-full justify-center rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 p-4 text-nowrap dark:from-indigo-950/20 dark:to-purple-950/20">
+                <p className="text-muted-foreground text-sm font-medium">
                   Bem-vindo de volta,
-                </p>
-                <p className="text-foreground font-medium">
-                  {user.nome}
+                  <span className="ml-1">
+                    {user.Usu_na.split(' ')[0]}!
+                  </span>
                 </p>
               </div>
             )}
@@ -59,7 +59,6 @@ const LandingPage = () => {
               <h1 className="text-foreground mb-4 text-4xl font-bold sm:text-5xl lg:text-6xl">
                 Planning Poker
                 <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                  {' '}
                   Ágil
                 </span>
               </h1>
@@ -96,7 +95,7 @@ const LandingPage = () => {
                 <Button
                   variant="outline"
                   size="lg"
-                  onClick={() => router.push('/auth')}
+                  onClick={() => router.push('/auth/login')}
                   className="flex items-center gap-2 px-8 py-6 text-lg"
                 >
                   <LogIn className="h-5 w-5" />
@@ -170,7 +169,7 @@ const LandingPage = () => {
         <div className="container mx-auto max-w-7xl px-4 py-6">
           <div className="flex items-center justify-center">
             <p className="text-muted-foreground text-sm">
-              © 2024 Planning Poker Ágil. Desenvolvido com
+              © 2025 Planning Poker Ágil. Desenvolvido com
               ❤️ para equipes ágeis.
             </p>
           </div>

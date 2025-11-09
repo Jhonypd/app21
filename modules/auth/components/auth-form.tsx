@@ -52,14 +52,17 @@ const AuthForm = ({
     confirmarSenha?: string;
   };
 
+  const isDevelopment =
+    process.env.NODE_ENV === 'development';
+
   const defaultValues = useMemo<AuthFormValues>(
     () => ({
       nome: '',
-      email: '',
-      senha: '',
+      email: isDevelopment ? 'jhony-16@live.com' : '',
+      senha: isDevelopment ? '123456' : '',
       confirmarSenha: '',
     }),
-    [],
+    [isDevelopment],
   );
 
   const form = useForm<AuthFormValues>({
