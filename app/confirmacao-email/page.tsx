@@ -1,6 +1,29 @@
+'use client';
 import { EmailInput } from '@/components/inputs/input-email';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useNovoCodigoMutation } from '@/services/api/auth-api';
+import { Link } from 'lucide-react';
+import { useState } from 'react';
 
 const ConfirmacaoEmail = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [novoEmail] = useNovoCodigoMutation();
+  const handleEmailChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setEmail(e.target.value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    await novoEmail({ email });
+    setIsLoading(false);
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
@@ -12,15 +35,31 @@ const ConfirmacaoEmail = () => {
           Clique no link para ativar sua conta.
         </p>
 
-        <div className="mt-6 flex justify-center">
-          <EmailInput
-            onChange={() => {}}
-            value=""
-            label="Email"
-            placeholder="seu@email.com"
-            disabled={true}
-          />
-        </div>
+        <Card>
+          <CardContent>
+            <EmailInput
+              onChange={handleEmailChange}
+              value={email}
+              label="Email"
+              placeholder="seu@email.com"
+              disabled={isLoading || !email}
+            />
+            <Button
+              disabled={isLoading || !email}
+              onClick={handleSubmit}
+            >
+              Enviar
+            </Button>
+          </CardContent>
+        </Card>
+        <Link href="/auth/login">
+          <Button
+            variant="link"
+            className="mt-4"
+          >
+            Voltar para o login
+          </Button>
+        </Link>
       </div>
     </div>
   );

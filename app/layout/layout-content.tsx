@@ -21,6 +21,7 @@ const HIDDEN_SIDEBAR_PATHS = [
   '/auth/forgot-password',
   '/error',
   '/',
+  '/confirmacao-email',
 ] as const;
 
 // Componente para o layout sem sidebar
