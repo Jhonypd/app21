@@ -16,6 +16,11 @@ export interface NovoCodigoPayload {
   email: string;
 }
 
+export interface ConficaoContaEmilPayload {
+  codigo: string;
+  confirmarConta: boolean;
+}
+
 export interface ResponseLogin {
   token: string;
   dataExpiracao: Date;
@@ -24,9 +29,11 @@ export interface ResponseLogin {
 export interface ResponseCriarConta {
   id: string;
 }
-// export interface ResponseNovoCodigo {
 
-// }
+export interface ResponseConfirmacaoCodigo {
+  id: string;
+  contaConfirmada: boolean;
+}
 
 export const AuthApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -59,6 +66,16 @@ export const AuthApi = apiSlice.injectEndpoints({
         url: '/auth/novoCodigo',
         method: 'POST',
         body: email,
+      }),
+    }),
+
+    validaCodigoEmail: builder.mutation<
+      ApiResponse<ResponseConfirmacaoCodigo>,
+      ConficaoContaEmilPayload
+    >({
+      query: () => ({
+        url: '/auth/validaCodigoEmail',
+        method: 'GET',
       }),
     }),
   }),

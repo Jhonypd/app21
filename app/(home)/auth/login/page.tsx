@@ -24,9 +24,12 @@ import {
   useCriarContaMutation,
   useLoginMutation,
 } from '@/services/api/auth-api';
+import Link from 'next/link';
+import ConfirmacaoEmailConta from '@/components/pages/confirmacao-email-conta';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
+  const [contaCriada, setContaCriada] = useState(false);
   const router = useRouter();
   const { refresh } = useAuth();
 
@@ -49,16 +52,12 @@ const Auth = () => {
         const res = await login(payload);
         const result = res.data;
 
-        // Se o interceptor já tratou o erro, apenas encerra
         if (!result?.Sucesso) {
           setLoading(false);
           return;
         }
 
         if (result.Resultado?.token) {
-          console.log('Token recebido no login');
-
-          // Aguarda o token ser salvo no cookie
           const setTokenResponse = await fetch(
             '/api/auth/set-token',
             {
@@ -79,23 +78,10 @@ const Auth = () => {
             return;
           }
 
-          console.log(
-            'Token salvo no cookie, atualizando sessão...',
-          );
-
-          // Pequeno delay para garantir que o cookie foi setado
           await new Promise((resolve) =>
             setTimeout(resolve, 100),
           );
-
-          // Atualiza a sessão para pegar os dados do usuário do cookie
           await refresh();
-
-          console.log(
-            'Sessão atualizada, redirecionando...',
-          );
-
-          // Redireciona para o dashboard
           router.push('/dashboard');
         }
       } else {
@@ -109,7 +95,8 @@ const Auth = () => {
         }
 
         if (result?.Resultado?.id) {
-          router.push('/confirmacao-email');
+          setContaCriada(true);
+          setLoading(false);
         }
       }
     } catch (error) {
@@ -126,87 +113,115 @@ const Auth = () => {
           type="transaction"
         />
       )}
-      <div className="bg-background flex min-h-screen items-center justify-center p-4">
+
+      <div className="from-background via-muted/20 to-background flex min-h-screen items-center justify-center bg-gradient-to-br p-4">
         <div className="w-full max-w-md space-y-8">
-          <div className="flex flex-col space-y-4 text-center">
-            <div className="flex items-center justify-center">
-              <div className="shadow-glow rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-4">
-                <GiCardRandom className="text-muted h-12 w-12" />
-              </div>
-            </div>
-            <h1 className="text-foreground text-center text-3xl font-bold">
-              Planning Poker
-              <span className="ml-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                Ágil
-              </span>
-            </h1>
-            <p className="text-muted-foreground">
-              Faça login ou crie sua conta para começar
-            </p>
-          </div>
+          {!contaCriada ? (
+            <>
+              {/* Header */}
+              <div className="flex flex-col space-y-6 text-center">
+                <div className="flex items-center justify-center">
+                  <div className="bg-primary shadow-primary/20 rounded-2xl p-4 shadow-lg">
+                    <GiCardRandom className="text-primary-foreground h-12 w-12" />
+                  </div>
+                </div>
 
-          <Card className="bg-gradient-card border-border shadow-card">
-            <CardHeader>
-              <CardTitle className="text-foreground text-center">
-                Acesso
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TabsCustom
-                defaultValue="login"
-                tabsTrigger={[
-                  { label: 'login', value: 'login' },
-                  { label: 'signup', value: 'signup' },
-                ]}
-                tabsContent={[
-                  {
-                    value: 'login',
-                    content: (
-                      <AuthForm
-                        isLoading={loading}
-                        isValidated={() => true}
-                        onDataChange={() => {}}
-                        onSubmit={(data) =>
-                          handleAction(data, 'login')
-                        }
-                      />
-                    ),
-                  },
-                  {
-                    value: 'signup',
-                    content: (
-                      <AuthForm
-                        authType="cadastro"
-                        isLoading={loading}
-                        isValidated={() => true}
-                        onDataChange={() => {}}
-                        onSubmit={(data) =>
-                          handleAction(data, 'signup')
-                        }
-                      />
-                    ),
-                  },
-                ]}
-              />
+                <div className="space-y-2">
+                  <h1 className="text-foreground text-4xl font-bold">
+                    Planning Poker{' '}
+                    <span className="text-primary">
+                      Ágil
+                    </span>
+                  </h1>
+                </div>
 
-              <div className="mt-4 grid w-full grid-cols-3 items-center justify-between overflow-hidden">
-                <Separator />
-                <span className="text-card-foreground mx-auto">
-                  Ou
-                </span>
-                <Separator />
+                <p className="text-muted-foreground text-lg">
+                  Faça login ou crie sua conta para começar
+                </p>
               </div>
 
-              <Button
-                variant="outline"
-                className="bg-background text-foreground hover:bg-accent hover:text-foreground mt-4 w-full justify-center"
-                disabled // implementar login via Google depois
-              >
-                <FcGoogle className="mr-2 h-5 w-5" />
-                Continue com o Google
-              </Button>
-            </CardContent>
-          </Card>
+              {/* Card de Login/Cadastro */}
+              <Card className="border-primary/20 shadow-primary/5 border-2 shadow-xl">
+                <CardHeader className="from-primary/5 to-primary/10 bg-gradient-to-r">
+                  <CardTitle className="text-center text-2xl">
+                    Acesso
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <TabsCustom
+                    defaultValue="login"
+                    tabsTrigger={[
+                      { label: 'Login', value: 'login' },
+                      {
+                        label: 'Cadastro',
+                        value: 'signup',
+                      },
+                    ]}
+                    tabsContent={[
+                      {
+                        value: 'login',
+                        content: (
+                          <AuthForm
+                            isLoading={loading}
+                            isValidated={() => true}
+                            onDataChange={() => {}}
+                            onSubmit={(data) =>
+                              handleAction(data, 'login')
+                            }
+                          />
+                        ),
+                      },
+                      {
+                        value: 'signup',
+                        content: (
+                          <AuthForm
+                            authType="cadastro"
+                            isLoading={loading}
+                            isValidated={() => true}
+                            onDataChange={() => {}}
+                            onSubmit={(data) =>
+                              handleAction(data, 'signup')
+                            }
+                          />
+                        ),
+                      },
+                    ]}
+                  />
+
+                  <div className="mt-6 grid w-full grid-cols-3 items-center gap-4">
+                    <Separator className="bg-border" />
+                    <span className="text-muted-foreground text-center text-sm">
+                      Ou
+                    </span>
+                    <Separator className="bg-border" />
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    className="border-primary/20 hover:bg-primary/5 hover:border-primary/40 mt-6 w-full justify-center transition-colors"
+                    disabled
+                  >
+                    <FcGoogle className="mr-2 h-5 w-5" />
+                    Continue com o Google
+                  </Button>
+
+                  <p className="text-muted-foreground mt-6 text-center text-sm">
+                    Ao continuar, você concorda com nossos{' '}
+                    <Link
+                      href="/termos"
+                      className="text-primary hover:text-primary/80 transition-colors hover:underline"
+                    >
+                      Termos de Uso
+                    </Link>
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <ConfirmacaoEmailConta
+              setContaCriada={setContaCriada}
+            />
+          )}
         </div>
       </div>
     </>
