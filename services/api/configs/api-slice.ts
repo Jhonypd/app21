@@ -11,7 +11,7 @@ import { toastError } from '@/components/custom-toast';
 
 // Base query com interceptação global de erros
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL, // Volta para o backend
+  baseUrl: process.env.NEXT_PUBLIC_API_URL,
   credentials: 'include',
   prepareHeaders: (headers) => {
     headers.set('Content-Type', 'application/json');
