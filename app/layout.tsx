@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import Layout from './layout/layout';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Providers } from '../providers/providers';
@@ -34,16 +33,14 @@ export default function RootLayout({
       >
         <Providers>
           <AuthProvider>
-            <SidebarProvider>
-              <Layout>
-                {children}
-                <Toaster
-                  className="z-[999999999] mx-auto flex w-full justify-end md:text-nowrap"
-                  visibleToasts={1}
-                  expand={false}
-                />
-              </Layout>
-            </SidebarProvider>
+            <Layout>
+              {children}
+              <Toaster
+                className="z-[999999999] mx-auto flex w-full justify-end md:text-nowrap"
+                visibleToasts={1}
+                expand={false}
+              />
+            </Layout>
           </AuthProvider>
         </Providers>
       </body>

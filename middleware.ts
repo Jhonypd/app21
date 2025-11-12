@@ -1,4 +1,7 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import {
+  NextResponse,
+  type NextRequest,
+} from 'next/server';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,7 +22,12 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('access_token')?.value;
 
   // Se não tem token e não está em rota pública, redireciona para login
-  if (!token && !publicRoutes.some(route => pathname.startsWith(route))) {
+  if (
+    !token &&
+    !publicRoutes.some((route) =>
+      pathname.startsWith(route),
+    )
+  ) {
     const loginUrl = new URL('/auth/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -31,10 +39,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Se tem token e está na raiz, redireciona para dashboard
-  if (token && pathname === '/') {
-    const dashboardUrl = new URL('/dashboard', request.url);
-    return NextResponse.redirect(dashboardUrl);
-  }
+  // if (token && pathname === '/') {
+  //   const dashboardUrl = new URL('/dashboard', request.url);
+  //   return NextResponse.redirect(dashboardUrl);
+  // }
 
   return NextResponse.next();
 }

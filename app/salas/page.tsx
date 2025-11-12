@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import { SalasGrid } from '@/components/planning-poker/sala-grid';
 import Loading from '@/components/loading';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Sala {
   id: string;
@@ -149,7 +149,7 @@ const PageSalas = () => {
       ) : (
         <SalasGrid
           salas={salas}
-          currentUserId={user?.id}
+          currentUserId={user?.Usu_Id}
           onEntrarSala={handleEntrarSala}
           onCopiarLink={handleCopiarLink}
         />

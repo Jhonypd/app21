@@ -16,7 +16,7 @@ export interface NovoCodigoPayload {
   email: string;
 }
 
-export interface ConficaoContaEmilPayload {
+export interface ConfirmacaoContaEmilPayload {
   codigo: string;
   confirmarConta: boolean;
 }
@@ -71,7 +71,7 @@ export const AuthApi = apiSlice.injectEndpoints({
 
     validaCodigoEmail: builder.mutation<
       ApiResponse<ResponseConfirmacaoCodigo>,
-      ConficaoContaEmilPayload
+      ConfirmacaoContaEmilPayload
     >({
       query: () => ({
         url: '/auth/validaCodigoEmail',

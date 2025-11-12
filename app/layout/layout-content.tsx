@@ -1,14 +1,10 @@
 'use client';
-import { ReactNode, memo, useMemo } from 'react';
-import { useSidebar } from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
-import { AppSidebar } from '@/components/ui/app-sidebar';
-import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { ReactNode, memo, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import {
-  SidebarInset,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
+import { Navegacao } from '@/components/navegacao';
+import { Header } from '@/components/header';
+import { Greeting } from '@/components/greeting';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LayoutContentProps {
   children: ReactNode;
@@ -26,76 +22,48 @@ const HIDDEN_SIDEBAR_PATHS = [
 
 // Componente para o layout sem sidebar
 const NoSidebarLayout = memo(
-  ({
-    children,
-    isMobile,
-  }: {
-    children: ReactNode;
-    isMobile: boolean;
-  }) => (
-    <div className="bg-muted box-border flex max-w-[100vw] flex-1 overflow-x-hidden">
+  ({ children }: { children: ReactNode }) => (
+    <div className="container min-h-screen bg-slate-950 pb-24 text-white">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full bg-purple-500/20 blur-3xl"></div>
+        <div
+          className="absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full bg-pink-500/20 blur-3xl"
+          style={{ animationDelay: '1s' }}
+        ></div>
+      </div>
+
       <div
-        className={`bg-background flex flex-1 flex-col gap-4 overflow-x-hidden px-4 pt-2 sm:px-6 ${
-          isMobile ? 'w-screen max-w-screen' : 'max-w-full'
-        }`}
+        className={`container flex max-w-screen flex-1 flex-col gap-4 px-4 pt-2 sm:px-6`}
       >
         {children}
       </div>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .active\\:scale-98:active {
+          transform: scale(0.98);
+        }
+      `}</style>
     </div>
   ),
 );
 
 NoSidebarLayout.displayName = 'NoSidebarLayout';
 
-// Componente para o header com sidebar
-const HeaderWithSidebar = memo(() => (
-  <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-    <div className="flex items-center gap-2 px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator
-        orientation="vertical"
-        className="mr-2 data-[orientation=vertical]:h-4"
-      />
-      <Breadcrumbs />
-    </div>
-  </header>
-));
-
-HeaderWithSidebar.displayName = 'HeaderWithSidebar';
-
-// Componente para o layout com sidebar
-const WithSidebarLayout = memo(
-  ({
-    children,
-    isMobile,
-  }: {
-    children: ReactNode;
-    isMobile: boolean;
-  }) => (
-    <div className="bg-muted box-border flex max-w-[100vw] flex-1 overflow-x-hidden">
-      <AppSidebar />
-      <SidebarInset>
-        <HeaderWithSidebar />
-        <div
-          className={`bg-background flex flex-1 flex-col gap-4 overflow-x-hidden px-4 pt-2 sm:px-6 ${
-            isMobile
-              ? 'w-screen max-w-screen'
-              : 'max-w-full'
-          }`}
-        >
-          {children}
-        </div>
-      </SidebarInset>
-    </div>
-  ),
-);
-
-WithSidebarLayout.displayName = 'WithSidebarLayout';
-
 const LayoutContent = memo(
   ({ children }: LayoutContentProps) => {
-    const { isMobile } = useSidebar();
+    const [abaAtiva, setAbaAtiva] = useState('home');
     const pathname = usePathname();
+    const { user } = useAuth();
 
     // Memoizar a verificação do path para evitar recálculos
     const shouldHideSidebar = useMemo(
@@ -107,20 +75,20 @@ const LayoutContent = memo(
 
     // Memoizar o conteúdo baseado na condição
     const content = useMemo(() => {
-      if (shouldHideSidebar) {
-        return (
-          <NoSidebarLayout isMobile={isMobile}>
-            {children}
-          </NoSidebarLayout>
-        );
-      }
-
       return (
-        <WithSidebarLayout isMobile={isMobile}>
+        <NoSidebarLayout>
+          <Header userNome={user?.Usu_na} />
+          <Greeting
+            nome={user?.Usu_na.split(' ')[0] as string}
+          />
           {children}
-        </WithSidebarLayout>
+          <Navegacao
+            abaAtiva={abaAtiva}
+            aoMudarAba={setAbaAtiva}
+          />
+        </NoSidebarLayout>
       );
-    }, [shouldHideSidebar, isMobile, children]);
+    }, [children, abaAtiva, user]);
 
     return content;
   },
