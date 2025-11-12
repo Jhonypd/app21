@@ -18,7 +18,7 @@ export function Navegacao({
   ];
 
   return (
-    <nav className="fixed right-4 bottom-4 left-4 z-50 rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-2xl">
+    <nav className="fixed right-4 bottom-4 left-4 z-50 max-w-screen rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-2xl">
       <div className="grid grid-cols-4 gap-1 p-2">
         {abas.map((aba) => {
           const Icone = aba.icone;

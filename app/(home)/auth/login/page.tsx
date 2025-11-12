@@ -114,7 +114,7 @@ const Auth = () => {
         />
       )}
 
-      <div className="from-background via-muted/20 to-background flex min-h-screen items-center justify-center bg-gradient-to-br p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br p-4">
         <div className="w-full max-w-md space-y-8">
           {!contaCriada ? (
             <>
@@ -127,7 +127,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h1 className="text-foreground text-4xl font-bold">
+                  <h1 className="text-4xl font-bold">
                     Planning Poker{' '}
                     <span className="text-primary">
                       Ágil

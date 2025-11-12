@@ -21,7 +21,7 @@ const TabsTriggerCustom = ({
 }: TabsTriggerCustomProps) => {
   return (
     <TabsTrigger
-      className="data-[state=active]:bg-primary text-accent-foreground text-base font-semibold"
+      className="data-[state=active]:bg-primary data-[state=active]:text-accent text-accent-foreground text-base font-semibold"
       value={value}
     >
       {label}

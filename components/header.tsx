@@ -15,7 +15,7 @@ export function Header({
     return iniciais.slice(0, 2).join('');
   };
   return (
-    <div className="sticky top-1 flex w-full items-center rounded-2xl bg-slate-900/80 shadow-2xl backdrop-blur-2xl">
+    <div className="sticky top-1 z-50 flex w-full items-center rounded-2xl bg-slate-900/80 shadow-2xl backdrop-blur-2xl">
       <header className="z-10 w-full px-4 pt-4 pb-2">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">

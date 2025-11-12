@@ -16,7 +16,6 @@ const HIDDEN_SIDEBAR_PATHS = [
   '/auth/register',
   '/auth/forgot-password',
   '/error',
-  '/',
   '/confirmacao-email',
 ] as const;
 
@@ -77,18 +76,24 @@ const LayoutContent = memo(
     const content = useMemo(() => {
       return (
         <NoSidebarLayout>
-          <Header userNome={user?.Usu_na} />
-          <Greeting
-            nome={user?.Usu_na.split(' ')[0] as string}
-          />
+          {!shouldHideSidebar && (
+            <Header userNome={user?.Usu_na} />
+          )}
+          {!shouldHideSidebar && (
+            <Greeting
+              nome={user?.Usu_na.split(' ')[0] as string}
+            />
+          )}
           {children}
-          <Navegacao
-            abaAtiva={abaAtiva}
-            aoMudarAba={setAbaAtiva}
-          />
+          {!shouldHideSidebar && (
+            <Navegacao
+              abaAtiva={abaAtiva}
+              aoMudarAba={setAbaAtiva}
+            />
+          )}
         </NoSidebarLayout>
       );
-    }, [children, abaAtiva, user]);
+    }, [shouldHideSidebar, children, abaAtiva, user]);
 
     return content;
   },
