@@ -30,19 +30,25 @@ interface CardSalaProps {
   sala: DadosSala;
   index: number;
   usuarioAtualId?: string; // ID do usuário logado para verificar se é proprietário
+  aoClicar?: (sala: DadosSala) => void; // Callback quando clicar em entrar
 }
 
 export function CardSala({
   sala,
   index,
   usuarioAtualId,
+  aoClicar,
 }: CardSalaProps) {
   const copiarCodigo = (codigo: number) => {
     copiarParaAreaTransferencia(codigo.toString());
   };
 
   const entrarNaSala = (titulo: string) => {
-    alert(`Entrando na sala: ${titulo}`);
+    if (aoClicar) {
+      aoClicar(sala);
+    } else {
+      alert(`Entrando na sala: ${titulo}`);
+    }
   };
 
   // Gerar avatar com iniciais do título

@@ -8,13 +8,18 @@ import type {
   FetchBaseQueryError,
 } from '@reduxjs/toolkit/query';
 import { toastError } from '@/components/custom-toast';
-
+import { ApiResponse } from '@/services/interfaces';
+interface ApiError {
+  data?: ApiResponse;
+  status?: number;
+}
 // Base query com interceptação global de erros
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL,
   credentials: 'include',
   prepareHeaders: (headers) => {
     headers.set('Content-Type', 'application/json');
+    console.log('API Request Headers:', headers);
     return headers;
   },
 });
@@ -31,22 +36,16 @@ const baseQueryWithInterceptor: BaseQueryFn<
   );
 
   if (result.error) {
-    const data = result.error.data as
-      | {
-          Mensagem?: string;
-          message?: string;
-          Detalhe?: string;
-        }
-      | undefined;
+    const data = (result.error as ApiError).data;
 
-    // Extrai mensagem padronizada do backend
     const mensagem =
-      data?.Mensagem || data?.message || 'Erro inesperado.';
+      data?.Mensagem ||
+      'Erro inesperado ao processar sua requisição.';
+
     const detalhe = data?.Detalhe
       ? ` (${data.Detalhe})`
       : '';
 
-    // Evita toasts múltiplos em chamadas simultâneas
     toastError({
       description: `${mensagem}${detalhe}`,
     });
@@ -54,7 +53,23 @@ const baseQueryWithInterceptor: BaseQueryFn<
     return result;
   }
 
-  return result;
+  const data = result.data as ApiResponse;
+
+  if (!data.Sucesso) {
+    toastError({
+      description:
+        data.Mensagem || 'Operação não concluída.',
+    });
+    // mantém consistência no formato de erro
+    return {
+      error: {
+        status: data.CodigoRetorno ?? 400,
+        data,
+      } as FetchBaseQueryError,
+    };
+  }
+
+  return { data: data.Resultado };
 };
 
 // Slice base da API

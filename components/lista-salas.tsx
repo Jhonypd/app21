@@ -1,15 +1,18 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { CardSala, DadosSala } from './cardSala';
+import { DadosSala } from './sala-planning';
+import { CardSala } from './card-sala';
 
 interface ListaSalasProps {
   salas: DadosSala[];
   usuarioAtualId?: string;
+  aoClicarSala?: (sala: DadosSala) => void;
 }
 
 export function ListaSalas({
   salas,
   usuarioAtualId,
+  aoClicarSala,
 }: ListaSalasProps) {
   return (
     <>
@@ -31,6 +34,7 @@ export function ListaSalas({
               sala={sala}
               index={index}
               usuarioAtualId={usuarioAtualId}
+              aoClicar={aoClicarSala}
             />
           ))
         ) : (
