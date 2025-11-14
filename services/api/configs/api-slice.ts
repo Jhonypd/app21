@@ -19,6 +19,8 @@ const rawBaseQuery = fetchBaseQuery({
   credentials: 'include',
   prepareHeaders: (headers) => {
     headers.set('Content-Type', 'application/json');
+    // headers.set('Accept', 'application/json');
+    // headers.set('Authorization', 'Bearer token');
     console.log('API Request Headers:', headers);
     return headers;
   },
@@ -34,7 +36,8 @@ const baseQueryWithInterceptor: BaseQueryFn<
     api,
     extraOptions,
   );
-
+  console.table(result);
+  console.table(result.data);
   if (result.error) {
     const data = (result.error as ApiError).data;
 
@@ -68,8 +71,7 @@ const baseQueryWithInterceptor: BaseQueryFn<
       } as FetchBaseQueryError,
     };
   }
-
-  return { data: data.Resultado };
+  return { data };
 };
 
 // Slice base da API

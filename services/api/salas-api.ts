@@ -2,103 +2,102 @@ import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
 
 export interface Salas {
-  id: string;
-  codigo: number;
-  titulo: string;
-  criado_por: string;
-  data_criacao: Date;
-  data_alteracao: Date;
-  inativo: boolean;
-  votos: [];
-  proprietario: {
+  votos: {
+    pessoa: {
+      nome: string;
+      id: string;
+      inativo: boolean;
+    };
     id: string;
+    valor: number;
+  }[];
+  proprietario: {
     nome: string;
+    id: string;
     inativo: boolean;
   };
-  participantes: [];
-}
-
-export interface LoginPayload {
-  email: string;
-  senha: string;
-}
-
-export interface CriarContaPayload {
-  nome: string;
-  email: string;
-  senha: string;
-}
-
-export interface NovoCodigoPayload {
-  email: string;
-}
-
-export interface ConfirmacaoContaEmilPayload {
+  titulo: string;
+  id: string;
   codigo: string;
-  confirmarConta: boolean;
+  inativo: boolean;
+  data_criacao: Date;
+  data_alteracao: Date | null;
+  participantes: {
+    pessoa_id: string;
+    pessoa: {
+      id: string;
+      inativo: boolean;
+      nome: string;
+    };
+  }[];
+  criado_por: string;
 }
 
-export interface ResponseLogin {
-  token: string;
+export interface LoginSalaPayload {
+  codigo: string;
+  senha?: string;
+}
+
+export interface CriarSalaPayload {
+  titulo: string;
+  senha?: string;
+  salaPrivada: boolean;
+}
+
+export interface ListarSalasQuery {
+  pagina: number;
+  itensPagina: number;
+}
+
+export interface ResponseLoginSala {
+  tokenSala: string;
   dataExpiracao: Date;
 }
 
-export interface ResponseCriarConta {
+export interface ResponseCriarSala {
   id: string;
-}
-
-export interface ResponseConfirmacaoCodigo {
-  id: string;
-  contaConfirmada: boolean;
 }
 
 export const SalasApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    login: builder.mutation<
-      ApiResponse<ResponseLogin>,
-      LoginPayload
+    loginSala: builder.mutation<
+      ApiResponse<ResponseLoginSala>,
+      LoginSalaPayload
     >({
-      query: () => ({
+      query: (credenciais) => ({
+        url: '/salas/loginSala',
+        method: 'POST',
+        body: credenciais,
+      }),
+    }),
+
+    criarSala: builder.mutation<
+      ApiResponse<ResponseCriarSala>,
+      CriarSalaPayload
+    >({
+      query: (salaData) => ({
+        url: '/salas/inserir',
+        method: 'POST',
+        body: salaData,
+      }),
+    }),
+
+    listarSalas: builder.query<
+      ApiResponse<{ salas: Salas[] }>,
+      ListarSalasQuery
+    >({
+      query: (params: ListarSalasQuery) => ({
         url: '/salas/listarSalas',
         method: 'GET',
-      }),
-    }),
-
-    criarConta: builder.mutation<
-      ApiResponse<ResponseCriarConta>,
-      CriarContaPayload
-    >({
-      query: (userData) => ({
-        url: '/salas/criarConta',
-        method: 'POST',
-        body: userData,
-      }),
-    }),
-    novoCodigo: builder.mutation<
-      ApiResponse,
-      NovoCodigoPayload
-    >({
-      query: (email) => ({
-        url: '/salas/novoCodigo',
-        method: 'POST',
-        body: email,
-      }),
-    }),
-
-    validaCodigoEmail: builder.mutation<
-      ApiResponse<ResponseConfirmacaoCodigo>,
-      ConfirmacaoContaEmilPayload
-    >({
-      query: () => ({
-        url: '/salas/validaCodigoEmail',
-        method: 'GET',
+        params,
       }),
     }),
   }),
 });
 
 export const {
-  useLoginMutation,
-  useCriarContaMutation,
-  useNovoCodigoMutation,
+  useLoginSalaMutation,
+  useCriarSalaMutation,
+  useListarSalasQuery,
+  useLazyListarSalasQuery,
 } = SalasApi;

@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   Users,
   Eye,
-  EyeOff,
   RotateCcw,
   Copy,
   Crown,

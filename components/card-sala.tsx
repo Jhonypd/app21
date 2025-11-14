@@ -9,21 +9,38 @@ import {
 } from 'lucide-react';
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 
+{
+}
 export interface DadosSala {
-  id: string;
-  codigo: number;
-  titulo: string;
-  criado_por: string;
-  data_criacao: string;
-  data_alteracao: string;
-  inativo: boolean;
-  votos: any[];
-  proprietario: {
+  votos: {
+    pessoa: {
+      nome: string;
+      id: string;
+      inativo: boolean;
+    };
     id: string;
+    valor: number;
+  }[];
+  proprietario: {
     nome: string;
+    id: string;
     inativo: boolean;
   };
-  participantes: any[];
+  titulo: string;
+  id: string;
+  codigo: string;
+  inativo: boolean;
+  data_criacao: Date;
+  data_alteracao: Date | null;
+  participantes: {
+    pessoa_id: string;
+    pessoa: {
+      id: string;
+      inativo: boolean;
+      nome: string;
+    };
+  }[];
+  criado_por: string;
 }
 
 interface CardSalaProps {
@@ -39,7 +56,7 @@ export function CardSala({
   usuarioAtualId,
   aoClicar,
 }: CardSalaProps) {
-  const copiarCodigo = (codigo: number) => {
+  const copiarCodigo = (codigo: string) => {
     copiarParaAreaTransferencia(codigo.toString());
   };
 
@@ -98,7 +115,9 @@ export function CardSala({
       ? 'active'
       : 'inactive';
   const tempoDecorrido = calcularTempoDecorrido(
-    sala.data_alteracao,
+    sala.data_alteracao
+      ? sala.data_alteracao.toString()
+      : sala.data_criacao.toString(),
   );
   const avatar = gerarAvatar(sala.titulo);
   const corAvatar = gerarCorAvatar(sala.id);

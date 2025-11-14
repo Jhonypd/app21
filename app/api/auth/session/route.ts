@@ -14,6 +14,7 @@ export async function GET() {
       const body: ApiResponse = {
         Resultado: null,
         Sucesso: false,
+        Detalhe: null,
         Mensagem: 'Sem sessão ativa',
         CodigoRetorno: 401,
         TipoRetorno: 0,
@@ -27,6 +28,7 @@ export async function GET() {
       const body: ApiResponse = {
         Resultado: null,
         Sucesso: false,
+        Detalhe: null,
         Mensagem: 'Token inválido',
         CodigoRetorno: 401,
         TipoRetorno: 0,
@@ -49,6 +51,7 @@ export async function GET() {
       const body: ApiResponse = {
         Resultado: null,
         Sucesso: false,
+        Detalhe: null,
         Mensagem: 'Não foi possível decodificar o token',
         CodigoRetorno: 500,
         TipoRetorno: 0,
@@ -68,6 +71,7 @@ export async function GET() {
     const body: ApiResponse<typeof perfil> = {
       Resultado: perfil,
       Sucesso: true,
+      Detalhe: null,
       Mensagem: 'Sessão válida',
       CodigoRetorno: 200,
       TipoRetorno: 0,

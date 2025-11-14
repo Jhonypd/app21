@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { DadosSala } from './sala-planning';
-import { CardSala } from './card-sala';
+import { CardSala, DadosSala } from './card-sala';
 
 interface ListaSalasProps {
   salas: DadosSala[];
