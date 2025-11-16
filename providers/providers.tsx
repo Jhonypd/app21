@@ -1,7 +1,7 @@
 'use client';
 
 import { Provider } from 'react-redux';
-import { store } from '@/services/api/configs/store';
+import { store } from '@/services/api/configs/store/store';
 
 export function Providers({
   children,

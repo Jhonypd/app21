@@ -20,10 +20,13 @@ export async function middleware(request: NextRequest) {
 
   // Verifica se tem o cookie access_token
   const token = request.cookies.get('access_token')?.value;
+  const refreshToken =
+    request.cookies.get('refresh_token')?.value;
 
   // Se não tem token e não está em rota pública, redireciona para login
   if (
     !token &&
+    !refreshToken &&
     !publicRoutes.some((route) =>
       pathname.startsWith(route),
     )
@@ -34,15 +37,9 @@ export async function middleware(request: NextRequest) {
 
   // Se tem token e está na página de login, redireciona para dashboard
   if (token && pathname === '/auth/login') {
-    const dashboardUrl = new URL('/dashboard', request.url);
+    const dashboardUrl = new URL('/', request.url);
     return NextResponse.redirect(dashboardUrl);
   }
-
-  // Se tem token e está na raiz, redireciona para dashboard
-  // if (token && pathname === '/') {
-  //   const dashboardUrl = new URL('/dashboard', request.url);
-  //   return NextResponse.redirect(dashboardUrl);
-  // }
 
   return NextResponse.next();
 }

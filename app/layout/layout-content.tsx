@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Navegacao } from '@/components/navegacao';
 import { Header } from '@/components/header';
 import { Greeting } from '@/components/greeting';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutContentProps {
   children: ReactNode;
@@ -62,7 +62,7 @@ const LayoutContent = memo(
   ({ children }: LayoutContentProps) => {
     const [abaAtiva, setAbaAtiva] = useState('home');
     const pathname = usePathname();
-    const { user } = useAuth();
+    const { usuario } = useAuth();
 
     // Memoizar a verificação do path para evitar recálculos
     const shouldHideSidebar = useMemo(
@@ -77,11 +77,11 @@ const LayoutContent = memo(
       return (
         <NoSidebarLayout>
           {!shouldHideSidebar && (
-            <Header userNome={user?.Usu_na} />
+            <Header userNome={usuario?.nome} />
           )}
           {!shouldHideSidebar && (
             <Greeting
-              nome={user?.Usu_na.split(' ')[0] as string}
+              nome={usuario?.nome.split(' ')[0] as string}
             />
           )}
           {children}
@@ -93,7 +93,7 @@ const LayoutContent = memo(
           )}
         </NoSidebarLayout>
       );
-    }, [shouldHideSidebar, children, abaAtiva, user]);
+    }, [shouldHideSidebar, children, abaAtiva, usuario]);
 
     return content;
   },

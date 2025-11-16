@@ -11,7 +11,6 @@ import {
 import { FcGoogle } from 'react-icons/fc';
 import { GiCardRandom } from 'react-icons/gi';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import {
   LoginFormValues,
   CadastroFormValues,
@@ -26,21 +25,32 @@ import {
 } from '@/services/api/auth-api';
 import Link from 'next/link';
 import ConfirmacaoEmailConta from '@/components/pages/confirmacao-email-conta';
+import { useDispatch } from 'react-redux';
+import {
+  logout,
+  setCredentials,
+  setUser,
+} from '@/services/api/configs/store/auth-slice';
+import { useLazyObterDadosContaQuery } from '@/services/api/pessoas.api';
+import { toastError } from '@/components/custom-toast';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [contaCriada, setContaCriada] = useState(false);
   const router = useRouter();
-  const { refresh } = useAuth();
 
+  const dispatch = useDispatch();
   const [login] = useLoginMutation();
   const [criarConta] = useCriarContaMutation();
+  const [loadDadosConta] = useLazyObterDadosContaQuery();
 
   const handleAction = async (
     data: LoginFormValues | CadastroFormValues,
     action: 'login' | 'signup',
   ) => {
     setLoading(true);
+    console.log('[LOGIN] Iniciando ação:', action);
 
     try {
       if (action === 'login') {
@@ -49,59 +59,71 @@ const Auth = () => {
           senha: (data as LoginFormValues).senha,
         };
 
-        const res = await login(payload);
-        const result = res.data;
+        console.log('[LOGIN] Payload enviado:', payload);
+
+        const result = await login(payload).unwrap();
+        console.log('[LOGIN] Resposta do login:', result);
 
         if (!result?.Sucesso) {
           setLoading(false);
           return;
         }
 
-        if (result.Resultado?.token) {
-          const setTokenResponse = await fetch(
-            '/api/auth/set-token',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                token: result.Resultado.token,
-              }),
-            },
+        const access = result.Resultado?.tokenAcesso?.token;
+        const refresh =
+          result.Resultado?.refreshToken?.token;
+
+        if (access && refresh) {
+          dispatch(
+            setCredentials({
+              accessToken: access,
+              refreshToken: refresh,
+            }),
           );
 
-          if (!setTokenResponse.ok) {
-            console.error('Erro ao salvar token');
+          try {
+            const resp = await loadDadosConta().unwrap();
+
+            if (resp?.Sucesso && resp?.Resultado?.pessoa) {
+              dispatch(setUser(resp.Resultado.pessoa));
+            } else {
+              dispatch(logout());
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error(
+              '[LOGIN] Erro ao carregar dados do usuário:',
+              e,
+            );
+            dispatch(logout());
             setLoading(false);
             return;
           }
 
-          await new Promise((resolve) =>
-            setTimeout(resolve, 100),
-          );
-          await refresh();
-          router.push('/dashboard');
-        }
-      } else {
-        const payload = data as CadastroFormValues;
-        const res = await criarConta(payload);
-        const result = res.data;
-
-        if (!result?.Sucesso) {
-          setLoading(false);
-          return;
+          router.push('/');
         }
 
-        if (result?.Resultado?.id) {
-          setContaCriada(true);
-          setLoading(false);
-        }
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Erro na autenticação:', error);
+
+      // --- SIGNUP ---
+      const payload = data as CadastroFormValues;
+      const res = await criarConta(payload);
+      const result = res.data;
+
+      if (result?.Sucesso && result.Resultado?.id) {
+        setContaCriada(true);
+      }
+
       setLoading(false);
+    } catch (error) {
+      console.error('[LOGIN] ERRO GERAL:', error);
+      setLoading(false);
+
+      const mensagem = getApiErrorMessage(error);
+      toastError({ description: mensagem });
     }
   };
 
@@ -118,7 +140,6 @@ const Auth = () => {
         <div className="w-full max-w-md space-y-8">
           {!contaCriada ? (
             <>
-              {/* Header */}
               <div className="flex flex-col space-y-6 text-center">
                 <div className="flex items-center justify-center">
                   <div className="bg-primary shadow-primary/20 rounded-2xl p-4 shadow-lg">
@@ -140,7 +161,6 @@ const Auth = () => {
                 </p>
               </div>
 
-              {/* Card de Login/Cadastro */}
               <Card className="border-primary/20 shadow-primary/5 border-2 shadow-xl">
                 <CardHeader className="from-primary/5 to-primary/10 bg-gradient-to-r">
                   <CardTitle className="text-center text-2xl">

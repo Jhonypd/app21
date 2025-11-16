@@ -22,8 +22,11 @@ export interface ConfirmacaoContaEmilPayload {
 }
 
 export interface ResponseLogin {
-  token: string;
-  dataExpiracao: Date;
+  tokenAcesso: { token: string; dataExpiracao: Date };
+  refreshToken: {
+    token: string;
+    dataExpiracao: Date;
+  };
 }
 
 export interface ResponseCriarConta {
