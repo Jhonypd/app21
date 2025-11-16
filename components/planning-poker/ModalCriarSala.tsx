@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Users } from 'lucide-react';
 import { CustomButton } from '../ui/custom-button';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Rooms {
   privateRoom: boolean;
@@ -35,13 +35,13 @@ export const CreateRoomModal = ({
   const router = useRouter();
 
   // Assumindo que você tem uma forma de pegar o ID do usuário
-  const { user, session } = useAuth();
+  const { usuario, isAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!roomName.trim()) return;
-    if (!user?.id || !session?.access_token) {
+    if (!usuario?.id || !isAuthenticated) {
       setError(
         'Você precisa estar logado para criar uma sala',
       );

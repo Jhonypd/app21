@@ -20,7 +20,7 @@ interface Participante {
 interface SalaPlanningProps {
   sala: {
     id: string;
-    codigo: number;
+    codigo: string;
     titulo: string;
     criado_por: string;
     proprietario: {

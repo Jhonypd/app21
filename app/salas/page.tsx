@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { SalasGrid } from '@/components/planning-poker/sala-grid';
 import Loading from '@/components/loading';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Sala {
   id: string;
@@ -27,7 +27,7 @@ const PageSalas = () => {
   const [salas, setSalas] = useState<Sala[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { usuario } = useAuth();
 
   useEffect(() => {
     const fetchSalas = async () => {
@@ -149,7 +149,7 @@ const PageSalas = () => {
       ) : (
         <SalasGrid
           salas={salas}
-          currentUserId={user?.Usu_Id}
+          currentUserId={usuario?.id}
           onEntrarSala={handleEntrarSala}
           onCopiarLink={handleCopiarLink}
         />

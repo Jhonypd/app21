@@ -57,7 +57,10 @@ export function CardSala({
   aoClicar,
 }: CardSalaProps) {
   const copiarCodigo = (codigo: string) => {
-    copiarParaAreaTransferencia(codigo.toString());
+    copiarParaAreaTransferencia(
+      codigo.toString(),
+      'Código copiado para a área de transferência!',
+    );
   };
 
   const entrarNaSala = (titulo: string) => {
@@ -147,7 +150,7 @@ export function CardSala({
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 justify-items-start">
             <div className="mb-1 flex items-center gap-2">
               <h4 className="truncate text-base">
                 {sala.titulo}

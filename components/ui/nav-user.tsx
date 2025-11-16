@@ -29,9 +29,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Perfil } from '@/contexts/AuthContext';
-// import { perfil } from '@/hooks/useAuth';
 
+interface Perfil {
+  id: string;
+  nome: string;
+  Email: string;
+  Idp: string;
+}
 interface NavUserProps {
   user?: Perfil | null;
   onLogout?: () => void;
@@ -48,8 +52,9 @@ export function NavUser({
     if (!user?.Email) return 'U';
 
     // Se tiver user_metadata com nome, usa as iniciais do nome
-    if (user.Usu_na) {
-      return user.Usu_na.split(' ')
+    if (user.nome) {
+      return user.nome
+        .split(' ')
         .map((name: string) => name.charAt(0))
         .join('')
         .toUpperCase()
@@ -65,9 +70,7 @@ export function NavUser({
   // Função para obter o nome de exibição
   const getDisplayName = (user: Perfil | null) => {
     if (!user) return 'Guest User';
-    return (
-      user.Usu_na || user.Email?.split('@')[0] || 'User'
-    );
+    return user.nome || user.Email?.split('@')[0] || 'User';
   };
 
   // Função para obter avatar URL

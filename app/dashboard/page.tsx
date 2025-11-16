@@ -32,8 +32,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import Loading from '@/components/loading';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 // Mock data - em produção viria da API
 const mockRooms = [
@@ -84,17 +83,17 @@ const mockStats = {
 };
 
 const Dashboard = () => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { usuario, isAuthenticated } = useAuth();
   const navigate = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] =
     useState(mockRooms);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!usuario && !isAuthenticated) {
       navigate.replace('/auth/login');
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [usuario, isAuthenticated, navigate]);
 
   useEffect(() => {
     const filtered = mockRooms.filter(
@@ -165,9 +164,9 @@ const Dashboard = () => {
     );
   };
 
-  if (loading) {
-    return <Loading active />;
-  }
+  // if (loading) {
+  //   return <Loading active />;
+  // }
 
   if (!isAuthenticated) {
     return null; // Will redirect to auth
@@ -184,7 +183,7 @@ const Dashboard = () => {
             </h2>
             <p className="text-muted-foreground">
               Bem-vindo de volta,{' '}
-              {user?.Usu_na.split(' ')[0]}! 👋
+              {usuario?.nome.split(' ')[0]}! 👋
             </p>
           </div>
           <div className="flex items-center gap-2">

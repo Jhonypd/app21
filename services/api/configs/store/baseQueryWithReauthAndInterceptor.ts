@@ -91,7 +91,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       api.dispatch(logout());
 
       if (typeof window !== 'undefined') {
-        console.log('aqui');
         toastError({
           description:
             'Não foi possível renovar a autenticação. Você será redirecionado para a tela de login em 5 segundos.',
@@ -115,7 +114,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     if (!novoAccess) {
       api.dispatch(logout());
       if (typeof window !== 'undefined') {
-        console.log('aqui');
         toastError({
           description:
             'Não foi possível renovar a autenticação. Você será redirecionado para a tela de login em 5 segundos.',

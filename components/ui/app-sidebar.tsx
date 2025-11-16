@@ -10,13 +10,17 @@ import {
 import { NavMain } from './nav-main';
 import { menus } from '@/constants/menus';
 import { NavUser } from './nav-user';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export const AppSidebar = React.memo(function AppSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  const { user, signOut } = useAuth();
+  const { usuario, logout } = useAuth();
+  const user = React.useMemo(() => usuario, [usuario]);
 
+  const signOut = React.useCallback(() => {
+    logout();
+  }, [logout]);
   const menuItems = React.useMemo(() => menus.menuList, []);
 
   return (

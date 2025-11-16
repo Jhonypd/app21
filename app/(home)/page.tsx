@@ -7,12 +7,12 @@ import { EntrarSala } from '@/components/entrar-sala';
 import { EstatisticasRapidas } from '@/components/estatisticas-rapidas';
 import { ListaSalas } from '@/components/lista-salas';
 import { SalaPlanning } from '@/components/sala-planning';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useListarSalasQuery } from '@/services/api/salas-api';
 import { useEffect, useState } from 'react';
 
 const LandingPage = () => {
-  const { user } = useAuth();
+  const { usuario } = useAuth();
   const [modalCriarAberto, setModalCriarAberto] =
     useState(false);
   const [modalEntrarAberto, setModalEntrarAberto] =
@@ -24,20 +24,20 @@ const LandingPage = () => {
     DadosSala[]
   >([]);
 
-  const { data, error, isLoading } = useListarSalasQuery({
+  const { data } = useListarSalasQuery({
     itensPagina: 3,
     pagina: 0,
   });
 
   useEffect(() => {
-    if (user) {
+    if (usuario) {
       if (data && data.Sucesso && data.Resultado) {
         setSalasRecentes(data.Resultado.salas);
       }
     }
-  }, [user, data]);
+  }, [usuario, data]);
 
-  const usuarioAtualId = user?.Usu_Id as string;
+  const usuarioAtualId = usuario?.id as string;
 
   if (salaAtual) {
     return (

@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { CardSala, DadosSala } from './card-sala';

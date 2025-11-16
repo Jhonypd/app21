@@ -4,12 +4,13 @@ import {
 } from '@/components/custom-toast';
 
 export function copiarParaAreaTransferencia(
-  texto: string,
+  textoCopiado: string,
+  textoToast?: string,
 ): boolean {
   try {
     // Método alternativo usando textarea temporário
     const textarea = document.createElement('textarea');
-    textarea.value = texto;
+    textarea.value = textoCopiado;
     textarea.style.position = 'fixed';
     textarea.style.top = '-9999px';
     textarea.style.left = '-9999px';
@@ -24,6 +25,7 @@ export function copiarParaAreaTransferencia(
     if (sucesso) {
       toastSuccess({
         description:
+          textoToast ||
           'Texto copiado para a área de transferência.',
       });
       return true;
