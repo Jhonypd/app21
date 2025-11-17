@@ -66,6 +66,31 @@ export interface SalaPorCodigo {
       inativo: boolean;
       nome: string;
     };
+    historias: [
+      {
+        id: string;
+        titulo: string;
+        descricao: string;
+      },
+    ];
+    participantes: [
+      {
+        id: string;
+        nome: string;
+        inativo: boolean;
+      },
+    ];
+    votos: [
+      {
+        pessoa: {
+          nome: string;
+          inativo: boolean;
+        };
+        id: string;
+        pessoa_id: string;
+        valor: number;
+      },
+    ];
     titulo: string;
     senha: string | null;
     id: string;
@@ -118,103 +143,11 @@ export const SalasApi = apiSlice.injectEndpoints({
       ApiResponse<SalaPorCodigo>,
       string
     >({
-      queryFn: async (
-        codigo: string,
-        _queryApi,
-        _extraOptions,
-        baseQuery,
-      ) => {
-        // Tenta chamar a API real primeiro
-        try {
-          const result = await baseQuery({
-            url: `/salas/obterPorCodigo/${codigo}`,
-            method: 'GET',
-          });
-
-          // Se a API retornou sucesso, retorna o resultado
-          if (result.data && !result.error) {
-            return result as {
-              data: ApiResponse<SalaPorCodigo>;
-            };
-          }
-
-          // Se deu erro (404, 500, etc), usa mock como fallback
-          // Mock data - simula resposta da API
-          const mockSala: SalaPorCodigo = {
-            sala: {
-              proprietario: {
-                id: 'e483f765-5e6b-43a0-877e-6bf5c5a9d4af',
-                inativo: false,
-                nome: 'João Silva', // Nome já descriptografado
-              },
-              titulo: 'Sprint Planning - E-commerce',
-              senha: null,
-              id: '5a3f6cfc-8206-4911-8b7f-f255aa11f7b4',
-              codigo: codigo,
-              inativo: false,
-              data_criacao: new Date(
-                '2025-11-16T21:01:45.656Z',
-              ),
-              data_alteracao: null,
-              criado_por:
-                'e483f765-5e6b-43a0-877e-6bf5c5a9d4af',
-            },
-          };
-
-          // Simula delay da API
-          await new Promise((resolve) =>
-            setTimeout(resolve, 300),
-          );
-
-          return {
-            data: {
-              Sucesso: true,
-              Mensagem: 'Operação realizada com sucesso',
-              Detalhe: null,
-              CodigoRetorno: 200,
-              TipoRetorno: 1,
-              Resultado: mockSala,
-            },
-          };
-        } catch {
-          // Se der erro de rede ou qualquer outro erro, usa mock
-          const mockSala: SalaPorCodigo = {
-            sala: {
-              proprietario: {
-                id: 'e483f765-5e6b-43a0-877e-6bf5c5a9d4af',
-                inativo: false,
-                nome: 'João Silva', // Nome já descriptografado
-              },
-              titulo: 'Sprint Planning - E-commerce',
-              senha: null,
-              id: '5a3f6cfc-8206-4911-8b7f-f255aa11f7b4',
-              codigo: codigo,
-              inativo: false,
-              data_criacao: new Date(
-                '2025-11-16T21:01:45.656Z',
-              ),
-              data_alteracao: null,
-              criado_por:
-                'e483f765-5e6b-43a0-877e-6bf5c5a9d4af',
-            },
-          };
-
-          await new Promise((resolve) =>
-            setTimeout(resolve, 300),
-          );
-
-          return {
-            data: {
-              Sucesso: true,
-              Mensagem: 'Operação realizada com sucesso',
-              Detalhe: null,
-              CodigoRetorno: 200,
-              TipoRetorno: 1,
-              Resultado: mockSala,
-            },
-          };
-        }
-      },
+      query: (codigo: string) => ({
+        url: `/salas/obterPorCodigo/${codigo}`,
+        method: 'GET',
+      }),
+      providesTags: ['salaPlaning'],
     }),
   }),
 });

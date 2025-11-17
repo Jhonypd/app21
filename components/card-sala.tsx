@@ -11,9 +11,6 @@ import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 import { Salas } from '@/services/api/salas-api';
 import { DialogEntrarSala } from '@/modules/salas/components/dialog-entrar-sala';
 
-{
-}
-
 interface CardSalaProps {
   sala: Salas;
   index: number;
@@ -51,8 +48,8 @@ export function CardSala({
     );
 
     if (sucesso) {
-      setFecharDialog(true); // <-- fecha o diálogo
-      setTimeout(() => setFecharDialog(false), 100); // reseta
+      setFecharDialog(true);
+      setTimeout(() => setFecharDialog(false), 100);
     }
   };
 

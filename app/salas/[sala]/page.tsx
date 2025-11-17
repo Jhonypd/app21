@@ -68,15 +68,22 @@ const PageSala = () => {
     <SalaPlanning
       usuarioAtualId={usuarioId}
       aoVoltar={handleVoltar}
-      sala={{
-        id: sala.id,
-        codigo: sala.codigo,
-        titulo: sala.titulo,
-        criado_por: sala.criado_por,
-        proprietario: {
-          id: sala.proprietario.id,
-          nome: sala.proprietario.nome, // Nome já vem descriptografado da API
-        },
+      sala={sala}
+      aoEnviarVoto={async (valor) => {
+        // Chamar sua API para enviar voto
+        console.log({ salaId: sala.id, valor });
+      }}
+      aoRevelarVotos={async () => {
+        // Chamar sua API para revelar votos
+        console.log({ salaId: sala.id });
+      }}
+      aoResetarVotos={async () => {
+        // Chamar sua API para resetar votos
+        console.log({ salaId: sala.id });
+      }}
+      aoSelecionarHistoria={async (historiaId) => {
+        // Chamar sua API para marcar história como ativa
+        console.log({ salaId: sala.id, historiaId });
       }}
     />
   );

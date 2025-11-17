@@ -16,14 +16,10 @@ interface LayoutContentProps {
   children: ReactNode;
 }
 
-// Array de paths que devem esconder a sidebar - memoizado
-const HIDDEN_SIDEBAR_PATHS = [
-  '/auth/login',
-  '/auth/register',
-  '/auth/forgot-password',
+const HIDDEN_SIDEBAR_PREFIXES = [
+  '/auth',
   '/error',
   '/confirmacao-email',
-  '/salas/[sala]',
   '/salas',
 ] as const;
 
@@ -73,12 +69,11 @@ const LayoutContent = memo(
     const { usuario } = useAuth();
 
     // Memoizar a verificação do path para evitar recálculos
-    const shouldHideSidebar = useMemo(
-      () =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        HIDDEN_SIDEBAR_PATHS.includes(pathname as any),
-      [pathname],
-    );
+    const shouldHideSidebar = useMemo(() => {
+      return HIDDEN_SIDEBAR_PREFIXES.some((prefix) =>
+        pathname.startsWith(prefix),
+      );
+    }, [pathname]);
 
     useEffect(() => {
       const path = pathname.split('/')[1];
