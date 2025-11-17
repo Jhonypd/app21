@@ -17,6 +17,7 @@ interface TextInputProps {
   maxLength?: number;
   minLength?: number;
   autoFocus?: boolean;
+  icon?: React.ReactNode;
 }
 
 export const useTextValidation = (
@@ -56,6 +57,9 @@ export const TextInput: React.FC<TextInputProps> = ({
   maxLength,
   minLength,
   autoFocus = false,
+  icon = (
+    <CaseSensitive className="h-5 w-5 text-gray-400" />
+  ),
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -104,27 +108,25 @@ export const TextInput: React.FC<TextInputProps> = ({
             MozAppearance: 'textfield',
           }}
           autoFocus={autoFocus}
-          className={`peer h-auto rounded-md bg-inherit py-3 pr-4 pl-11 text-gray-600 transition-colors duration-200 focus:ring-0 focus:outline-none dark:bg-none [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden ${
+          className={`peer h-auto rounded-md bg-transparent py-3 pr-4 pl-11 text-gray-600 transition-colors duration-200 focus:ring-0 focus:outline-none dark:bg-none [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden ${
             error
-              ? 'border-red-500 focus:border-red-500'
+              ? 'border-red-500 focus:border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/80'
               : 'border-gray-300 focus:border-blue-500 focus-visible:border-gray-300 focus-visible:ring-gray-200'
-          } ${disabled ? 'bg-background cursor-not-allowed' : 'bg-background'} ${className}`.trim()}
+          } ${disabled && 'cursor-not-allowed'} ${className}`.trim()}
         />
 
         {/* Ícone de email */}
         <div className="absolute top-1/2 left-3 z-10 -translate-y-1/2">
-          <CaseSensitive
-            className={`h-5 w-5 text-gray-400`}
-          />
+          {icon}
         </div>
 
         {/* Label flutuante */}
         <label
           htmlFor={id}
-          className={`pointer-events-none absolute left-10 cursor-text transition-all duration-200 ${
+          className={`pointer-events-none absolute left-10 cursor-text transition-all duration-200 ${!disabled && 'pointer-events-none cursor-not-allowed'} ${
             shouldLabelBeOnTop
-              ? 'bg-background -top-2 z-10 px-1 text-xs'
-              : 'top-1/2 -translate-y-1/2 text-sm'
+              ? '-top-2 z-10 bg-slate-900 px-1 text-xs'
+              : 'top-1/2 -translate-y-1/2 text-sm font-medium'
           } ${
             error && shouldLabelBeOnTop
               ? 'text-red-500'

@@ -9,9 +9,11 @@ import { ListaSalas } from '@/components/lista-salas';
 import { SalaPlanning } from '@/components/sala-planning';
 import { useAuth } from '@/hooks/useAuth';
 import { useListarSalasQuery } from '@/services/api/salas-api';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const LandingPage = () => {
+  const router = useRouter();
   const { usuario } = useAuth();
   const [modalCriarAberto, setModalCriarAberto] =
     useState(false);
@@ -40,15 +42,16 @@ const LandingPage = () => {
   const usuarioAtualId = usuario?.id as string;
 
   if (salaAtual) {
-    return (
-      <>
-        <SalaPlanning
-          sala={salaAtual}
-          usuarioAtualId={usuarioAtualId}
-          aoVoltar={() => setSalaAtual(null)}
-        />
-      </>
-    );
+    // return (
+    //   <>
+    //     <SalaPlanning
+    //       sala={salaAtual}
+    //       usuarioAtualId={usuarioAtualId}
+    //       aoVoltar={() => setSalaAtual(null)}
+    //     />
+    //   </>
+    // );
+    router.push(`/salas/${salaAtual.codigo}`);
   }
 
   return (

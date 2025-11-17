@@ -1,12 +1,15 @@
 'use client';
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { CardSala, DadosSala } from './card-sala';
+import { CardSala } from './card-sala';
+import { Button } from './ui/button';
+import { useRouter } from 'next/navigation';
+import { Salas } from '@/services/api/salas-api';
 
 interface ListaSalasProps {
-  salas: DadosSala[];
+  salas: Salas[];
   usuarioAtualId?: string;
-  aoClicarSala?: (sala: DadosSala) => void;
+  aoClicarSala?: (sala: Salas) => void;
 }
 
 export function ListaSalas({
@@ -14,15 +17,25 @@ export function ListaSalas({
   usuarioAtualId,
   aoClicarSala,
 }: ListaSalasProps) {
+  const router = useRouter();
+
+  const handleVerTodasClick = () => {
+    router.push('/salas');
+  };
+
   return (
     <>
       {/* Section Header */}
       <div className="flex items-center justify-between pt-4">
         <h3 className="text-lg">Recentes</h3>
-        <button className="flex items-center gap-1 text-sm text-purple-400">
+        <Button
+          type="button"
+          onClick={handleVerTodasClick}
+          className="flex h-fit w-fit items-center gap-1 bg-transparent text-sm text-purple-400"
+        >
           Ver todas
           <ChevronRight className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Recent Rooms - Card Stack */}
@@ -34,7 +47,7 @@ export function ListaSalas({
               sala={sala}
               index={index}
               usuarioAtualId={usuarioAtualId}
-              aoClicar={aoClicarSala}
+              entrarSala={aoClicarSala}
             />
           ))
         ) : (

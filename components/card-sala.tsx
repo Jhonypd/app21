@@ -1,6 +1,6 @@
-import React from 'react';
+'use client';
+import React, { useState } from 'react';
 import {
-  ChevronRight,
   Share2,
   Copy,
   Crown,
@@ -8,54 +8,30 @@ import {
   Vote,
 } from 'lucide-react';
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
+import { Salas } from '@/services/api/salas-api';
+import { DialogEntrarSala } from '@/modules/salas/components/dialog-entrar-sala';
 
 {
 }
-export interface DadosSala {
-  votos: {
-    pessoa: {
-      nome: string;
-      id: string;
-      inativo: boolean;
-    };
-    id: string;
-    valor: number;
-  }[];
-  proprietario: {
-    nome: string;
-    id: string;
-    inativo: boolean;
-  };
-  titulo: string;
-  id: string;
-  codigo: string;
-  inativo: boolean;
-  data_criacao: Date;
-  data_alteracao: Date | null;
-  participantes: {
-    pessoa_id: string;
-    pessoa: {
-      id: string;
-      inativo: boolean;
-      nome: string;
-    };
-  }[];
-  criado_por: string;
-}
 
 interface CardSalaProps {
-  sala: DadosSala;
+  sala: Salas;
   index: number;
-  usuarioAtualId?: string; // ID do usuário logado para verificar se é proprietário
-  aoClicar?: (sala: DadosSala) => void; // Callback quando clicar em entrar
+  usuarioAtualId?: string;
+  entrarSala?: (
+    codigo: string,
+    senha?: string,
+  ) => Promise<boolean>;
 }
 
 export function CardSala({
   sala,
   index,
   usuarioAtualId,
-  aoClicar,
+  entrarSala,
 }: CardSalaProps) {
+  const eProprietario = usuarioAtualId === sala.criado_por;
+  const [fecharDialog, setFecharDialog] = useState(false);
   const copiarCodigo = (codigo: string) => {
     copiarParaAreaTransferencia(
       codigo.toString(),
@@ -63,11 +39,20 @@ export function CardSala({
     );
   };
 
-  const entrarNaSala = (titulo: string) => {
-    if (aoClicar) {
-      aoClicar(sala);
-    } else {
-      alert(`Entrando na sala: ${titulo}`);
+  const handleEntrar = async (data: {
+    codigo: string;
+    senha?: string;
+  }) => {
+    if (!entrarSala) return;
+
+    const sucesso = await entrarSala(
+      data.codigo,
+      data.senha,
+    );
+
+    if (sucesso) {
+      setFecharDialog(true); // <-- fecha o diálogo
+      setTimeout(() => setFecharDialog(false), 100); // reseta
     }
   };
 
@@ -112,7 +97,6 @@ export function CardSala({
     return cores[index];
   };
 
-  const eProprietario = usuarioAtualId === sala.criado_por;
   const status =
     !sala.inativo && sala.participantes.length > 0
       ? 'active'
@@ -200,16 +184,13 @@ export function CardSala({
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <button
-            onClick={() => entrarNaSala(sala.titulo)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm transition-all hover:bg-purple-700 active:bg-purple-800"
-            disabled={sala.inativo}
-          >
-            {sala.inativo ? 'Sala Inativa' : 'Entrar'}
-            {!sala.inativo && (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
+          <DialogEntrarSala
+            salaPrivada={sala.privada}
+            codigoSala={sala.codigo}
+            proprietario={eProprietario}
+            onSubmit={handleEntrar}
+            fecharDialog={fecharDialog}
+          />
           <button
             onClick={() => copiarCodigo(sala.codigo)}
             className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-3 transition-all hover:bg-white/10 active:scale-95"

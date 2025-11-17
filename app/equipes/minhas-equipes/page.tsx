@@ -15,7 +15,7 @@ import {
   EditEquipeData,
   EquipeFormValues,
 } from '../../../modules/equipes/minha-equipes/schema';
-import BasicForm from '@/components/forms/basic-form';
+import BasicForm from '@/components/forms/formulario-base';
 import TitlePage from '@/components/pages/title-page';
 import FilterPage from '@/components/pages/filter-page';
 import { FilterGrid } from '@/components/pages/filter-grid';

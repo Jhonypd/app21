@@ -1,5 +1,11 @@
 'use client';
-import { ReactNode, memo, useMemo, useState } from 'react';
+import {
+  ReactNode,
+  memo,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { usePathname } from 'next/navigation';
 import { Navegacao } from '@/components/navegacao';
 import { Header } from '@/components/header';
@@ -17,6 +23,8 @@ const HIDDEN_SIDEBAR_PATHS = [
   '/auth/forgot-password',
   '/error',
   '/confirmacao-email',
+  '/salas/[sala]',
+  '/salas',
 ] as const;
 
 // Componente para o layout sem sidebar
@@ -60,7 +68,7 @@ NoSidebarLayout.displayName = 'NoSidebarLayout';
 
 const LayoutContent = memo(
   ({ children }: LayoutContentProps) => {
-    const [abaAtiva, setAbaAtiva] = useState('home');
+    const [abaAtiva, setAbaAtiva] = useState('/');
     const pathname = usePathname();
     const { usuario } = useAuth();
 
@@ -72,6 +80,12 @@ const LayoutContent = memo(
       [pathname],
     );
 
+    useEffect(() => {
+      const path = pathname.split('/')[1];
+      // Atualiza a aba ativa com base no pathname
+      setAbaAtiva(path.length > 0 ? `${path}` : '/');
+    }, [pathname]);
+
     // Memoizar o conteúdo baseado na condição
     const content = useMemo(() => {
       return (
@@ -79,7 +93,7 @@ const LayoutContent = memo(
           {!shouldHideSidebar && (
             <Header userNome={usuario?.nome} />
           )}
-          {!shouldHideSidebar && (
+          {pathname === '/' && !shouldHideSidebar && (
             <Greeting
               nome={usuario?.nome.split(' ')[0] as string}
             />
@@ -93,7 +107,13 @@ const LayoutContent = memo(
           )}
         </NoSidebarLayout>
       );
-    }, [shouldHideSidebar, children, abaAtiva, usuario]);
+    }, [
+      shouldHideSidebar,
+      children,
+      abaAtiva,
+      usuario,
+      pathname,
+    ]);
 
     return content;
   },

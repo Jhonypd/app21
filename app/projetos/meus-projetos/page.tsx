@@ -8,7 +8,7 @@ import {
   useRef,
 } from 'react';
 import Loading from '@/components/loading';
-import BasicForm from '@/components/forms/basic-form';
+import BasicForm from '@/components/forms/formulario-base';
 import TitlePage from '@/components/pages/title-page';
 import FilterPage from '@/components/pages/filter-page';
 import { FilterGrid } from '@/components/pages/filter-grid';

@@ -50,7 +50,6 @@ const Auth = () => {
     action: 'login' | 'signup',
   ) => {
     setLoading(true);
-    console.log('[LOGIN] Iniciando ação:', action);
 
     try {
       if (action === 'login') {
@@ -59,10 +58,7 @@ const Auth = () => {
           senha: (data as LoginFormValues).senha,
         };
 
-        console.log('[LOGIN] Payload enviado:', payload);
-
         const result = await login(payload).unwrap();
-        console.log('[LOGIN] Resposta do login:', result);
 
         if (!result?.Sucesso) {
           setLoading(false);
@@ -91,11 +87,7 @@ const Auth = () => {
               setLoading(false);
               return;
             }
-          } catch (e) {
-            console.error(
-              '[LOGIN] Erro ao carregar dados do usuário:',
-              e,
-            );
+          } catch (error) {
             dispatch(logout());
             setLoading(false);
             return;
@@ -119,11 +111,10 @@ const Auth = () => {
 
       setLoading(false);
     } catch (error) {
-      console.error('[LOGIN] ERRO GERAL:', error);
       setLoading(false);
 
       const mensagem = getApiErrorMessage(error);
-      toastError({ description: mensagem });
+      toastError({ description: mensagem.Mensagem });
     }
   };
 

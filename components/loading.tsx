@@ -111,7 +111,7 @@ const Loading = ({
             key={String(currentValue) + animation}
             className={clsx(
               'absolute inset-0 flex items-center justify-center text-4xl font-bold text-white',
-              'bg-primary rounded-lg shadow-lg',
+              'rounded-lg bg-purple-600 shadow-lg',
               animation,
             )}
           >
@@ -123,7 +123,7 @@ const Loading = ({
       {type === 'page-transition' && (
         <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <div className="border-primary mx-auto mb-4 h-32 w-32 animate-spin rounded-full border-b-4"></div>
+            <div className="mx-auto mb-4 h-32 w-32 animate-spin rounded-full border-b-4 border-purple-600"></div>
           </div>
         </div>
       )}
@@ -131,7 +131,7 @@ const Loading = ({
       {type === 'transaction' && (
         <div className="flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <div className="border-primary mx-auto mb-4 h-32 w-32 animate-spin rounded-full border-b-4"></div>
+            <div className="mx-auto mb-4 h-32 w-32 animate-spin rounded-full border-b-4 border-purple-600"></div>
           </div>
         </div>
       )}

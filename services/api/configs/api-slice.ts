@@ -4,6 +4,6 @@ import { baseQueryWithReauthAndInterceptor } from './store/baseQueryWithReauthAn
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauthAndInterceptor,
-  tagTypes: [],
+  tagTypes: ['listarSalas'],
   endpoints: () => ({}),
 });

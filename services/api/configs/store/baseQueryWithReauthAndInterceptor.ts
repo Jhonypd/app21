@@ -139,18 +139,34 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
   if (result.error) {
     if (isApiError(result.error)) {
-      const msg =
-        result.error.data?.Mensagem ?? 'Erro inesperado';
-      const det = result.error.data?.Detalhe
-        ? ` (${result.error.data.Detalhe})`
-        : '';
-
-      toastError({ description: `${msg}${det}` });
-    } else {
-      toastError({ description: 'Erro inesperado' });
+      return {
+        error: {
+          status: result.error.status ?? 400,
+          data: {
+            Sucesso: false,
+            Mensagem:
+              result.error.data?.Mensagem ??
+              'Erro inesperado',
+            Detalhe: result.error.data?.Detalhe ?? '',
+            CodigoRetorno: result.error.status ?? 400,
+            Resultado: null,
+          },
+        },
+      };
     }
 
-    return result;
+    return {
+      error: {
+        status: 400,
+        data: {
+          Sucesso: false,
+          Mensagem: 'Erro inesperado',
+          Detalhe: '',
+          CodigoRetorno: 400,
+          Resultado: null,
+        },
+      },
+    };
   }
 
   const data = result.data as ApiResponse;

@@ -66,7 +66,7 @@ export function LoadingGlobalRedux({
     return (
       <Loading
         active
-        type="transaction"
+        type="default"
       />
     );
   }

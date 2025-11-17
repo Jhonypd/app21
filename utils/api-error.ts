@@ -6,6 +6,11 @@ export interface ApiError {
   status?: number;
 }
 
+export interface ApiErroFormatado {
+  Mensagem: string;
+  Detalhe: string;
+}
+
 export function isApiError(
   error: unknown,
 ): error is ApiError {
@@ -18,18 +23,28 @@ export function isApiError(
   );
 }
 
-export function getApiErrorMessage(error: unknown): string {
+export function getApiErrorMessage(
+  error: unknown,
+): ApiErroFormatado {
+  // Caso seja o erro padrão da API
   if (isApiError(error)) {
-    return (
-      error.data?.Mensagem ||
-      error.data?.Detalhe ||
-      'Erro inesperado'
-    );
+    return {
+      Mensagem: error.data?.Mensagem || 'Erro inesperado',
+      Detalhe: error.data?.Detalhe || 'Erro inesperado',
+    };
   }
 
+  // Caso seja um erro nativo JS
   if (error instanceof Error) {
-    return error.message;
+    return {
+      Mensagem: error.message,
+      Detalhe: error.message,
+    };
   }
 
-  return 'Erro inesperado';
+  // Fallback para qualquer outra coisa
+  return {
+    Mensagem: 'Erro inesperado',
+    Detalhe: 'Erro inesperado',
+  };
 }

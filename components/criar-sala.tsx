@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Button } from './ui/button';
+import FormularioBase from './forms/formulario-base';
+import { FormularioSala } from '@/modules/salas/components/formulario-sala';
+import { useCriarSalaMutation } from '@/services/api/salas-api';
+import { SalaForm } from '@/modules/salas/types';
+import { toastError, toastSuccess } from './custom-toast';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 interface CriarSalaProps {
   aberto: boolean;
@@ -20,75 +15,69 @@ export function CriarSala({
   aberto,
   aoFechar,
 }: CriarSalaProps) {
-  const [nomeSala, setNomeSala] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isValidated, setIsValidated] = useState(false);
+  const [formData, setFormData] = useState<SalaForm | null>(
+    null,
+  );
 
-  const handleCriar = () => {
-    if (nomeSala.trim()) {
-      const codigoGerado = Math.random()
-        .toString(36)
-        .substring(2, 7)
-        .toUpperCase();
-      alert(
-        `Sala "${nomeSala}" criada com sucesso! Código: ${codigoGerado}`,
-      );
-      setNomeSala('');
-      aoFechar();
+  const [criarSala] = useCriarSalaMutation();
+
+  const handleCriar = async (data: SalaForm) => {
+    setIsLoading(true);
+    try {
+      const novaSala = await criarSala({
+        titulo: data.titulo,
+        salaPrivada: data.salaPrivada,
+        senha:
+          data.senha.length > 0 ? data.senha : undefined,
+      }).unwrap();
+
+      if (!novaSala.Sucesso) {
+        toastError({
+          title: `${novaSala.Mensagem}`,
+          description: `${novaSala.Detalhe}`,
+        });
+        return;
+      } else {
+        toastSuccess({
+          description: 'Sala criada com sucesso!',
+        });
+        aoFechar();
+      }
+    } catch (error) {
+      console.table(error);
+      const { Mensagem, Detalhe } =
+        getApiErrorMessage(error);
+
+      toastError({
+        title: Mensagem,
+        description: Detalhe,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Dialog
+    <FormularioBase
+      className="border-slate-700 bg-slate-900 text-white"
+      title="Criar Nova Sala"
       open={aberto}
       onOpenChange={aoFechar}
+      isLoading={isLoading}
+      isValid={isValidated}
+      onSubmit={() => {
+        if (formData) {
+          handleCriar(formData);
+        }
+      }}
     >
-      <DialogContent className="border-slate-700 bg-slate-900 text-white">
-        <DialogHeader>
-          <DialogTitle className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl text-transparent">
-            Criar Nova Sala
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Digite um nome para sua sala de planning poker
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label
-              htmlFor="nome-sala"
-              className="text-gray-300"
-            >
-              Nome da Sala
-            </Label>
-            <Input
-              id="nome-sala"
-              placeholder="Ex: Sprint 25 - Frontend"
-              value={nomeSala}
-              onChange={(e) => setNomeSala(e.target.value)}
-              className="border-slate-700 bg-slate-800 text-white placeholder:text-gray-500 focus:border-purple-500"
-              onKeyDown={(e) =>
-                e.key === 'Enter' && handleCriar()
-              }
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={aoFechar}
-            className="border-slate-700 bg-slate-800 text-white hover:bg-slate-700"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleCriar}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-            disabled={!nomeSala.trim()}
-          >
-            Criar Sala
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <FormularioSala
+        isLoading={isLoading}
+        isValidated={(valid) => setIsValidated(valid)}
+        onDataChange={(data) => setFormData(data.values)}
+      />
+    </FormularioBase>
   );
 }

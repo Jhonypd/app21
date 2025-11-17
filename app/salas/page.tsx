@@ -1,159 +1,238 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
-import { SalasGrid } from '@/components/planning-poker/sala-grid';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Search } from 'lucide-react';
 import Loading from '@/components/loading';
 import { useAuth } from '@/hooks/useAuth';
-
-interface Sala {
-  id: string;
-  codigo: number;
-  titulo: string;
-  criado_por: string;
-  inativo: boolean;
-  protegida: boolean;
-  data_criacao: string;
-  data_alteracao: string;
-  totalParticipantes: number;
-  totalVotos: number;
-  nomeDono: string;
-}
+import {
+  LoginSalaPayload,
+  Salas,
+  useListarSalasQuery,
+  useSalaEntrarMutation,
+} from '@/services/api/salas-api';
+import { CardSala } from '@/components/card-sala';
+import { toastError } from '@/components/custom-toast';
+import { getApiErrorMessage } from '@/utils/api-error';
+import { BarraBuscaSalas } from '@/components/barra-busca-salas';
+import { BotaoFiltro } from '@/components/botao-filtro';
+import { PainelFiltros } from '@/components/painel-filtros';
+import { TipoOrdenacao } from '@/components/opcao-ordenacao';
+import { TipoFiltroStatus } from '@/components/opcao-filtro';
 
 const PageSalas = () => {
-  const [salas, setSalas] = useState<Sala[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const { usuario } = useAuth();
 
+  // Estados de filtro e busca
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] =
+    useState<TipoFiltroStatus>('todas');
+  const [ordenacao, setOrdenacao] =
+    useState<TipoOrdenacao>('recentes');
+  const [mostrarFiltros, setMostrarFiltros] =
+    useState(false);
+
+  // Estados de salas
+  const [listaSalas, setListaSalas] = useState<Salas[]>([]);
+  const [loadingLogin, setLoadingLogin] = useState(false);
+
+  // Queries e mutations
+  const [salaEntrar] = useSalaEntrarMutation();
+  const { data, isLoading, error } = useListarSalasQuery({
+    itensPagina: 10,
+    pagina: 0,
+  });
+
+  // Carrega as salas quando os dados chegam
   useEffect(() => {
-    const fetchSalas = async () => {
-      try {
-        const res = await fetch('/api/salas');
-        if (!res.ok) {
-          throw new Error('Falha ao carregar as salas');
-        }
-        const data = await res.json();
-        setSalas(data.salas || []);
-        setError(null);
-      } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'Erro desconhecido';
-        setError(message);
-        toast.error('Erro ao carregar salas', {
-          description: 'Tente novamente mais tarde.',
-        });
-      } finally {
-        setLoading(false);
+    if (usuario && data?.Sucesso && data.Resultado) {
+      setListaSalas(data.Resultado.salas);
+    }
+  }, [usuario, data]);
+
+  // Exibe erro se houver
+  useEffect(() => {
+    if (error) {
+      toastError({
+        title: 'Erro ao carregar salas',
+        description: `${error}`,
+      });
+    }
+  }, [error]);
+
+  // Filtrar salas
+  const salasFiltradas = listaSalas.filter((sala) => {
+    // Filtro de busca
+    const passaBusca =
+      busca === '' ||
+      sala.titulo
+        .toLowerCase()
+        .includes(busca.toLowerCase()) ||
+      sala.proprietario.nome
+        .toLowerCase()
+        .includes(busca.toLowerCase()) ||
+      sala.codigo.toString().includes(busca);
+
+    // Filtro de status
+    let passaStatus = true;
+    if (filtroStatus === 'ativas') {
+      passaStatus = !sala.inativo;
+    } else if (filtroStatus === 'encerradas') {
+      passaStatus = sala.inativo;
+    }
+
+    return passaBusca && passaStatus;
+  });
+
+  // Ordenar salas
+  const salasOrdenadas = [...salasFiltradas].sort(
+    (a, b) => {
+      switch (ordenacao) {
+        case 'recentes':
+          return (
+            new Date(b.data_criacao).getTime() -
+            new Date(a.data_criacao).getTime()
+          );
+        case 'antigas':
+          return (
+            new Date(a.data_criacao).getTime() -
+            new Date(b.data_criacao).getTime()
+          );
+        case 'participantes':
+          return (
+            (b.participantes?.length || 0) -
+            (a.participantes?.length || 0)
+          );
+        default:
+          return 0;
       }
-    };
+    },
+  );
 
-    fetchSalas();
-  }, []);
+  // Handler para entrar na sala (compatível com CardSala)
+  const handleEntrarSala = async (
+    codigo: string,
+    senha?: string,
+  ): Promise<boolean> => {
+    setLoadingLogin(true);
+    try {
+      const loginPayload: LoginSalaPayload = {
+        codigo,
+        senha: senha || undefined,
+      };
 
-  const handleEntrarSala = (salaId: string) => {
-    toast.success('Entrando na sala...');
-    // Navegar para a sala
-    window.location.href = `/dashboard/salas/${salaId}`;
+      const result =
+        await salaEntrar(loginPayload).unwrap();
+
+      if (result.Sucesso) {
+        // Redirecionar para a sala
+        router.push(`/salas/${codigo}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      const msg = getApiErrorMessage(error);
+      toastError({
+        title: msg.Mensagem,
+        description: msg.Detalhe,
+      });
+      return false;
+    } finally {
+      setLoadingLogin(false);
+    }
   };
-
-  const handleCopiarLink = (salaId: string) => {
-    const link = `/dashboard/salas/${salaId}`;
-    navigator.clipboard.writeText(link);
-    toast.success('Link copiado!', {
-      description:
-        'Compartilhe o link com os participantes.',
-    });
-  };
-
-  if (loading) {
-    return (
-      <Loading
-        active
-        type="transaction"
-      />
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto w-full">
-        <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-          <div className="max-w-md">
-            <h2 className="text-destructive mb-4 text-xl font-semibold">
-              Erro ao carregar salas
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              {error}
-            </p>
-            <Button
-              onClick={() => window.location.reload()}
-              variant="outline"
-            >
-              Tentar novamente
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto w-full">
-      <div className="mb-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="mb-2 text-3xl font-bold text-white">
-              Salas de Planning Poker
-            </h1>
-            <p className="text-gray-500">
-              Gerencie e participe das sessões de estimativa
-            </p>
+    <div className="min-h-screen bg-slate-950 pb-6 text-white">
+      {/* Loading overlay */}
+      {(isLoading || loadingLogin) && (
+        <Loading
+          active
+          type="transaction"
+        />
+      )}
+
+      {/* Header sticky */}
+      <div className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/95 backdrop-blur-xl">
+        <div className="px-4 py-4">
+          {/* Cabeçalho com voltar e contador */}
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+
+            <div className="flex-1">
+              <h1 className="text-xl">Todas as Salas</h1>
+              <p className="text-xs text-gray-400">
+                {salasOrdenadas.length} sala
+                {salasOrdenadas.length !== 1
+                  ? 's'
+                  : ''}{' '}
+                encontrada
+                {salasOrdenadas.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            <BotaoFiltro
+              ativo={mostrarFiltros}
+              aoClicar={() =>
+                setMostrarFiltros(!mostrarFiltros)
+              }
+            />
           </div>
 
-          <Link href="/salas/criar">
-            <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-              <Plus size={16} />
-              Nova Sala
-            </Button>
-          </Link>
+          {/* Barra de busca */}
+          <BarraBuscaSalas
+            valor={busca}
+            aoMudar={setBusca}
+            placeholder="Buscar por nome, código ou criador..."
+          />
+
+          {/* Painel de filtros */}
+          <PainelFiltros
+            visivel={mostrarFiltros}
+            statusSelecionado={filtroStatus}
+            ordenacaoSelecionada={ordenacao}
+            aoMudarStatus={setFiltroStatus}
+            aoMudarOrdenacao={setOrdenacao}
+          />
         </div>
       </div>
 
-      {salas.length === 0 ? (
-        <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-4 text-center">
-          <div className="max-w-md">
-            <h2 className="mb-2 text-xl font-semibold">
+      {/* Lista de salas */}
+      <div className="mt-6 px-4">
+        {salasOrdenadas.length > 0 ? (
+          <div className="space-y-3">
+            {salasOrdenadas.map((sala, index) => (
+              <CardSala
+                key={sala.id}
+                index={index}
+                sala={sala}
+                usuarioAtualId={usuario?.id}
+                entrarSala={handleEntrarSala}
+              />
+            ))}
+          </div>
+        ) : (
+          // Estado vazio
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/5">
+              <Search className="h-10 w-10 text-gray-500" />
+            </div>
+            <p className="mb-2 text-gray-400">
               Nenhuma sala encontrada
-            </h2>
-            <p className="text-muted-foreground">
-              Você ainda não criou nenhuma sala. Crie uma
-              agora para começar a colaborar!
+            </p>
+            <p className="text-sm text-gray-500">
+              Tente ajustar os filtros ou buscar por outros
+              termos
             </p>
           </div>
-          <Link
-            href="/salas/criar"
-            className="mt-2"
-          >
-            <Button className="gap-2">
-              <Plus size={16} />
-              Criar primeira sala
-            </Button>
-          </Link>
-        </div>
-      ) : (
-        <SalasGrid
-          salas={salas}
-          currentUserId={usuario?.id}
-          onEntrarSala={handleEntrarSala}
-          onCopiarLink={handleCopiarLink}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 };

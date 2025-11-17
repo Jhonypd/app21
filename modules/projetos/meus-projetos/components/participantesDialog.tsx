@@ -93,9 +93,9 @@ export const ParticipantesDialog: React.FC<
             </Badge>
           </DialogTrigger>
           <DialogContent
+            className={`flex h-96 w-72 flex-col overflow-hidden rounded-tl-lg border-l-0 p-0 outline-0 sm:w-auto`}
             aria-describedby={'dialog'}
             role="dialog"
-            className={`flex h-96 w-72 flex-col overflow-hidden rounded-tl-lg border-l-0 p-0 outline-0 sm:w-auto`}
             onPointerDownOutside={(event) => {
               event.preventDefault();
             }}

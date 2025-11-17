@@ -30,7 +30,7 @@ interface Props {
   isOverlay?: boolean;
 }
 
-const BasicForm = memo(function BasicForm({
+const FormularioBase = memo(function FormularioBase({
   mode = 'create',
   open,
   onOpenChange,
@@ -130,7 +130,7 @@ const BasicForm = memo(function BasicForm({
           <SheetFooter className="w-full flex-row flex-nowrap justify-end gap-3 border-t-2 border-b-gray-600 p-4">
             <SheetClose
               asChild
-              className="min-w-28 cursor-pointer uppercase"
+              className="min-w-28 cursor-pointer border-slate-700 bg-slate-800 text-white uppercase hover:bg-slate-700"
             >
               <Button
                 variant="outline"
@@ -145,7 +145,7 @@ const BasicForm = memo(function BasicForm({
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading || !isValid}
-                className="min-w-28 cursor-pointer uppercase"
+                className="min-w-28 cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 text-white uppercase hover:from-purple-700 hover:to-pink-700"
               >
                 {submitText}
               </Button>
@@ -157,6 +157,6 @@ const BasicForm = memo(function BasicForm({
   );
 });
 
-BasicForm.displayName = 'BasicForm';
+FormularioBase.displayName = 'FormularioBase';
 
-export default BasicForm;
+export default FormularioBase;
