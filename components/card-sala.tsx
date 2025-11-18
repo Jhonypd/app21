@@ -8,7 +8,10 @@ import {
   Vote,
 } from 'lucide-react';
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
-import { Salas } from '@/services/api/salas-api';
+import {
+  Salas,
+  useSessaoSalaMutation,
+} from '@/services/api/salas-api';
 import { DialogEntrarSala } from '@/modules/salas/components/dialog-entrar-sala';
 
 interface CardSalaProps {
@@ -48,6 +51,8 @@ export function CardSala({
     );
 
     if (sucesso) {
+      const sessao = await useSessaoSalaMutation(sala.id);
+
       setFecharDialog(true);
       setTimeout(() => setFecharDialog(false), 100);
     }

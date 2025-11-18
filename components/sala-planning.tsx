@@ -254,9 +254,7 @@ export function SalaPlanning({
     const soma = votosNumericos.reduce((a, b) => a + b, 0);
     return (soma / votosNumericos.length).toFixed(1);
   };
-  console.log(eProprietario);
-  console.log(sala.historias);
-  console.log(sala);
+
   return (
     <div className="min-h-screen bg-slate-950 pb-6 text-white">
       {/* Header */}
@@ -355,7 +353,7 @@ export function SalaPlanning({
           {historiaAtual && (
             <div className="rounded-xl border border-purple-500/30 bg-purple-600/10 px-4 py-3">
               <p className="text-xs text-purple-300">
-                Estimando agora:
+                Estimativa da PBI atual:
               </p>
               <p className="text-sm">
                 {historiaAtual.titulo}

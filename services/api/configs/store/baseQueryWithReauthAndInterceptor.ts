@@ -74,8 +74,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       extraOptions,
     );
 
-    console.log('refreshResult', refreshResult);
-
     const refreshError = refreshResult.error;
     const refreshStatus =
       isApiError(refreshError) &&
@@ -136,7 +134,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
     result = await rawBaseQuery(args, api, extraOptions);
   }
-
   if (result.error) {
     if (isApiError(result.error)) {
       return {
@@ -154,7 +151,7 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
         },
       };
     }
-
+    console.log('result', result);
     return {
       error: {
         status: 400,

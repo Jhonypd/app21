@@ -115,6 +115,13 @@ export const SalasApi = apiSlice.injectEndpoints({
       }),
     }),
 
+    sessaoSala: builder.mutation<ApiResponse, string>({
+      query: (salaId) => ({
+        url: `/salas/${salaId}/sessoes`,
+        method: 'POST',
+      }),
+    }),
+
     criarSala: builder.mutation<
       ApiResponse<ResponseCriarSala>,
       CriarSalaPayload
@@ -158,4 +165,5 @@ export const {
   useListarSalasQuery,
   useLazyListarSalasQuery,
   useObterSalaPorCodigoQuery,
+  useSessaoSalaMutation,
 } = SalasApi;
