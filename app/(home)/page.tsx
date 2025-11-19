@@ -1,14 +1,17 @@
 'use client';
 
 import { AcoesPrincipais } from '@/components/acoes-principais';
-import { DadosSala } from '@/components/card-sala';
+import {} from '@/components/card-sala';
 import { CriarSala } from '@/components/criar-sala';
 import { EntrarSala } from '@/components/entrar-sala';
 import { EstatisticasRapidas } from '@/components/estatisticas-rapidas';
 import { ListaSalas } from '@/components/lista-salas';
 import { SalaPlanning } from '@/components/sala-planning';
 import { useAuth } from '@/hooks/useAuth';
-import { useListarSalasQuery } from '@/services/api/salas-api';
+import {
+  Salas,
+  useListarSalasQuery,
+} from '@/services/api/salas-api';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -19,11 +22,12 @@ const LandingPage = () => {
     useState(false);
   const [modalEntrarAberto, setModalEntrarAberto] =
     useState(false);
-  const [salaAtual, setSalaAtual] =
-    useState<DadosSala | null>(null);
+  const [salaAtual, setSalaAtual] = useState<Salas | null>(
+    null,
+  );
 
   const [salasRecentes, setSalasRecentes] = useState<
-    DadosSala[]
+    Salas[]
   >([]);
 
   const { data } = useListarSalasQuery({

@@ -5,6 +5,7 @@ import { useCriarSalaMutation } from '@/services/api/salas-api';
 import { SalaForm } from '@/modules/salas/types';
 import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
+import Loading from './loading';
 
 interface CriarSalaProps {
   aberto: boolean;
@@ -60,24 +61,32 @@ export function CriarSala({
   };
 
   return (
-    <FormularioBase
-      className="border-slate-700 bg-slate-900 text-white"
-      title="Criar Nova Sala"
-      open={aberto}
-      onOpenChange={aoFechar}
-      isLoading={isLoading}
-      isValid={isValidated}
-      onSubmit={() => {
-        if (formData) {
-          handleCriar(formData);
-        }
-      }}
-    >
-      <FormularioSala
+    <>
+      {isLoading && (
+        <Loading
+          active
+          type="transaction"
+        />
+      )}
+      <FormularioBase
+        className="border-slate-700 bg-slate-900 text-white"
+        title="Criar Nova Sala"
+        open={aberto}
+        onOpenChange={aoFechar}
         isLoading={isLoading}
-        isValidated={(valid) => setIsValidated(valid)}
-        onDataChange={(data) => setFormData(data.values)}
-      />
-    </FormularioBase>
+        isValid={isValidated}
+        onSubmit={() => {
+          if (formData) {
+            handleCriar(formData);
+          }
+        }}
+      >
+        <FormularioSala
+          isLoading={isLoading}
+          isValidated={(valid) => setIsValidated(valid)}
+          onDataChange={(data) => setFormData(data.values)}
+        />
+      </FormularioBase>
+    </>
   );
 }

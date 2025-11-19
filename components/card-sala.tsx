@@ -51,7 +51,7 @@ export function CardSala({
     );
 
     if (sucesso) {
-      const sessao = await useSessaoSalaMutation(sala.id);
+      // const sessao = await useSessaoSalaMutation(sala.id);
 
       setFecharDialog(true);
       setTimeout(() => setFecharDialog(false), 100);
@@ -132,7 +132,9 @@ export function CardSala({
               </span>
             </div>
             {status === 'active' && (
-              <div className="absolute -top-1 -right-1 h-4 w-4 animate-pulse rounded-full border-2 border-slate-950 bg-green-500 shadow-lg shadow-green-500/50"></div>
+              <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white p-[1px]">
+                <span className="h-full w-full animate-pulse rounded-full border-white bg-green-500 shadow-lg shadow-green-500/50"></span>
+              </div>
             )}
           </div>
 
