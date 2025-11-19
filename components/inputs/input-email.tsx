@@ -110,11 +110,11 @@ export const EmailInput: React.FC<EmailInputProps> = ({
           autoCorrect="off"
           autoComplete="email"
           spellCheck={false}
-          className={`peer h-auto rounded-md bg-inherit py-3 pr-4 pl-11 text-gray-600 transition-colors duration-200 focus:ring-0 focus:outline-none dark:bg-none ${
+          className={`peer h-auto rounded-md bg-transparent py-3 pr-4 pl-11 text-gray-600 transition-colors duration-200 focus:ring-0 focus:outline-none dark:bg-none ${
             error
               ? 'border-red-500 focus:border-red-500'
               : 'border-gray-300 focus-visible:border-gray-300 focus-visible:ring-gray-200'
-          } ${disabled ? 'bg-background cursor-not-allowed' : 'bg-background'} ${className}`.trim()}
+          } ${disabled && 'cursor-not-allowed'} ${className}`.trim()}
         />
 
         {/* Ícone de email */}
