@@ -3,6 +3,7 @@ import {
   configureStore,
 } from '@reduxjs/toolkit';
 import authReducer from './auth-slice';
+import salaAuthReducer from './sala-auth-slice';
 import { apiSlice } from '../api-slice';
 import storage from 'redux-persist/lib/storage';
 import {
@@ -18,13 +19,14 @@ import {
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  salaAuth: salaAuthReducer,
   [apiSlice.reducerPath]: apiSlice.reducer,
 });
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth'],
+  whitelist: ['auth', 'salaAuth'],
 };
 
 const persistedReducer = persistReducer(

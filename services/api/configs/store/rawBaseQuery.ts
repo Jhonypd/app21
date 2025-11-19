@@ -7,10 +7,13 @@ export const rawBaseQuery = fetchBaseQuery({
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth
       .accessToken;
+    const tokenSala = (getState() as RootState).salaAuth
+      ?.tokenSala;
     headers.set('Content-Type', 'application/json');
     headers.set('Accept', 'application/json');
     if (token)
       headers.set('Authorization', `Bearer ${token}`);
+    if (tokenSala) headers.set('x-token-sala', tokenSala);
     return headers;
   },
 });

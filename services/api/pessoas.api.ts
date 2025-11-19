@@ -9,6 +9,12 @@ export interface DadosContaPessoa {
   email_confirmado: boolean;
 }
 
+export interface DadosPessoaResumo {
+  id: string;
+  nome: string;
+  email: string;
+}
+
 export const PessoasApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     obterDadosConta: builder.query<
@@ -20,10 +26,22 @@ export const PessoasApi = apiSlice.injectEndpoints({
         method: 'GET',
       }),
     }),
+
+    pesquisarPorNomeOuEmail: builder.query<
+      ApiResponse<{ pessoas: DadosPessoaResumo[] }>,
+      { termo: string }
+    >({
+      query: ({ termo }) => ({
+        url: `/pessoas/listarPorNomeOuEmail?termo=${encodeURIComponent(termo)}`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
 export const {
   useLazyObterDadosContaQuery,
   useObterDadosContaQuery,
+  useLazyPesquisarPorNomeOuEmailQuery,
+  usePesquisarPorNomeOuEmailQuery,
 } = PessoasApi;

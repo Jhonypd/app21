@@ -8,11 +8,13 @@ import {
   RotateCcw,
   Copy,
   Crown,
-  Share2,
+  UserPlus,
   Check,
   X,
   ListTodo,
   ChevronRight,
+  LogOut,
+  Ban,
 } from 'lucide-react';
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 
@@ -70,6 +72,8 @@ interface SalaPlanningProps {
   aoSelecionarHistoria?: (
     historiaId: string,
   ) => Promise<void>;
+  aoEncerrarSessao?: () => Promise<void>;
+  aoAnularVoto?: (votoId: string) => Promise<void>;
 }
 
 const CARTAS_PLANNING = [
@@ -95,6 +99,8 @@ export function SalaPlanning({
   aoRevelarVotos,
   aoResetarVotos,
   aoSelecionarHistoria,
+  aoEncerrarSessao,
+  aoAnularVoto,
 }: SalaPlanningProps) {
   // Estados
   const [votoSelecionado, setVotoSelecionado] = useState<
@@ -135,6 +141,7 @@ export function SalaPlanning({
         nome: participante.nome,
         voto: voto ? voto.valor.toString() : null,
         votou: !!voto,
+        votoId: voto?.id,
       };
     });
 
@@ -159,9 +166,8 @@ export function SalaPlanning({
 
   // Handlers
   const handleSelecionarVoto = (carta: string) => {
-    if (votoConfirmado) return; // Não permite mudar voto já confirmado
+    if (votoConfirmado) return;
 
-    // Se clicar na mesma carta, desseleciona
     if (votoSelecionado === carta) {
       setVotoSelecionado(null);
     } else {
@@ -174,7 +180,6 @@ export function SalaPlanning({
 
     setLoadingAcao(true);
     try {
-      // Converter voto para número (? = 0, ☕ = -1)
       let valorNumerico: number;
       if (votoSelecionado === '?') {
         valorNumerico = 0;
@@ -196,7 +201,7 @@ export function SalaPlanning({
   };
 
   const handleCancelarVoto = () => {
-    if (votoConfirmado) return; // Não permite cancelar voto já confirmado
+    if (votoConfirmado) return;
     setVotoSelecionado(null);
   };
 
@@ -240,6 +245,46 @@ export function SalaPlanning({
 
     if (aoSelecionarHistoria) {
       await aoSelecionarHistoria(historia.id);
+    }
+  };
+
+  const handleEncerrarSessao = async () => {
+    if (
+      !confirm(
+        'Tem certeza que deseja encerrar esta sessão?',
+      )
+    )
+      return;
+
+    setLoadingAcao(true);
+    try {
+      if (aoEncerrarSessao) {
+        await aoEncerrarSessao();
+      }
+      aoVoltar();
+    } catch (error) {
+      console.error('Erro ao encerrar sessão:', error);
+    } finally {
+      setLoadingAcao(false);
+    }
+  };
+
+  const handleAnularVoto = async (
+    votoId: string,
+    nomeParticipante: string,
+  ) => {
+    if (!confirm(`Anular voto de ${nomeParticipante}?`))
+      return;
+
+    setLoadingAcao(true);
+    try {
+      if (aoAnularVoto) {
+        await aoAnularVoto(votoId);
+      }
+    } catch (error) {
+      console.error('Erro ao anular voto:', error);
+    } finally {
+      setLoadingAcao(false);
     }
   };
 
@@ -289,6 +334,17 @@ export function SalaPlanning({
                 {sala.codigo}
               </span>
             </button>
+
+            {eProprietario && (
+              <button
+                onClick={handleEncerrarSessao}
+                disabled={loadingAcao}
+                className="flex items-center gap-2 rounded-xl bg-red-600/20 px-3 py-2 text-red-400 transition-all hover:bg-red-600/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="text-xs">Encerrar</span>
+              </button>
+            )}
           </div>
 
           {/* História Atual */}
@@ -317,7 +373,6 @@ export function SalaPlanning({
                   </div>
                 </button>
 
-                {/* Lista de Histórias */}
                 {mostrarHistorias && (
                   <div className="mt-2 max-h-60 space-y-2 overflow-y-auto rounded-xl border border-white/10 bg-slate-900/50 p-2">
                     {sala.historias.map((historia) => (
@@ -349,11 +404,10 @@ export function SalaPlanning({
               </div>
             )}
 
-          {/* Descrição da História Atual */}
           {historiaAtual && (
             <div className="rounded-xl border border-purple-500/30 bg-purple-600/10 px-4 py-3">
               <p className="text-xs text-purple-300">
-                Estimativa da PBI atual:
+                Estimando agora:
               </p>
               <p className="text-sm">
                 {historiaAtual.titulo}
@@ -386,7 +440,7 @@ export function SalaPlanning({
             {participantesComVotos.map((participante) => (
               <div
                 key={participante.id}
-                className="relative rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl"
+                className="group relative rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
@@ -417,13 +471,32 @@ export function SalaPlanning({
                       )}
                     </div>
                   </div>
+
+                  {/* Botão anular voto (apenas proprietário) */}
+                  {eProprietario &&
+                    participante.votou &&
+                    participante.votoId &&
+                    participante.id !== usuarioAtualId && (
+                      <button
+                        onClick={() =>
+                          handleAnularVoto(
+                            participante.votoId!,
+                            participante.nome,
+                          )
+                        }
+                        disabled={loadingAcao}
+                        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg bg-red-500/0 text-red-400 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/20 disabled:cursor-not-allowed"
+                      >
+                        <Ban className="h-3 w-3" />
+                      </button>
+                    )}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Resultados (quando revelado) */}
+        {/* Resultados */}
         {votosRevelados && (
           <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-4">
             <h3 className="mb-2 text-sm text-gray-300">
@@ -488,7 +561,6 @@ export function SalaPlanning({
             ))}
           </div>
 
-          {/* Botão de Confirmar Voto */}
           {votoSelecionado && !votoConfirmado && (
             <button
               onClick={handleConfirmarVoto}
@@ -513,23 +585,38 @@ export function SalaPlanning({
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-3">
+        <div className="flex gap-3">
+          {/* Convidar Participantes (compacto) */}
+          <button
+            onClick={() => {
+              const shareText = `Participe da sala "${sala.titulo}" no PlanningHub! Código: ${sala.codigo}`;
+              copiarParaAreaTransferencia(shareText);
+            }}
+            className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-3 transition-all hover:bg-white/10 active:scale-95"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span className="text-sm">Convidar</span>
+          </button>
+
+          {/* Revelar/Resetar (apenas proprietário) */}
           {eProprietario && !votosRevelados ? (
             <button
               onClick={handleRevelarVotos}
               disabled={!todosVotaram || loadingAcao}
-              className={`flex w-full items-center justify-center gap-2 rounded-2xl py-4 transition-all ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 transition-all ${
                 todosVotaram
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 active:scale-98'
                   : 'cursor-not-allowed bg-white/5 opacity-50'
               }`}
             >
               <Eye className="h-5 w-5" />
-              {loadingAcao
-                ? 'Revelando...'
-                : todosVotaram
-                  ? 'Revelar Votos'
-                  : `Aguardando ${participantesComVotos.length - totalVotos} voto(s)`}
+              <span className="text-sm">
+                {loadingAcao
+                  ? 'Revelando...'
+                  : todosVotaram
+                    ? 'Revelar Votos'
+                    : `Aguardando ${participantesComVotos.length - totalVotos}`}
+              </span>
             </button>
           ) : null}
 
@@ -537,25 +624,16 @@ export function SalaPlanning({
             <button
               onClick={handleResetarVotacao}
               disabled={loadingAcao}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 transition-all hover:from-purple-700 hover:to-pink-700 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 transition-all hover:from-purple-700 hover:to-pink-700 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RotateCcw className="h-5 w-5" />
-              {loadingAcao
-                ? 'Resetando...'
-                : 'Nova Votação'}
+              <span className="text-sm">
+                {loadingAcao
+                  ? 'Resetando...'
+                  : 'Nova Votação'}
+              </span>
             </button>
           )}
-
-          <button
-            onClick={() => {
-              const shareText = `Participe da sala "${sala.titulo}" no PlanningHub! Código: ${sala.codigo}`;
-              copiarParaAreaTransferencia(shareText);
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white/5 py-4 transition-all hover:bg-white/10 active:scale-95"
-          >
-            <Share2 className="h-5 w-5" />
-            Convidar Participantes
-          </button>
         </div>
       </div>
     </div>

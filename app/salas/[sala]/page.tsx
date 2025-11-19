@@ -1,6 +1,5 @@
 'use client';
 
-import { SalaPlanning } from '@/components/sala-planning';
 import { useAuth } from '@/hooks/useAuth';
 import { useParams, useRouter } from 'next/navigation';
 import { useObterSalaPorCodigoQuery } from '@/services/api/salas-api';
@@ -8,6 +7,7 @@ import Loading from '@/components/loading';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useEffect } from 'react';
+import { SalaPlanning } from '@/components/sala-planning';
 
 const PageSala = () => {
   const params = useParams();

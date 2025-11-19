@@ -11,7 +11,7 @@ import {
   useListarSalasQuery,
   useSalaEntrarMutation,
 } from '@/services/api/salas-api';
-import { CardSala } from '@/components/card-sala';
+// import { CardSala } from '@/components/card-sala';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { BarraBuscaSalas } from '@/components/barra-busca-salas';
@@ -19,6 +19,7 @@ import { BotaoFiltro } from '@/components/botao-filtro';
 import { PainelFiltros } from '@/components/painel-filtros';
 import { TipoOrdenacao } from '@/components/opcao-ordenacao';
 import { TipoFiltroStatus } from '@/components/opcao-filtro';
+import { CardSala } from '@/components/card-sala';
 
 const PageSalas = () => {
   const router = useRouter();
@@ -214,6 +215,7 @@ const PageSalas = () => {
                 sala={sala}
                 usuarioAtualId={usuario?.id}
                 entrarSala={handleEntrarSala}
+                editarSala={async () => {}}
               />
             ))}
           </div>
