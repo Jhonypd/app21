@@ -102,6 +102,17 @@ export interface SalaPorCodigo {
   };
 }
 
+export interface AlterarSalaPayload {
+  id: string;
+  titulo?: string;
+  senha?: string | null;
+  salaPrivada?: boolean;
+}
+
+export interface DeletarSalaPayload {
+  id: string;
+}
+
 export const SalasApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     salaEntrar: builder.mutation<
@@ -120,6 +131,7 @@ export const SalasApi = apiSlice.injectEndpoints({
         url: `/salas/${salaId}/sessoes`,
         method: 'POST',
       }),
+      invalidatesTags: ['salaPlaning'],
     }),
 
     criarSala: builder.mutation<
@@ -130,6 +142,30 @@ export const SalasApi = apiSlice.injectEndpoints({
         url: '/salas/inserir',
         method: 'POST',
         body: salaData,
+      }),
+      invalidatesTags: ['listarSalas'],
+    }),
+
+    alterarSala: builder.mutation<
+      ApiResponse,
+      AlterarSalaPayload
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/salas/alterar/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['listarSalas', 'salaPlaning'],
+    }),
+
+    deletarSala: builder.mutation<
+      ApiResponse,
+      DeletarSalaPayload
+    >({
+      query: ({ id }) => ({
+        url: `/salas/delete`,
+        method: 'DELETE',
+        body: { id },
       }),
       invalidatesTags: ['listarSalas'],
     }),
@@ -156,14 +192,30 @@ export const SalasApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['salaPlaning'],
     }),
+
+    obterSalaPorId: builder.query<
+      ApiResponse<SalaPorCodigo>,
+      string
+    >({
+      query: (id: string) => ({
+        url: `/salas/obterPorId/${id}`,
+        method: 'GET',
+      }),
+      providesTags: ['salaPlaning'],
+    }),
   }),
 });
 
 export const {
   useSalaEntrarMutation,
   useCriarSalaMutation,
+  useAlterarSalaMutation,
+  useDeletarSalaMutation,
   useListarSalasQuery,
   useLazyListarSalasQuery,
   useObterSalaPorCodigoQuery,
+  useLazyObterSalaPorCodigoQuery,
+  useObterSalaPorIdQuery,
+  useLazyObterSalaPorIdQuery,
   useSessaoSalaMutation,
 } = SalasApi;

@@ -16,11 +16,17 @@ interface LayoutContentProps {
   children: ReactNode;
 }
 
-const HIDDEN_SIDEBAR_PREFIXES = [
+const HIDDEN_HEADER_PREFIXES = [
   '/auth',
   '/error',
   '/confirmacao-email',
   '/salas',
+] as const;
+
+const HIDDEN_SIDEBAR_PREFIXES = [
+  '/auth',
+  '/error',
+  '/confirmacao-email',
 ] as const;
 
 // Componente para o layout sem sidebar
@@ -75,6 +81,12 @@ const LayoutContent = memo(
       );
     }, [pathname]);
 
+    const shouldHideHeader = useMemo(() => {
+      return HIDDEN_HEADER_PREFIXES.some((prefix) =>
+        pathname.startsWith(prefix),
+      );
+    }, [pathname]);
+
     useEffect(() => {
       const path = pathname.split('/')[1];
       // Atualiza a aba ativa com base no pathname
@@ -85,10 +97,10 @@ const LayoutContent = memo(
     const content = useMemo(() => {
       return (
         <NoSidebarLayout>
-          {!shouldHideSidebar && (
+          {!shouldHideHeader && (
             <Header userNome={usuario?.nome} />
           )}
-          {pathname === '/' && !shouldHideSidebar && (
+          {pathname === '/' && !shouldHideHeader && (
             <Greeting
               nome={usuario?.nome.split(' ')[0] as string}
             />
@@ -103,6 +115,7 @@ const LayoutContent = memo(
         </NoSidebarLayout>
       );
     }, [
+      shouldHideHeader,
       shouldHideSidebar,
       children,
       abaAtiva,

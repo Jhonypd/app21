@@ -15,6 +15,13 @@ export interface DadosPessoaResumo {
   email: string;
 }
 
+export interface AlterarPessoaPayload {
+  id: string;
+  nome?: string;
+  email?: string;
+  senha?: string;
+}
+
 export const PessoasApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     obterDadosConta: builder.query<
@@ -25,6 +32,29 @@ export const PessoasApi = apiSlice.injectEndpoints({
         url: '/pessoas/obterDadosConta',
         method: 'GET',
       }),
+      providesTags: ['pessoa'],
+    }),
+
+    obterDadosAlterar: builder.query<
+      ApiResponse<{ pessoa: DadosContaPessoa }>,
+      void
+    >({
+      query: () => ({
+        url: '/pessoas/obterDadosAlterar',
+        method: 'GET',
+      }),
+    }),
+
+    alterarPessoa: builder.mutation<
+      ApiResponse,
+      AlterarPessoaPayload
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/pessoas/alterar/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['pessoa'],
     }),
 
     pesquisarPorNomeOuEmail: builder.query<
@@ -42,6 +72,9 @@ export const PessoasApi = apiSlice.injectEndpoints({
 export const {
   useLazyObterDadosContaQuery,
   useObterDadosContaQuery,
+  useObterDadosAlterarQuery,
+  useLazyObterDadosAlterarQuery,
+  useAlterarPessoaMutation,
   useLazyPesquisarPorNomeOuEmailQuery,
   usePesquisarPorNomeOuEmailQuery,
 } = PessoasApi;

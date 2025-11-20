@@ -38,6 +38,19 @@ export interface ResponseConfirmacaoCodigo {
   contaConfirmada: boolean;
 }
 
+export interface EsqueciMinhaSenhaPayload {
+  email: string;
+}
+
+export interface RedefinirSenhaPayload {
+  codigo: string;
+  novaSenha: string;
+}
+
+export interface RefreshTokenPayload {
+  refreshToken: string;
+}
+
 export const AuthApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<
@@ -61,6 +74,7 @@ export const AuthApi = apiSlice.injectEndpoints({
         body: userData,
       }),
     }),
+
     novoCodigo: builder.mutation<
       ApiResponse,
       NovoCodigoPayload
@@ -76,9 +90,53 @@ export const AuthApi = apiSlice.injectEndpoints({
       ApiResponse<ResponseConfirmacaoCodigo>,
       ConfirmacaoContaEmilPayload
     >({
-      query: () => ({
-        url: '/auth/validaCodigoEmail',
+      query: (params) => ({
+        url: `/auth/validaCodigoEmail?codigo=${params.codigo}&confirmarConta=${params.confirmarConta}`,
         method: 'GET',
+      }),
+    }),
+
+    esqueciMinhaSenha: builder.mutation<
+      ApiResponse,
+      EsqueciMinhaSenhaPayload
+    >({
+      query: (payload) => ({
+        url: '/auth/esqueciMinhaSenha',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    redefinirSenha: builder.mutation<
+      ApiResponse,
+      RedefinirSenhaPayload
+    >({
+      query: (payload) => ({
+        url: '/auth/redefinirSenha',
+        method: 'PUT',
+        body: payload,
+      }),
+    }),
+
+    refreshToken: builder.mutation<
+      ApiResponse<ResponseLogin>,
+      RefreshTokenPayload
+    >({
+      query: (payload) => ({
+        url: '/auth/refresh',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    revogarRefreshToken: builder.mutation<
+      ApiResponse,
+      RefreshTokenPayload
+    >({
+      query: (payload) => ({
+        url: '/auth/refresh/revogar',
+        method: 'POST',
+        body: payload,
       }),
     }),
   }),
@@ -88,4 +146,9 @@ export const {
   useLoginMutation,
   useCriarContaMutation,
   useNovoCodigoMutation,
+  useValidaCodigoEmailMutation,
+  useEsqueciMinhaSenhaMutation,
+  useRedefinirSenhaMutation,
+  useRefreshTokenMutation,
+  useRevogarRefreshTokenMutation,
 } = AuthApi;
