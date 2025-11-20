@@ -3,6 +3,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/services/api/configs/store/store';
 import { logout as logoutAction } from '@/services/api/configs/store/auth-slice';
+import { clearSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 
 export function useAuth() {
   const dispatch = useDispatch();
@@ -20,6 +21,7 @@ export function useAuth() {
 
   const logout = () => {
     dispatch(logoutAction());
+    dispatch(clearSalaToken());
   };
 
   return {

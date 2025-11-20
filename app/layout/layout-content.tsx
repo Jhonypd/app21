@@ -72,7 +72,7 @@ const LayoutContent = memo(
   ({ children }: LayoutContentProps) => {
     const [abaAtiva, setAbaAtiva] = useState('/');
     const pathname = usePathname();
-    const { usuario } = useAuth();
+    const { usuario, logout } = useAuth();
 
     // Memoizar a verificação do path para evitar recálculos
     const shouldHideSidebar = useMemo(() => {
@@ -98,7 +98,10 @@ const LayoutContent = memo(
       return (
         <NoSidebarLayout>
           {!shouldHideHeader && (
-            <Header userNome={usuario?.nome} />
+            <Header
+              usuario={usuario}
+              logout={logout}
+            />
           )}
           {pathname === '/' && !shouldHideHeader && (
             <Greeting

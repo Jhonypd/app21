@@ -11,7 +11,6 @@ import {
   useListarSalasQuery,
   useSalaEntrarMutation,
 } from '@/services/api/salas-api';
-// import { CardSala } from '@/components/card-sala';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { BarraBuscaSalas } from '@/components/barra-busca-salas';
@@ -20,9 +19,12 @@ import { PainelFiltros } from '@/components/painel-filtros';
 import { TipoOrdenacao } from '@/components/opcao-ordenacao';
 import { TipoFiltroStatus } from '@/components/opcao-filtro';
 import { CardSala } from '@/components/card-sala';
+import { useDispatch } from 'react-redux';
+import { setSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 
 const PageSalas = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { usuario } = useAuth();
 
   // Estados de filtro e busca
@@ -127,6 +129,21 @@ const PageSalas = () => {
         await salaEntrar(loginPayload).unwrap();
 
       if (result.Sucesso) {
+        // Salvar token da sala no Redux
+        if (
+          result.Resultado?.tokenSala &&
+          result.Resultado?.dataExpiracao
+        ) {
+          dispatch(
+            setSalaToken({
+              tokenSala: result.Resultado.tokenSala,
+              expiracao: String(
+                result.Resultado.dataExpiracao,
+              ),
+            }),
+          );
+        }
+
         // Redirecionar para a sala
         router.push(`/salas/${codigo}`);
         return true;
@@ -214,7 +231,8 @@ const PageSalas = () => {
                 index={index}
                 sala={sala}
                 usuarioAtualId={usuario?.id}
-                entrarSala={handleEntrarSala}
+                iniciarSessao={handleEntrarSala}
+                entrarSessaoAtiva={() => {}}
                 editarSala={async () => {}}
               />
             ))}

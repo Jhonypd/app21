@@ -4,10 +4,18 @@ import { useAuth } from '@/hooks/useAuth';
 import { useParams, useRouter } from 'next/navigation';
 import { useObterSalaPorCodigoQuery } from '@/services/api/salas-api';
 import Loading from '@/components/loading';
-import { toastError } from '@/components/custom-toast';
+import {
+  toastError,
+  toastSuccess,
+} from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useEffect } from 'react';
 import { SalaPlanning } from '@/components/sala-planning';
+import { useVotarMutation } from '@/services/api/votos-api';
+import {
+  useRevelarVotosMutation,
+  useResetarVotosMutation,
+} from '@/services/api/sessoes-api';
 
 const PageSala = () => {
   const params = useParams();
@@ -19,6 +27,10 @@ const PageSala = () => {
     useObterSalaPorCodigoQuery(codigoSala, {
       skip: !codigoSala,
     });
+
+  const [votar] = useVotarMutation();
+  const [revelarVotos] = useRevelarVotosMutation();
+  const [resetarVotos] = useResetarVotosMutation();
 
   useEffect(() => {
     if (error) {
@@ -64,27 +76,88 @@ const PageSala = () => {
   const sala = data.Resultado.sala;
   const usuarioId = usuario?.id ?? '';
 
+  const handleEnviarVoto = async (valor: number) => {
+    try {
+      // TODO: Obter sessão ativa e historia_sessao_id atual
+      // Por enquanto, mostrar erro que precisa de história ativa
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'A votação será implementada após a seleção de histórias',
+      });
+      console.log({ salaId: sala.id, valor });
+    } catch (error: any) {
+      const apiError = getApiErrorMessage(error);
+      toastError({
+        title: apiError.Mensagem,
+        description: apiError.Detalhe,
+      });
+    }
+  };
+
+  const handleRevelarVotos = async () => {
+    try {
+      // TODO: Obter sessão ativa
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'Revelar votos será implementado com gestão de sessões',
+      });
+    } catch (error: any) {
+      const apiError = getApiErrorMessage(error);
+      toastError({
+        title: apiError.Mensagem,
+        description: apiError.Detalhe,
+      });
+    }
+  };
+
+  const handleResetarVotos = async () => {
+    try {
+      // TODO: Obter sessão ativa
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'Resetar votos será implementado com gestão de sessões',
+      });
+    } catch (error: any) {
+      const apiError = getApiErrorMessage(error);
+      toastError({
+        title: apiError.Mensagem,
+        description: apiError.Detalhe,
+      });
+    }
+  };
+
+  const handleSelecionarHistoria = async (
+    historiaId: string,
+  ) => {
+    try {
+      // TODO: Marcar história como ativa na sessão atual
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'Seleção de história será implementada',
+      });
+      console.log({ salaId: sala.id, historiaId });
+    } catch (error: any) {
+      const apiError = getApiErrorMessage(error);
+      toastError({
+        title: apiError.Mensagem,
+        description: apiError.Detalhe,
+      });
+    }
+  };
+
   return (
     <SalaPlanning
       usuarioAtualId={usuarioId}
       aoVoltar={handleVoltar}
       sala={sala}
-      aoEnviarVoto={async (valor) => {
-        // Chamar sua API para enviar voto
-        console.log({ salaId: sala.id, valor });
-      }}
-      aoRevelarVotos={async () => {
-        // Chamar sua API para revelar votos
-        console.log({ salaId: sala.id });
-      }}
-      aoResetarVotos={async () => {
-        // Chamar sua API para resetar votos
-        console.log({ salaId: sala.id });
-      }}
-      aoSelecionarHistoria={async (historiaId) => {
-        // Chamar sua API para marcar história como ativa
-        console.log({ salaId: sala.id, historiaId });
-      }}
+      aoEnviarVoto={handleEnviarVoto}
+      aoRevelarVotos={handleRevelarVotos}
+      aoResetarVotos={handleResetarVotos}
+      aoSelecionarHistoria={handleSelecionarHistoria}
     />
   );
 };

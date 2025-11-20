@@ -11,6 +11,7 @@ export const apiSlice = createApi({
     'votos',
     'participantes',
     'pessoa',
+    'historias',
   ],
   endpoints: () => ({}),
 });

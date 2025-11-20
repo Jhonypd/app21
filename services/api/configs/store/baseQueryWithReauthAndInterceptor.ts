@@ -152,6 +152,7 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       };
     }
     console.log('result', result);
+
     return {
       error: {
         status: 400,

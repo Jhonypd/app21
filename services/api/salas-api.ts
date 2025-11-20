@@ -37,6 +37,7 @@ export interface Salas {
 export interface LoginSalaPayload {
   codigo: string;
   senha?: string;
+  visitantes?: string[]; // IDs dos visitantes temporários (apenas para dono)
 }
 
 export interface CriarSalaPayload {
@@ -124,14 +125,7 @@ export const SalasApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: credenciais,
       }),
-    }),
-
-    sessaoSala: builder.mutation<ApiResponse, string>({
-      query: (salaId) => ({
-        url: `/salas/${salaId}/sessoes`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['salaPlaning'],
+      invalidatesTags: ['salaPlaning'], // Invalidar para recarregar dados da sala
     }),
 
     criarSala: builder.mutation<
@@ -217,5 +211,4 @@ export const {
   useLazyObterSalaPorCodigoQuery,
   useObterSalaPorIdQuery,
   useLazyObterSalaPorIdQuery,
-  useSessaoSalaMutation,
 } = SalasApi;
