@@ -8,11 +8,8 @@ import {
   Lock,
   Settings,
   Users,
-  Crown,
-  Shield,
-  User,
   UserPlus,
-  Trash2,
+  InfoIcon,
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,22 +29,20 @@ import { TabsCustom } from './tabs';
 import { TextInput } from './inputs/input-text';
 import { PasswordInput } from './inputs/input-password';
 import { Switch } from './ui/switch';
-import { SalaParaEdicao } from '@/services/api/salas-api';
 import {
-  useLazyPesquisarPorNomeOuEmailQuery,
-  DadosPessoaResumo,
-} from '@/services/api/pessoas.api';
+  SalaParaEdicao,
+  useAdicionarParticipanteMutation,
+  useRemoverParticipanteMutation,
+  useAlterarRoleParticipanteMutation,
+} from '@/services/api/salas-api';
+import { CardParticipante } from './sala/card-participante';
+import { DialogAdicionarParticipante } from './sala/dialog-adicionar-participante';
+import { DialogRemoverParticipante } from './sala/dialog-remover-participante';
 import { toastError, toastSuccess } from './custom-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
 import Loading from './loading';
-import { Badge } from './ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +53,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 // Schema de validação
 const EditarSalaSchema = z
@@ -89,6 +89,7 @@ type ParticipanteLocal = SalaParaEdicao['participantes'][0];
 // Componente interno para Aba de Participantes
 interface AbaParticipantesProps {
   participantes: ParticipanteLocal[];
+  participantesOriginais: ParticipanteLocal[]; // Para verificar se já existia no banco
   onAlterarParticipantes: (
     participantes: ParticipanteLocal[],
   ) => void;
@@ -97,6 +98,7 @@ interface AbaParticipantesProps {
 
 function AbaParticipantes({
   participantes,
+  participantesOriginais,
   onAlterarParticipantes,
   meuRole,
 }: AbaParticipantesProps) {
@@ -107,54 +109,9 @@ function AbaParticipantes({
     } | null>(null);
   const [dialogAdicionarAberto, setDialogAdicionarAberto] =
     useState(false);
-  const [pessoaSelecionada, setPessoaSelecionada] =
-    useState<string>('');
-  const [roleSelecionado, setRoleSelecionado] = useState<
-    1 | 2
-  >(2);
-  const [termoBusca, setTermoBusca] = useState('');
-  const [pessoasEncontradas, setPessoasEncontradas] =
-    useState<DadosPessoaResumo[]>([]);
-
-  const [buscarPessoas, { isLoading: buscando }] =
-    useLazyPesquisarPorNomeOuEmailQuery();
 
   // Permissões
   const podeAdicionar = meuRole === 0 || meuRole === 1; // Dono ou Admin
-  const podeRemover = meuRole === 0 || meuRole === 1; // Dono ou Admin
-  const podeAlterarRole = meuRole === 0; // Apenas Dono
-  const podeAdicionarAdmin = meuRole === 0; // Apenas Dono pode adicionar Admin
-
-  // Helper para determinar ícone e label do role
-  const getRoleInfo = (role: number) => {
-    switch (role) {
-      case 0:
-        return {
-          icon: Crown,
-          label: 'Dono',
-          color: 'text-yellow-500',
-          badgeClass:
-            'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-        };
-      case 1:
-        return {
-          icon: Shield,
-          label: 'Admin',
-          color: 'text-blue-500',
-          badgeClass:
-            'bg-blue-500/10 text-blue-500 border-blue-500/20',
-        };
-      case 2:
-      default:
-        return {
-          icon: User,
-          label: 'Membro',
-          color: 'text-gray-400',
-          badgeClass:
-            'bg-gray-500/10 text-gray-400 border-gray-500/20',
-        };
-    }
-  };
 
   const handleRemoverParticipante = () => {
     if (!participanteRemover) return;
@@ -176,87 +133,17 @@ function AbaParticipantes({
     onAlterarParticipantes(novosParticipantes);
   };
 
-  // Buscar pessoas ao digitar
-  useEffect(() => {
-    const buscar = async () => {
-      if (termoBusca.trim().length < 2) {
-        setPessoasEncontradas([]);
-        return;
-      }
-
-      try {
-        const resultado = await buscarPessoas({
-          termo: termoBusca,
-        }).unwrap();
-        // Filtrar pessoas que já são participantes
-        const idsParticipantes = participantes.map(
-          (p) => p.id,
-        );
-        const pessoas = resultado.Resultado?.pessoas || [];
-        const pessoasFiltradas = pessoas.filter(
-          (p: DadosPessoaResumo) =>
-            !idsParticipantes.includes(p.id),
-        );
-        setPessoasEncontradas(pessoasFiltradas);
-      } catch {
-        setPessoasEncontradas([]);
-      }
-    };
-
-    const timer = setTimeout(buscar, 300);
-    return () => clearTimeout(timer);
-  }, [termoBusca, buscarPessoas, participantes]);
-
   const handleAbrirDialogAdicionar = () => {
     setDialogAdicionarAberto(true);
-    setPessoaSelecionada('');
-    setRoleSelecionado(2);
-    setTermoBusca('');
-    setPessoasEncontradas([]);
   };
 
   const handleFecharDialogAdicionar = () => {
     setDialogAdicionarAberto(false);
-    setPessoaSelecionada('');
-    setRoleSelecionado(2);
-    setTermoBusca('');
-    setPessoasEncontradas([]);
-  };
-
-  const handleAdicionarParticipante = () => {
-    if (!pessoaSelecionada) return;
-
-    const pessoaEncontrada = pessoasEncontradas.find(
-      (p) => p.id === pessoaSelecionada,
-    );
-    if (!pessoaEncontrada) return;
-
-    const novoParticipante: ParticipanteLocal = {
-      id: pessoaEncontrada.id,
-      nome: pessoaEncontrada.nome,
-      inativo: pessoaEncontrada.inativo,
-      role: roleSelecionado,
-    };
-
-    onAlterarParticipantes([
-      ...participantes,
-      novoParticipante,
-    ]);
-    handleFecharDialogAdicionar();
   };
 
   return (
     <>
-      <div className="space-y-4">
-        {/* Mensagem informativa */}
-        <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 p-4">
-          <p className="text-xs text-purple-300">
-            <strong>ℹ️ Importante:</strong> As alterações de
-            participantes serão salvas apenas quando você
-            clicar em &quot;Salvar&quot; no final.
-          </p>
-        </div>
-
+      <div className="h-full space-y-4">
         {/* Header com contador */}
         <div className="flex items-center justify-between">
           <div>
@@ -281,286 +168,57 @@ function AbaParticipantes({
         </div>
 
         {/* Lista de Participantes */}
-        <div className="space-y-2">
+        <div className="h-48 max-h-96 space-y-2 overflow-y-auto py-3 sm:min-h-52">
           {participantes.map((participante) => {
-            const roleInfo = getRoleInfo(participante.role);
-            const Icon = roleInfo.icon;
-            const isDono = participante.role === 0;
-            const isAdmin = participante.role === 1;
-
-            // Admin não pode remover dono ou outro admin
-            const podeRemoverEste =
-              podeRemover &&
-              !isDono &&
-              (meuRole === 0 || !isAdmin);
+            const jaExistia = participantesOriginais.some(
+              (p) => p.id === participante.id,
+            );
 
             return (
-              <div
+              <CardParticipante
                 key={participante.id}
-                className="flex items-center justify-between rounded-xl bg-white/5 p-4 transition-all hover:bg-white/10"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`rounded-full bg-white/10 p-2 ${roleInfo.color}`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium">
-                      {participante.nome}
-                    </p>
-                    <Badge
-                      variant="outline"
-                      className={`mt-1 ${roleInfo.badgeClass}`}
-                    >
-                      {roleInfo.label}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Ações */}
-                <div className="flex items-center gap-2">
-                  {/* Alterar Role - apenas dono pode fazer */}
-                  {podeAlterarRole && !isDono && (
-                    <div className="flex gap-1">
-                      {participante.role === 2 && (
-                        <button
-                          onClick={() =>
-                            handleAlterarRole(
-                              participante.id,
-                              1,
-                            )
-                          }
-                          className="rounded-lg bg-blue-600/20 px-3 py-1 text-xs text-blue-400 transition-all hover:bg-blue-600/30 active:scale-95"
-                        >
-                          Promover
-                        </button>
-                      )}
-                      {participante.role === 1 && (
-                        <button
-                          onClick={() =>
-                            handleAlterarRole(
-                              participante.id,
-                              2,
-                            )
-                          }
-                          className="rounded-lg bg-gray-600/20 px-3 py-1 text-xs text-gray-400 transition-all hover:bg-gray-600/30 active:scale-95"
-                        >
-                          Rebaixar
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Remover */}
-                  {podeRemoverEste && (
-                    <button
-                      onClick={() =>
-                        setParticipanteRemover({
-                          id: participante.id,
-                          nome: participante.nome,
-                        })
-                      }
-                      className="rounded-lg bg-red-600/20 p-2 text-red-400 transition-all hover:bg-red-600/30 active:scale-95"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
+                participante={participante}
+                jaExistia={jaExistia}
+                meuRole={meuRole}
+                onAlterarRole={handleAlterarRole}
+                onRemover={(participante) =>
+                  setParticipanteRemover(participante)
+                }
+              />
             );
           })}
-        </div>
-
-        {/* Informações sobre permissões */}
-        <div className="rounded-xl bg-blue-500/10 p-4">
-          <p className="text-xs text-blue-400">
-            <strong>Dica:</strong>{' '}
-            {meuRole === 0 &&
-              'Como dono, você pode promover membros a admin ou removê-los da sala.'}
-            {meuRole === 1 &&
-              'Como admin, você pode adicionar e remover membros (mas não outros admins).'}
-            {(meuRole === 2 || meuRole === null) &&
-              'Apenas dono e admins podem gerenciar participantes.'}
-          </p>
         </div>
       </div>
 
       {/* Dialog para Adicionar Participante */}
-      <AlertDialog
-        open={dialogAdicionarAberto}
-        onOpenChange={(open) =>
-          !open && handleFecharDialogAdicionar()
-        }
-      >
-        <AlertDialogContent className="border-white/20 bg-slate-900 text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Adicionar Participante
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
-              Busque e adicione um novo participante à sala
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+      <DialogAdicionarParticipante
+        aberto={dialogAdicionarAberto}
+        aoFechar={handleFecharDialogAdicionar}
+        participantesExistentes={participantes}
+        meuRole={meuRole}
+        onAdicionar={(pessoaId, nome, role) => {
+          const novoParticipante: ParticipanteLocal = {
+            id: pessoaId,
+            nome,
+            role,
+            inativo: false,
+          };
 
-          <div className="space-y-4 py-4">
-            {/* Busca */}
-            <div className="space-y-2">
-              <label className="text-sm text-gray-400">
-                Buscar pessoa
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={termoBusca}
-                  onChange={(e) =>
-                    setTermoBusca(e.target.value)
-                  }
-                  placeholder="Digite o nome ou email..."
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white placeholder:text-gray-500 focus:border-purple-500 focus:outline-none"
-                />
-                {buscando && (
-                  <div className="absolute top-1/2 right-3 -translate-y-1/2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
-                  </div>
-                )}
-              </div>
-            </div>
+          onAlterarParticipantes([
+            ...participantes,
+            novoParticipante,
+          ]);
 
-            {/* Lista de resultados */}
-            {termoBusca.trim().length >= 2 &&
-              pessoasEncontradas.length > 0 && (
-                <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl bg-white/5 p-2">
-                  {pessoasEncontradas.map((pessoa) => (
-                    <button
-                      key={pessoa.id}
-                      onClick={() =>
-                        setPessoaSelecionada(pessoa.id)
-                      }
-                      className={`w-full rounded-lg p-3 text-left transition-all ${
-                        pessoaSelecionada === pessoa.id
-                          ? 'border border-purple-500 bg-purple-600/20'
-                          : 'bg-white/5 hover:bg-white/10'
-                      }`}
-                    >
-                      <p className="text-sm font-medium">
-                        {pessoa.nome}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {pessoa.email}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-            {termoBusca.trim().length >= 2 &&
-              pessoasEncontradas.length === 0 &&
-              !buscando && (
-                <p className="py-4 text-center text-sm text-gray-400">
-                  Nenhuma pessoa encontrada
-                </p>
-              )}
-
-            {/* Seletor de Role */}
-            {pessoaSelecionada && (
-              <div className="space-y-2">
-                <label className="text-sm text-gray-400">
-                  Tipo de participante
-                </label>
-                <Select
-                  value={roleSelecionado.toString()}
-                  onValueChange={(value) =>
-                    setRoleSelecionado(
-                      Number(value) as 1 | 2,
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-full rounded-xl border-white/10 bg-white/5 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="border-white/20 bg-slate-900">
-                    <SelectItem
-                      value="2"
-                      className="text-white hover:bg-white/10"
-                    >
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>Membro</span>
-                      </div>
-                    </SelectItem>
-                    {podeAdicionarAdmin && (
-                      <SelectItem
-                        value="1"
-                        className="text-white hover:bg-white/10"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          <span>Administrador</span>
-                        </div>
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                {!podeAdicionarAdmin && (
-                  <p className="text-xs text-gray-500">
-                    Apenas o dono pode adicionar
-                    administradores
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/10 bg-white/5 text-white hover:bg-white/10">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleAdicionarParticipante}
-              disabled={!pessoaSelecionada}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
-            >
-              Adicionar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          handleFecharDialogAdicionar();
+        }}
+      />
 
       {/* Dialog de Confirmação de Remoção */}
-      <AlertDialog
-        open={!!participanteRemover}
-        onOpenChange={(open) =>
-          !open && setParticipanteRemover(null)
-        }
-      >
-        <AlertDialogContent className="border-white/20 bg-slate-900 text-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-semibold">
-              Remover Participante
-            </AlertDialogTitle>
-            <AlertDialogDescription className="mt-2 text-gray-400">
-              Tem certeza que deseja remover{' '}
-              <strong className="text-white">
-                {participanteRemover?.nome}
-              </strong>{' '}
-              da sala? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4 gap-2">
-            <AlertDialogCancel className="border-white/10 bg-white/5 text-white hover:bg-white/10">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRemoverParticipante}
-              className="bg-gradient-to-r from-red-500 to-rose-500 text-white hover:from-red-600 hover:to-rose-600"
-            >
-              Remover
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DialogRemoverParticipante
+        participante={participanteRemover}
+        onFechar={() => setParticipanteRemover(null)}
+        onConfirmar={handleRemoverParticipante}
+      />
     </>
   );
 }
@@ -589,6 +247,21 @@ export function DialogEditarSala({
   const [abaAtiva, setAbaAtiva] = useState('geral');
   const [participantesLocais, setParticipantesLocais] =
     useState<ParticipanteLocal[]>([]);
+  const [salvandoParticipantes, setSalvandoParticipantes] =
+    useState(false);
+  const [
+    dialogConfirmarFechamento,
+    setDialogConfirmarFechamento,
+  ] = useState(false);
+
+  // Hooks
+  const { usuario } = useAuth();
+  const [adicionarParticipante] =
+    useAdicionarParticipanteMutation();
+  const [removerParticipante] =
+    useRemoverParticipanteMutation();
+  const [alterarRoleParticipante] =
+    useAlterarRoleParticipanteMutation();
 
   // Permissões baseadas na matriz
   const podeEditarTitulo = meuRole === 0 || meuRole === 1; // Dono ou Admin
@@ -630,7 +303,55 @@ export function DialogEditarSala({
     }
   }, [aberto, dadosSala, form]);
 
+  // Verificar se há mudanças não salvas
+  const temMudancasParticipantes = () => {
+    if (!dadosSala) return false;
+
+    // Verificar se quantidade mudou
+    if (
+      participantesLocais.length !==
+      dadosSala.participantes.length
+    ) {
+      return true;
+    }
+
+    // Verificar se algum participante mudou de role
+    const origMap = new Map(
+      dadosSala.participantes.map((p) => [p.id, p]),
+    );
+    for (const local of participantesLocais) {
+      const orig = origMap.get(local.id);
+      if (!orig || orig.role !== local.role) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const temMudancasGerais = () => {
+    if (!dadosSala) return false;
+    const formData = form.getValues();
+    return (
+      formData.titulo !== dadosSala.titulo ||
+      (formData.alterarSenha &&
+        formData.senha.trim().length > 0)
+    );
+  };
+
+  const temMudancasNaoSalvas =
+    temMudancasParticipantes() || temMudancasGerais();
+
   const handleSalvar = async () => {
+    if (!dadosSala || !usuario?.id) {
+      toastError({
+        title: 'Erro',
+        description:
+          'Dados da sala ou usuário não disponíveis',
+      });
+      return;
+    }
+
     // Validar permissões
     if (!podeEditarTitulo && !podeEditarSenha) {
       toastError({
@@ -651,52 +372,211 @@ export function DialogEditarSala({
     }
 
     setSalvando(true);
-    try {
-      const formData = form.getValues();
-      const dados: { titulo: string; senha?: string } = {
-        titulo: formData.titulo,
-      };
+    setSalvandoParticipantes(true);
 
-      // Só incluir senha se:
-      // 1. Usuário marcou para alterar senha
-      // 2. Sala é privada (tem ou terá senha)
-      // 3. Senha não está vazia
-      if (
-        formData.alterarSenha &&
-        formData.salaPrivada &&
-        formData.senha.trim()
-      ) {
-        dados.senha = formData.senha;
+    try {
+      // ========================================
+      // PARTE 1: PERSISTIR MUDANÇAS DE PARTICIPANTES
+      // ========================================
+
+      // Criar maps para comparação rápida
+      const origMap = new Map(
+        dadosSala.participantes.map((p) => [p.id, p]),
+      );
+      const localMap = new Map(
+        participantesLocais.map((p) => [p.id, p]),
+      );
+
+      // Calcular diferenças
+      const toRemove = dadosSala.participantes.filter(
+        (p) => !localMap.has(p.id),
+      );
+      const toAdd = participantesLocais.filter(
+        (p) => !origMap.has(p.id),
+      );
+      const toUpdate = participantesLocais.filter((p) => {
+        const orig = origMap.get(p.id);
+        return orig && orig.role !== p.role;
+      });
+
+      // VALIDAÇÃO FRONTEND: Não permitir remover o dono
+      const dono = dadosSala.participantes.find(
+        (p) => p.role === 0,
+      );
+      if (dono && toRemove.some((r) => r.id === dono.id)) {
+        toastError({
+          title: 'Operação não permitida',
+          description:
+            'Não é permitido remover o dono da sala',
+        });
+        setSalvando(false);
+        setSalvandoParticipantes(false);
+        return;
       }
 
-      await aoSalvar(dados);
+      // VALIDAÇÃO FRONTEND: Admin não pode alterar role do dono
+      if (
+        meuRole === 1 &&
+        dono &&
+        toUpdate.some((u) => u.id === dono.id)
+      ) {
+        toastError({
+          title: 'Operação não permitida',
+          description:
+            'Administradores não podem alterar o role do dono',
+        });
+        setSalvando(false);
+        setSalvandoParticipantes(false);
+        return;
+      }
 
+      // EXECUTAR MUDANÇAS NA ORDEM SEGURA: remover → adicionar → alterar role
+
+      // 1) REMOÇÕES (sequencial para melhor controle de erro)
+      for (const participante of toRemove) {
+        try {
+          await removerParticipante({
+            sala_id: dadosSala.id,
+            pessoa_id: participante.id,
+          }).unwrap();
+        } catch (error) {
+          const apiError = getApiErrorMessage(error);
+          toastError({
+            title: `Erro ao remover ${participante.nome}`,
+            description:
+              apiError.Detalhe ||
+              'Falha ao remover participante',
+          });
+          setSalvando(false);
+          setSalvandoParticipantes(false);
+          return; // Abortar em caso de erro
+        }
+      }
+
+      // 2) ADIÇÕES (paralelo para melhor performance)
+      if (toAdd.length > 0) {
+        try {
+          await Promise.all(
+            toAdd.map((participante) =>
+              adicionarParticipante({
+                sala_id: dadosSala.id,
+                pessoa_id: participante.id,
+                role: participante.role as 1 | 2,
+              }).unwrap(),
+            ),
+          );
+        } catch (error) {
+          const apiError = getApiErrorMessage(error);
+          toastError({
+            title: 'Erro ao adicionar participantes',
+            description:
+              apiError.Detalhe ||
+              'Falha ao adicionar um ou mais participantes',
+          });
+          setSalvando(false);
+          setSalvandoParticipantes(false);
+          return; // Abortar em caso de erro
+        }
+      }
+
+      // 3) ALTERAÇÕES DE ROLE (paralelo para melhor performance)
+      if (toUpdate.length > 0) {
+        try {
+          await Promise.all(
+            toUpdate.map((participante) =>
+              alterarRoleParticipante({
+                sala_id: dadosSala.id,
+                pessoa_id: participante.id,
+                role: participante.role as 1 | 2,
+              }).unwrap(),
+            ),
+          );
+        } catch (error) {
+          const apiError = getApiErrorMessage(error);
+          toastError({
+            title: 'Erro ao alterar roles',
+            description:
+              apiError.Detalhe ||
+              'Falha ao alterar role de um ou mais participantes',
+          });
+          setSalvando(false);
+          setSalvandoParticipantes(false);
+          return; // Abortar em caso de erro
+        }
+      }
+
+      setSalvandoParticipantes(false);
+
+      // ========================================
+      // PARTE 2: PERSISTIR MUDANÇAS GERAIS (TÍTULO/SENHA)
+      // ========================================
+
+      const formData = form.getValues();
+
+      // Verificar se houve mudanças reais no título ou senha
+      const tituloMudou =
+        formData.titulo !== dadosSala.titulo;
+      const senhaMudou =
+        formData.alterarSenha &&
+        formData.salaPrivada &&
+        formData.senha.trim().length > 0;
+
+      // Só chamar API se houver mudanças
+      if (tituloMudou || senhaMudou) {
+        const dados: { titulo: string; senha?: string } = {
+          titulo: formData.titulo,
+        };
+
+        // Só incluir senha se foi alterada
+        if (senhaMudou) {
+          dados.senha = formData.senha;
+        }
+
+        await aoSalvar(dados);
+      }
+
+      // SUCESSO TOTAL
       toastSuccess({
         title: 'Sala atualizada!',
         description:
-          'As alterações foram salvas com sucesso',
+          'Todas as alterações foram salvas com sucesso',
       });
 
-      handleFechar();
+      handleFechar(true); // Força fechamento sem verificar mudanças
     } catch (error) {
       const apiError = getApiErrorMessage(error);
       toastError({
-        title: apiError.Mensagem,
-        description: apiError.Detalhe,
+        title: apiError.Mensagem || 'Erro ao salvar',
+        description:
+          apiError.Detalhe ||
+          'Ocorreu um erro ao salvar as alterações',
       });
     } finally {
       setSalvando(false);
+      setSalvandoParticipantes(false);
     }
   };
 
-  const handleFechar = () => {
+  const handleFechar = (forcarFechamento = false) => {
+    // Se tiver mudanças não salvas E não for forçado, mostrar dialog de confirmação
+    if (temMudancasNaoSalvas && !forcarFechamento) {
+      setDialogConfirmarFechamento(true);
+      return;
+    }
+
+    form.reset();
+    aoFechar();
+  };
+
+  const handleConfirmarFechamento = () => {
+    setDialogConfirmarFechamento(false);
     form.reset();
     aoFechar();
   };
 
   return (
     <>
-      {salvando && (
+      {(salvando || salvandoParticipantes) && (
         <Loading
           active
           type="transaction"
@@ -709,7 +589,7 @@ export function DialogEditarSala({
         <DialogTrigger asChild>{children}</DialogTrigger>
 
         <DialogContent
-          className="rounded-sm border-white/20 bg-slate-900 p-0 text-white sm:max-w-2xl"
+          className="h-full rounded-sm border-white/20 bg-slate-900 p-0 text-white sm:h-[600px] sm:max-w-2xl"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -724,8 +604,21 @@ export function DialogEditarSala({
             {/* Header Visual */}
             <div className="border-b border-white/10 p-6">
               <h2 className="text-xl">Editar Sala</h2>
-              <p className="mt-1 text-sm text-gray-400">
-                Gerencie as configurações da sala
+              <p className="mt-1 flex items-center justify-between text-sm text-gray-400">
+                Gerencie as configurações da sala{' '}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <InfoIcon />
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-accent">
+                    <p className="w-60 text-xs text-purple-200 sm:w-3xs">
+                      <strong>ℹ️ Importante:</strong> As
+                      alterações de participantes serão
+                      salvas apenas quando você clicar em
+                      &quot;Salvar&quot; no final.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </p>
             </div>
 
@@ -740,7 +633,7 @@ export function DialogEditarSala({
                     value={abaAtiva}
                     onValueChange={setAbaAtiva}
                     className="flex flex-1 flex-col"
-                    tabsListClassName="bg-transparent grid h-fit w-full grid-cols-2 items-center gap-2 border-0 p-6 pb-0"
+                    tabsListClassName="bg-transparent grid h-fit w-full grid-cols-2 items-center gap-2 "
                     tabsTrigger={[
                       {
                         value: 'geral',
@@ -907,6 +800,10 @@ export function DialogEditarSala({
                               participantes={
                                 participantesLocais
                               }
+                              participantesOriginais={
+                                dadosSala?.participantes ||
+                                []
+                              }
                               onAlterarParticipantes={
                                 setParticipantesLocais
                               }
@@ -920,9 +817,9 @@ export function DialogEditarSala({
                 </div>
 
                 {/* Footer */}
-                <div className="flex gap-2 border-t border-white/10 p-6">
+                <div className="fixed right-0 bottom-0 flex w-full gap-2 border-t border-white/10 p-6">
                   <button
-                    onClick={handleFechar}
+                    onClick={() => handleFechar(false)}
                     disabled={salvando}
                     className="flex-1 rounded-xl bg-white/5 py-3 text-sm transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                   >
@@ -935,9 +832,20 @@ export function DialogEditarSala({
                       (!podeEditarTitulo &&
                         !podeEditarSenha)
                     }
-                    className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 text-sm transition-all hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`flex-1 rounded-xl py-3 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                      temMudancasNaoSalvas
+                        ? 'animate-pulse bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                    }`}
                   >
-                    Salvar
+                    <span className="flex items-center justify-center gap-2">
+                      Salvar
+                      {temMudancasNaoSalvas && (
+                        <span className="flex h-2 w-2 items-center justify-center rounded-full bg-white">
+                          <span className="h-2 w-2 animate-ping rounded-full bg-white opacity-75"></span>
+                        </span>
+                      )}
+                    </span>
                   </button>
                 </div>
               </FormProvider>
@@ -945,6 +853,35 @@ export function DialogEditarSala({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Confirmação ao Fechar com Mudanças */}
+      <AlertDialog
+        open={dialogConfirmarFechamento}
+        onOpenChange={setDialogConfirmarFechamento}
+      >
+        <AlertDialogContent className="border-white/20 bg-slate-900 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-semibold">
+              Alterações não salvas
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-2 text-gray-400">
+              Você tem alterações não salvas. Deseja
+              realmente sair sem salvar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel className="border-white/10 bg-white/5 text-white hover:bg-white/10">
+              Continuar Editando
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmarFechamento}
+              className="bg-gradient-to-r from-red-500 to-rose-500 text-white hover:from-red-600 hover:to-rose-600"
+            >
+              Sair sem Salvar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

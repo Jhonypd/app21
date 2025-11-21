@@ -30,10 +30,13 @@ interface CardSalaProps {
     senha?: string,
   ) => Promise<boolean>;
   abrirWizard?: (sala: Salas) => void;
-  editarSala?: (dados: {
-    titulo: string;
-    senha?: string;
-  }) => Promise<void>;
+  editarSala?: (
+    salaId: string,
+    dados: {
+      titulo: string;
+      senha?: string;
+    },
+  ) => Promise<void>;
   podeIniciarSessao?: boolean; // Se o usuário pode iniciar sessão (dono ou admin)
 }
 
@@ -269,7 +272,7 @@ export function CardSala({
           meuRole={sala.meuRole}
           aoSalvar={async (dados) => {
             if (editarSala) {
-              await editarSala(dados);
+              await editarSala(sala.id, dados);
             }
           }}
         />

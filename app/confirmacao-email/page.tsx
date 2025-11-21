@@ -24,7 +24,7 @@ import {
   useRouter,
   useSearchParams,
 } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MdEmail } from 'react-icons/md';
 
 const ConfirmacaoEmail = () => {
@@ -35,6 +35,7 @@ const ConfirmacaoEmail = () => {
   const confirmarConta = searchParams.get('confirmarConta');
 
   const [email, setEmail] = useState('');
+  const jaValidouRef = useRef(false);
 
   const [novoCodigo, { isLoading }] =
     useNovoCodigoMutation();
@@ -47,7 +48,9 @@ const ConfirmacaoEmail = () => {
    */
   useEffect(() => {
     const confirmar = async () => {
-      if (!codigo) return;
+      if (!codigo || jaValidouRef.current) return;
+
+      jaValidouRef.current = true;
 
       try {
         const result = await validarCodigoEmail({
@@ -56,16 +59,28 @@ const ConfirmacaoEmail = () => {
         }).unwrap();
 
         if (result?.Sucesso) {
-          toastSuccess({
-            description:
-              'Email confirmado com sucesso! Você já pode fazer login.',
-          });
+          // Só redireciona se contaConfirmada for true
+          const contaConfirmada =
+            result?.Resultado?.pessoa?.contaConfirmada;
 
-          // Redireciona para o login após 1 segundo
-          setTimeout(
-            () => router.push('/auth/login'),
-            1200,
-          );
+          if (contaConfirmada === true) {
+            toastSuccess({
+              description:
+                'Email confirmado com sucesso! Você já pode fazer login.',
+            });
+
+            // Redireciona para o login após 1 segundo
+            setTimeout(
+              () => router.push('/auth/login'),
+              1200,
+            );
+          } else {
+            toastInfo({
+              description:
+                result?.Mensagem ??
+                'Código validado com sucesso.',
+            });
+          }
           return;
         }
 
@@ -83,7 +98,8 @@ const ConfirmacaoEmail = () => {
     };
 
     confirmar();
-  }, [codigo, confirmarConta, validarCodigoEmail, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codigo, confirmarConta]);
 
   const handleEmailChange = (
     e: React.ChangeEvent<HTMLInputElement>,

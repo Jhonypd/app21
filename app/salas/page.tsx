@@ -10,6 +10,7 @@ import {
   Salas,
   useListarSalasQuery,
   useSalaEntrarMutation,
+  useAlterarSalaMutation,
 } from '@/services/api/salas-api';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -48,6 +49,7 @@ const PageSalas = () => {
 
   // Queries e mutations
   const [salaEntrar] = useSalaEntrarMutation();
+  const [alterarSala] = useAlterarSalaMutation();
   const { data, isLoading, error } = useListarSalasQuery({
     itensPagina: 10,
     pagina: 0,
@@ -123,6 +125,32 @@ const PageSalas = () => {
   const handleAbrirWizard = (sala: Salas) => {
     setSalaParaIniciar(sala);
     setWizardAberto(true);
+  };
+
+  // Handler para editar sala
+  const handleEditarSala = async (
+    salaId: string,
+    dados: { titulo: string; senha?: string },
+  ): Promise<void> => {
+    try {
+      const payload: {
+        id: string;
+        titulo: string;
+        senha?: string;
+      } = {
+        id: salaId,
+        titulo: dados.titulo,
+      };
+
+      // Só incluir senha se foi fornecida (não enviar null ou undefined)
+      if (dados.senha) {
+        payload.senha = dados.senha;
+      }
+
+      await alterarSala(payload).unwrap();
+    } catch (error) {
+      throw error; // Deixar o dialog-editar-sala tratar o erro
+    }
   };
 
   // Handler para entrar na sala (compatível com CardSala)
@@ -259,7 +287,7 @@ const PageSalas = () => {
                 usuarioAtualId={usuario?.id}
                 abrirWizard={handleAbrirWizard}
                 entrarSessaoAtiva={handleEntrarSala}
-                editarSala={async () => {}}
+                editarSala={handleEditarSala}
                 podeIniciarSessao={
                   sala.meuRole === 0 || sala.meuRole === 1
                 }

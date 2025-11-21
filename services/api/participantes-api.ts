@@ -38,7 +38,11 @@ export const ParticipantesApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: { pessoaId, permissao },
       }),
-      invalidatesTags: ['participantes', 'salaPlaning'],
+      invalidatesTags: [
+        'participantes',
+        'salaPlaning',
+        'listarSalas',
+      ],
     }),
 
     // DELETE /salas/:id/participantes/:pessoaId - Remover participante permanente
