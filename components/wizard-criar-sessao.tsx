@@ -1,24 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import {
-  X,
-  ChevronRight,
-  ChevronLeft,
-  Check,
-} from 'lucide-react';
-import { Dialog, DialogContent } from './ui/dialog';
+import React, { useState, useEffect } from 'react';
 import { StepConvidados } from './wizard-steps/step-convidados';
 import { StepHistorias } from './wizard-steps/step-historias';
 import { StepConclusao } from './wizard-steps/step-conclusao';
-import { usePesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { useSalaEntrarMutation } from '@/services/api/salas-api';
 import { useCriarVariasHistoriasMutation } from '@/services/api/historias-api';
+import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { setSalaToken } from '@/services/api/configs/store/sala-auth-slice';
+import { WizardBase, WizardStep } from './wizard-base';
 
 interface WizardCriarSessaoProps {
   aberto: boolean;
@@ -27,8 +21,6 @@ interface WizardCriarSessaoProps {
   codigoSala: string;
   tituloSala: string;
 }
-
-type Step = 'convidados' | 'historias' | 'conclusao';
 
 export function WizardCriarSessao({
   aberto,
@@ -39,8 +31,6 @@ export function WizardCriarSessao({
 }: WizardCriarSessaoProps) {
   const router = useRouter();
   const dispatch = useDispatch();
-  const [stepAtual, setStepAtual] =
-    useState<Step>('convidados');
   const [
     convidadosSelecionados,
     setConvidadosSelecionados,
@@ -50,52 +40,49 @@ export function WizardCriarSessao({
   const [historias, setHistorias] = useState<
     Array<{ id: string; titulo: string; descricao: string }>
   >([]);
-  const [argumentoBusca, setArgumentoBusca] = useState('');
-  const [criandoSessao, setCriandoSessao] = useState(false);
+  const [listaPessoas, setListaPessoas] = useState<
+    Array<{ id: string; nome: string; email: string }>
+  >([]);
+  const [termoBusca, setTermoBusca] = useState('');
 
   const [entrarSala] = useSalaEntrarMutation();
   const [criarHistorias] =
     useCriarVariasHistoriasMutation();
+  const [
+    buscarPessoas,
+    { data: dadosPessoas, isLoading: buscandoPessoas },
+  ] = useLazyPesquisarPorNomeOuEmailQuery();
 
-  const { data, isLoading } =
-    usePesquisarPorNomeOuEmailQuery({
-      termo: argumentoBusca,
-    });
-
-  const steps: {
-    id: Step;
-    titulo: string;
-    numero: number;
-  }[] = [
-    { id: 'convidados', titulo: 'Convidados', numero: 1 },
-    { id: 'historias', titulo: 'Histórias', numero: 2 },
-    { id: 'conclusao', titulo: 'Conclusão', numero: 3 },
-  ];
-
-  const stepAtualIndex = steps.findIndex(
-    (s) => s.id === stepAtual,
-  );
-
-  const podeAvancar =
-    stepAtual === 'convidados' ||
-    stepAtual === 'historias' ||
-    stepAtual === 'conclusao';
-
-  const handleProximo = async () => {
-    if (stepAtual === 'convidados') {
-      setStepAtual('historias');
-    } else if (stepAtual === 'historias') {
-      setStepAtual('conclusao');
-    } else {
-      // Última etapa: criar sessão e redirecionar
-      await handleIniciarSessao();
+  // Atualizar lista de pessoas quando a busca retornar
+  useEffect(() => {
+    if (
+      dadosPessoas?.Sucesso &&
+      dadosPessoas.Resultado?.pessoas
+    ) {
+      setListaPessoas(dadosPessoas.Resultado.pessoas);
     }
+  }, [dadosPessoas]);
+
+  // Buscar pessoas conforme digita (com debounce)
+  useEffect(() => {
+    if (termoBusca.trim().length >= 2) {
+      const timer = setTimeout(() => {
+        buscarPessoas({ termo: termoBusca });
+      }, 500); // Debounce de 500ms
+
+      return () => clearTimeout(timer);
+    } else {
+      setListaPessoas([]);
+    }
+  }, [termoBusca, buscarPessoas]);
+
+  // Handler para atualizar o termo de busca
+  const handleBuscarPessoas = (termo: string) => {
+    setTermoBusca(termo);
   };
 
-  const handleIniciarSessao = async () => {
+  const handleConfirmar = async () => {
     try {
-      setCriandoSessao(true);
-
       // Preparar lista de visitantes para enviar no entrarSala
       const visitantes =
         convidadosSelecionados.length > 0
@@ -153,154 +140,84 @@ export function WizardCriarSessao({
       setTimeout(() => {
         router.push(`/salas/${codigoSala}`);
       }, 500);
-    } catch (error: any) {
+    } catch (error) {
       const apiError = getApiErrorMessage(error);
       toastError({
         title: apiError.Mensagem,
         description: apiError.Detalhe,
       });
-    } finally {
-      setCriandoSessao(false);
-    }
-  };
-
-  const handleVoltar = () => {
-    if (stepAtual === 'historias') {
-      setStepAtual('convidados');
-    } else if (stepAtual === 'conclusao') {
-      setStepAtual('historias');
     }
   };
 
   const handleFechar = () => {
-    setStepAtual('convidados');
     setConvidadosSelecionados([]);
     setHistorias([]);
     aoFechar();
   };
 
+  const steps: WizardStep[] = [
+    {
+      id: 'convidados',
+      titulo: 'Convidados',
+      descricao:
+        'Adicione pessoas para participar da sessão',
+      conteudo: (
+        <StepConvidados
+          salaId={salaId}
+          convidados={convidadosSelecionados}
+          aoMudarConvidados={setConvidadosSelecionados}
+          listaPessoas={listaPessoas}
+          argumentoBusca={handleBuscarPessoas}
+          isLoading={buscandoPessoas}
+          tooltipInfo="Adicione pessoas que terão acesso permanente a
+            esta sala. Elas poderão participar de todas as
+            sessões."
+        />
+      ),
+      validar: () => convidadosSelecionados.length > 0,
+      obrigatorio: false,
+    },
+    {
+      id: 'historias',
+      titulo: 'Histórias',
+      descricao:
+        'Adicione as histórias para serem planejadas',
+      conteudo: (
+        <StepHistorias
+          salaId={salaId}
+          historias={historias}
+          aoMudarHistorias={setHistorias}
+        />
+      ),
+      validar: () => historias.length > 0,
+      obrigatorio: false,
+    },
+    {
+      id: 'conclusao',
+      titulo: 'Conclusão',
+      descricao: 'Revise e confirme as informações',
+      conteudo: (
+        <StepConclusao
+          tituloSala={tituloSala}
+          codigoSala={codigoSala}
+          totalConvidados={convidadosSelecionados.length}
+          totalHistorias={historias.length}
+        />
+      ),
+      obrigatorio: false,
+    },
+  ];
+
   return (
-    <Dialog
-      open={aberto}
-      onOpenChange={handleFechar}
-    >
-      <DialogContent className="max-h-[90vh] overflow-hidden border-white/20 bg-slate-900 p-0 text-white sm:max-w-2xl">
-        {/* Header */}
-        <div className="border-b border-white/10 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl">
-              Iniciar Sessão de Planning
-            </h2>
-            <button
-              onClick={handleFechar}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 transition-all hover:bg-white/10"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Steps Indicator */}
-          <div className="flex items-center gap-2">
-            {steps.map((step, index) => (
-              <React.Fragment key={step.id}>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs transition-all ${
-                      stepAtualIndex > index
-                        ? 'bg-green-600 text-white'
-                        : stepAtual === step.id
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-white/10 text-gray-400'
-                    }`}
-                  >
-                    {stepAtualIndex > index ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      step.numero
-                    )}
-                  </div>
-                  <span
-                    className={`text-sm ${stepAtual === step.id ? 'text-white' : 'text-gray-400'}`}
-                  >
-                    {step.titulo}
-                  </span>
-                </div>
-                {index < steps.length - 1 && (
-                  <ChevronRight className="h-4 w-4 text-gray-600" />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="max-h-[50vh] overflow-y-auto p-6">
-          {stepAtual === 'convidados' && (
-            <StepConvidados
-              salaId={salaId}
-              convidados={convidadosSelecionados}
-              aoMudarConvidados={setConvidadosSelecionados}
-              listaPessoas={data?.Resultado?.pessoas || []}
-              argumentoBusca={setArgumentoBusca}
-              isLoading={isLoading}
-            />
-          )}
-
-          {stepAtual === 'historias' && (
-            <StepHistorias
-              salaId={salaId}
-              historias={historias}
-              aoMudarHistorias={setHistorias}
-            />
-          )}
-
-          {stepAtual === 'conclusao' && (
-            <StepConclusao
-              tituloSala={tituloSala}
-              codigoSala={codigoSala}
-              totalConvidados={
-                convidadosSelecionados.length
-              }
-              totalHistorias={historias.length}
-            />
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/10 p-6">
-          <button
-            onClick={handleVoltar}
-            disabled={stepAtual === 'convidados'}
-            className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Voltar
-          </button>
-
-          <button
-            onClick={handleProximo}
-            disabled={!podeAvancar || criandoSessao}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 transition-all hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {criandoSessao ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Criando...
-              </>
-            ) : stepAtual === 'conclusao' ? (
-              <>
-                Iniciar Sessão
-                <ChevronRight className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Próximo
-                <ChevronRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <WizardBase
+      aberto={aberto}
+      aoFechar={handleFechar}
+      aoConfirmar={handleConfirmar}
+      titulo="Iniciar Sessão de Planning"
+      descricao="Configure sua sessão em 3 passos"
+      steps={steps}
+      textoBotaoFinal="Entrar na Sala"
+      permitirPularSteps={false}
+    />
   );
 }

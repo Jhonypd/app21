@@ -1,8 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, UserPlus, X, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import {
+  Search,
+  UserPlus,
+  X,
+  Mail,
+  Info,
+} from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../ui/tooltip';
 
 interface Convidado {
   id: string;
@@ -17,6 +27,7 @@ interface StepConvidadosProps {
   listaPessoas: Convidado[];
   argumentoBusca: (termo: string) => void;
   isLoading?: boolean;
+  tooltipInfo?: string;
 }
 
 export function StepConvidados({
@@ -26,6 +37,7 @@ export function StepConvidados({
   listaPessoas,
   argumentoBusca,
   isLoading,
+  tooltipInfo,
 }: StepConvidadosProps) {
   const [busca, setBusca] = useState('');
   const [debouncedTerm, setDebouncedTerm] = useState('');
@@ -64,14 +76,26 @@ export function StepConvidados({
       convidados.filter((c) => c.id !== id),
     );
   };
-  console.log(isLoading);
+
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="mb-2 flex items-center gap-2">
-          <UserPlus className="h-5 w-5 text-purple-400" />
-          Adicionar Convidados
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="mb-2 flex w-full items-center gap-2">
+            <UserPlus className="h-5 w-5 text-purple-400" />
+            Adicionar participantes
+          </h3>
+          <Tooltip delayDuration={1000}>
+            <TooltipTrigger>
+              <Info />
+            </TooltipTrigger>
+            <TooltipContent className="bg-accent">
+              <p className="max-w-60 text-sm font-medium text-gray-300">
+                {tooltipInfo}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <p className="text-sm text-gray-400">
           Pesquise e adicione pessoas para participar da
           sessão de planning

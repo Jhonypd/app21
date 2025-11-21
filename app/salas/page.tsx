@@ -19,6 +19,7 @@ import { PainelFiltros } from '@/components/painel-filtros';
 import { TipoOrdenacao } from '@/components/opcao-ordenacao';
 import { TipoFiltroStatus } from '@/components/opcao-filtro';
 import { CardSala } from '@/components/card-sala';
+import { WizardCriarSessao } from '@/components/wizard-criar-sessao';
 import { useDispatch } from 'react-redux';
 import { setSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 
@@ -39,6 +40,11 @@ const PageSalas = () => {
   // Estados de salas
   const [listaSalas, setListaSalas] = useState<Salas[]>([]);
   const [loadingLogin, setLoadingLogin] = useState(false);
+
+  // Estados do wizard
+  const [wizardAberto, setWizardAberto] = useState(false);
+  const [salaParaIniciar, setSalaParaIniciar] =
+    useState<Salas | null>(null);
 
   // Queries e mutations
   const [salaEntrar] = useSalaEntrarMutation();
@@ -112,6 +118,12 @@ const PageSalas = () => {
       }
     },
   );
+
+  // Handler para abrir o wizard de criar sessão
+  const handleAbrirWizard = (sala: Salas) => {
+    setSalaParaIniciar(sala);
+    setWizardAberto(true);
+  };
 
   // Handler para entrar na sala (compatível com CardSala)
   const handleEntrarSala = async (
@@ -221,6 +233,20 @@ const PageSalas = () => {
         </div>
       </div>
 
+      {/* Wizard de criar sessão */}
+      {salaParaIniciar && (
+        <WizardCriarSessao
+          aberto={wizardAberto}
+          aoFechar={() => {
+            setWizardAberto(false);
+            setSalaParaIniciar(null);
+          }}
+          salaId={salaParaIniciar.id}
+          codigoSala={salaParaIniciar.codigo}
+          tituloSala={salaParaIniciar.titulo}
+        />
+      )}
+
       {/* Lista de salas */}
       <div className="mt-6 px-4">
         {salasOrdenadas.length > 0 ? (
@@ -231,9 +257,12 @@ const PageSalas = () => {
                 index={index}
                 sala={sala}
                 usuarioAtualId={usuario?.id}
-                iniciarSessao={handleEntrarSala}
-                entrarSessaoAtiva={() => {}}
+                abrirWizard={handleAbrirWizard}
+                entrarSessaoAtiva={handleEntrarSala}
                 editarSala={async () => {}}
+                podeIniciarSessao={
+                  sala.meuRole === 0 || sala.meuRole === 1
+                }
               />
             ))}
           </div>

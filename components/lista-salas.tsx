@@ -47,7 +47,6 @@ export function ListaSalas({
               sala={sala}
               index={index}
               usuarioAtualId={usuarioAtualId}
-              entrarSala={aoClicarSala}
             />
           ))
         ) : (

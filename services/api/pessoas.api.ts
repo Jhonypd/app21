@@ -13,6 +13,7 @@ export interface DadosPessoaResumo {
   id: string;
   nome: string;
   email: string;
+  inativo: boolean;
 }
 
 export interface AlterarPessoaPayload {

@@ -2,36 +2,34 @@ import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
 
 export interface Salas {
-  titulo: string;
   id: string;
+  titulo: string;
   codigo: string;
   inativo: boolean;
+  salaPrivada: boolean; // Se a sala possui senha
   data_criacao: Date;
-  data_alteracao: Date | null;
-  criado_por: string;
-  privada: boolean;
-  votos: {
-    pessoa: {
-      nome: string;
-      id: string;
-      inativo: boolean;
-    };
-    id: string;
-    valor: number;
-  }[];
   proprietario: {
-    nome: string;
     id: string;
+    nome: string;
     inativo: boolean;
   };
-  participantes: {
-    pessoa_id: string;
-    pessoa: {
-      id: string;
-      inativo: boolean;
-      nome: string;
-    };
-  }[];
+  membros: number; // Quantidade de membros
+  meuRole?: number | null; // 0=Dono, 1=Admin, 2=Membro, null=não participante
+  temSessaoAtiva: boolean; // Se possui sessão ativa
+  status: 'online' | null; // 'online' se tem sessão ativa com participantes
+  data_ultima_sessao: Date | null; // Data da última sessão ativa
+}
+
+export interface SalaParaEdicao {
+  id: string;
+  titulo: string;
+  salaPrivada: boolean;
+  participantes: Array<{
+    id: string;
+    nome: string;
+    inativo: boolean;
+    role: number; // 0=Dono, 1=Admin, 2=Membro
+  }>;
 }
 
 export interface LoginSalaPayload {
@@ -44,6 +42,7 @@ export interface CriarSalaPayload {
   titulo: string;
   senha?: string | null;
   salaPrivada: boolean;
+  participantesIds?: string[]; // IDs dos participantes permanentes (role 2)
 }
 
 export interface ListarSalasQuery {
@@ -112,6 +111,23 @@ export interface AlterarSalaPayload {
 
 export interface DeletarSalaPayload {
   id: string;
+}
+
+export interface AdicionarParticipantePayload {
+  sala_id: string;
+  pessoa_id: string;
+  role: 1 | 2; // 1=Admin, 2=Membro
+}
+
+export interface RemoverParticipantePayload {
+  sala_id: string;
+  pessoa_id: string;
+}
+
+export interface AlterarRoleParticipantePayload {
+  sala_id: string;
+  pessoa_id: string;
+  role: 1 | 2; // 1=Admin, 2=Membro
 }
 
 export const SalasApi = apiSlice.injectEndpoints({
@@ -197,6 +213,52 @@ export const SalasApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['salaPlaning'],
     }),
+
+    obterSalaParaEdicao: builder.query<
+      ApiResponse<{ sala: SalaParaEdicao }>,
+      string
+    >({
+      query: (id: string) => ({
+        url: `/salas/${id}/editar`,
+        method: 'GET',
+      }),
+      providesTags: ['participantes'],
+    }),
+
+    adicionarParticipante: builder.mutation<
+      ApiResponse,
+      AdicionarParticipantePayload
+    >({
+      query: ({ sala_id, pessoa_id, role }) => ({
+        url: `/salas/${sala_id}/participantes/adicionar`,
+        method: 'POST',
+        body: { pessoa_id, role },
+      }),
+      invalidatesTags: ['participantes'],
+    }),
+
+    removerParticipante: builder.mutation<
+      ApiResponse,
+      RemoverParticipantePayload
+    >({
+      query: ({ sala_id, pessoa_id }) => ({
+        url: `/salas/${sala_id}/participantes/${pessoa_id}/remover`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['participantes'],
+    }),
+
+    alterarRoleParticipante: builder.mutation<
+      ApiResponse,
+      AlterarRoleParticipantePayload
+    >({
+      query: ({ sala_id, pessoa_id, role }) => ({
+        url: `/salas/${sala_id}/participantes/${pessoa_id}/role`,
+        method: 'PATCH',
+        body: { role },
+      }),
+      invalidatesTags: ['participantes'],
+    }),
   }),
 });
 
@@ -211,4 +273,8 @@ export const {
   useLazyObterSalaPorCodigoQuery,
   useObterSalaPorIdQuery,
   useLazyObterSalaPorIdQuery,
+  useLazyObterSalaParaEdicaoQuery,
+  useAdicionarParticipanteMutation,
+  useRemoverParticipanteMutation,
+  useAlterarRoleParticipanteMutation,
 } = SalasApi;
