@@ -87,6 +87,7 @@ export interface SalaPorCodigo {
         id: string;
         nome: string;
         inativo: boolean;
+        role: number; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
       },
     ];
     votos: [
@@ -301,10 +302,8 @@ export const SalasApi = apiSlice.injectEndpoints({
     }),
 
     // POST /salas/:id/sessoes - Criar nova sessão
-    criarSessao: builder.mutation<
-      ApiResponse<{ sessao: SessaoCriada }>,
-      string
-    >({
+    // precisa ver sobre o tipo de retorno
+    criarSessao: builder.mutation<ApiResponse, string>({
       query: (salaId) => ({
         url: `/salas/${salaId}/sessoes`,
         method: 'POST',
