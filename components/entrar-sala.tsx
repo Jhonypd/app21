@@ -24,7 +24,6 @@ export function EntrarSala({
 
   const handleEntrar = () => {
     if (codigoSala.trim()) {
-      alert(`Entrando na sala com código: ${codigoSala}`);
       setCodigoSala('');
       aoFechar();
     }

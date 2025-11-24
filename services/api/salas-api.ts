@@ -53,10 +53,19 @@ export interface ListarSalasQuery {
 export interface ResponseLoginSala {
   tokenSala: string;
   dataExpiracao: Date;
+  role: number;
+  sessaoId?: string;
 }
 
 export interface ResponseCriarSala {
   id: string;
+}
+
+export interface SessaoAtiva {
+  id: string;
+  criada_em: Date;
+  ativa: boolean;
+  iniciada_por: string; // ID da pessoa que iniciou a sessão
 }
 
 export interface SalaPorCodigo {
@@ -99,6 +108,7 @@ export interface SalaPorCodigo {
     data_criacao: Date;
     data_alteracao: Date | null;
     criado_por: string;
+    sessaoAtiva?: SessaoAtiva; // Dados da sessão ativa
   };
 }
 
@@ -128,6 +138,36 @@ export interface AlterarRoleParticipantePayload {
   sala_id: string;
   pessoa_id: string;
   role: 1 | 2; // 1=Admin, 2=Membro
+}
+
+export interface AdicionarVisitantePayload {
+  sala_id: string;
+  sessao_id: string;
+  pessoa_id: string;
+  autorizado?: boolean; // Se o voto do visitante conta (padrão false)
+}
+
+export interface RemoverVisitantePayload {
+  sala_id: string;
+  sessao_id: string;
+  pessoa_id: string;
+}
+
+export interface ListarVisitantesPayload {
+  sala_id: string;
+  sessao_id: string;
+}
+
+export interface Visitante {
+  id: string;
+  pessoa_id: string;
+  autorizado: boolean;
+  pessoa?: {
+    id: string;
+    nome: string;
+    email: string;
+    inativo: boolean;
+  };
 }
 
 export const SalasApi = apiSlice.injectEndpoints({
@@ -189,7 +229,7 @@ export const SalasApi = apiSlice.injectEndpoints({
         method: 'GET',
         params,
       }),
-      providesTags: ['listarSalas'],
+      providesTags: ['listarSalas', 'listarSalas'],
     }),
 
     obterSalaPorCodigo: builder.query<
@@ -234,7 +274,7 @@ export const SalasApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: { pessoa_id, role },
       }),
-      invalidatesTags: ['participantes'],
+      invalidatesTags: ['participantes', 'listarSalas'],
     }),
 
     removerParticipante: builder.mutation<
@@ -245,7 +285,7 @@ export const SalasApi = apiSlice.injectEndpoints({
         url: `/salas/${sala_id}/participantes/${pessoa_id}/remover`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['participantes'],
+      invalidatesTags: ['participantes', 'listarSalas'],
     }),
 
     alterarRoleParticipante: builder.mutation<
@@ -258,6 +298,39 @@ export const SalasApi = apiSlice.injectEndpoints({
         body: { role },
       }),
       invalidatesTags: ['participantes'],
+    }),
+
+    // POST /salas/:id/sessoes - Criar nova sessão
+    criarSessao: builder.mutation<
+      ApiResponse<{ sessao: SessaoCriada }>,
+      string
+    >({
+      query: (salaId) => ({
+        url: `/salas/${salaId}/sessoes`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['salaPlaning', 'visitantes'],
+    }),
+
+    // GET /salas/codigo/:codigo/sessao-ativa - Obter dados da sessão ativa
+    obterDadosSessaoAtiva: builder.query<
+      ApiResponse<SalaPorCodigo>,
+      string
+    >({
+      query: (codigo: string) => ({
+        url: `/salas/codigo/${codigo}/sessao-ativa`,
+        method: 'GET',
+      }),
+      providesTags: ['salaPlaning'],
+    }),
+
+    // POST /salas/:id/sair - Sair da sala (marca offline e limpa autorização)
+    sairDaSala: builder.mutation<ApiResponse, string>({
+      query: (salaId) => ({
+        url: `/salas/${salaId}/sair`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['salaPlaning', 'listarSalas'],
     }),
   }),
 });
@@ -277,4 +350,8 @@ export const {
   useAdicionarParticipanteMutation,
   useRemoverParticipanteMutation,
   useAlterarRoleParticipanteMutation,
+  useCriarSessaoMutation,
+  useObterDadosSessaoAtivaQuery,
+  useLazyObterDadosSessaoAtivaQuery,
+  useSairDaSalaMutation,
 } = SalasApi;

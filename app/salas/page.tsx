@@ -22,7 +22,10 @@ import { TipoFiltroStatus } from '@/components/opcao-filtro';
 import { CardSala } from '@/components/card-sala';
 import { WizardCriarSessao } from '@/components/wizard-criar-sessao';
 import { useDispatch } from 'react-redux';
-import { setSalaToken } from '@/services/api/configs/store/sala-auth-slice';
+import {
+  setSalaToken,
+  iniciarSessao,
+} from '@/services/api/configs/store/sala-auth-slice';
 
 const PageSalas = () => {
   const router = useRouter();
@@ -111,10 +114,7 @@ const PageSalas = () => {
             new Date(b.data_criacao).getTime()
           );
         case 'participantes':
-          return (
-            (b.participantes?.length || 0) -
-            (a.participantes?.length || 0)
-          );
+          return (b.membros || 0) - (a.membros || 0);
         default:
           return 0;
       }
@@ -181,6 +181,38 @@ const PageSalas = () => {
                 result.Resultado.dataExpiracao,
               ),
             }),
+          );
+        }
+
+        // Salvar sessão ativa no Redux (CRÍTICO!)
+        if (result.Resultado?.sessaoId) {
+          // Buscar salaId pela lista de salas usando o código
+          const sala = listaSalas.find(
+            (s) => s.codigo === codigo,
+          );
+          if (sala) {
+            console.log(
+              '[ENTRAR CARD] Salvando sessão no Redux:',
+              {
+                salaId: sala.id,
+                sessaoId: result.Resultado.sessaoId,
+              },
+            );
+            dispatch(
+              iniciarSessao({
+                salaId: sala.id,
+                sessaoId: result.Resultado.sessaoId,
+              }),
+            );
+          } else {
+            console.warn(
+              '[ENTRAR CARD] Sala não encontrada na lista para salvar sessão',
+            );
+          }
+        } else {
+          console.warn(
+            '[ENTRAR CARD] sessaoId não recebido na resposta:',
+            result,
           );
         }
 
@@ -284,7 +316,6 @@ const PageSalas = () => {
                 key={sala.id}
                 index={index}
                 sala={sala}
-                usuarioAtualId={usuario?.id}
                 abrirWizard={handleAbrirWizard}
                 entrarSessaoAtiva={handleEntrarSala}
                 editarSala={handleEditarSala}

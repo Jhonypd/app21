@@ -11,7 +11,10 @@ import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import { setSalaToken } from '@/services/api/configs/store/sala-auth-slice';
+import {
+  setSalaToken,
+  iniciarSessao,
+} from '@/services/api/configs/store/sala-auth-slice';
 import { WizardBase, WizardStep } from './wizard-base';
 
 interface WizardCriarSessaoProps {
@@ -117,8 +120,32 @@ export function WizardCriarSessao({
         );
       }
 
+      // Salvar sessão ativa no Redux
+      if (resultadoEntrar.Resultado?.sessaoId) {
+        console.log('[WIZARD] Salvando sessão no Redux:', {
+          salaId,
+          sessaoId: resultadoEntrar.Resultado.sessaoId,
+        });
+        dispatch(
+          iniciarSessao({
+            salaId,
+            sessaoId: resultadoEntrar.Resultado.sessaoId,
+          }),
+        );
+        console.log('[WIZARD] Sessão salva com sucesso!');
+      } else {
+        console.warn(
+          '[WIZARD] sessaoId não recebido na resposta:',
+          resultadoEntrar,
+        );
+      }
+
       // 2. Criar histórias (se houver)
       if (historias.length > 0) {
+        console.log(
+          '[WIZARD] Criando histórias...',
+          historias.length,
+        );
         await criarHistorias({
           salaId,
           historias: historias.map((h) => ({
@@ -126,20 +153,29 @@ export function WizardCriarSessao({
             descricao: h.descricao,
           })),
         }).unwrap();
+        console.log(
+          '[WIZARD] Histórias criadas com sucesso!',
+        );
       }
 
+      console.log('[WIZARD] Exibindo toast de sucesso...');
       toastSuccess({
         title: 'Sessão iniciada!',
         description: 'Redirecionando para a sala...',
       });
 
-      // Limpar estado e fechar
-      handleFechar();
+      // Redirecionar para a sala PRIMEIRO
+      console.log(
+        '[WIZARD] Redirecionando para:',
+        `/salas/${codigoSala}`,
+      );
+      router.push(`/salas/${codigoSala}`);
 
-      // Redirecionar para a sala
+      // Limpar estado e fechar DEPOIS (permite o redirect acontecer)
       setTimeout(() => {
-        router.push(`/salas/${codigoSala}`);
-      }, 500);
+        console.log('[WIZARD] Fechando wizard...');
+        handleFechar();
+      }, 100);
     } catch (error) {
       const apiError = getApiErrorMessage(error);
       toastError({
@@ -174,7 +210,7 @@ export function WizardCriarSessao({
             sessões."
         />
       ),
-      validar: () => convidadosSelecionados.length > 0,
+      // validar: () => convidadosSelecionados.length > 0,
       obrigatorio: false,
     },
     {
@@ -189,7 +225,7 @@ export function WizardCriarSessao({
           aoMudarHistorias={setHistorias}
         />
       ),
-      validar: () => historias.length > 0,
+      // validar: () => historias.length > 0,
       obrigatorio: false,
     },
     {

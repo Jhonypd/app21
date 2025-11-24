@@ -3,7 +3,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/services/api/configs/store/store';
 import { logout as logoutAction } from '@/services/api/configs/store/auth-slice';
-import { clearSalaToken } from '@/services/api/configs/store/sala-auth-slice';
+import { limparSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 import { useRevogarRefreshTokenMutation } from '@/services/api/auth-api';
 import { useRouter } from 'next/navigation';
 
@@ -43,7 +43,7 @@ export function useAuth() {
 
     // Limpa o estado local e cookies
     dispatch(logoutAction());
-    dispatch(clearSalaToken());
+    dispatch(limparSalaToken());
 
     // Redireciona para login
     router.push('/auth/login');

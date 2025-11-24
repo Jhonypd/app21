@@ -11,6 +11,7 @@ import { Navegacao } from '@/components/navegacao';
 import { Header } from '@/components/header';
 import { Greeting } from '@/components/greeting';
 import { useAuth } from '@/hooks/useAuth';
+import { useSalaAuth } from '@/hooks/salaAuth';
 
 interface LayoutContentProps {
   children: ReactNode;
@@ -73,6 +74,7 @@ const LayoutContent = memo(
     const [abaAtiva, setAbaAtiva] = useState('/');
     const pathname = usePathname();
     const { usuario, logout } = useAuth();
+    const { sala } = useSalaAuth();
 
     // Memoizar a verificação do path para evitar recálculos
     const shouldHideSidebar = useMemo(() => {

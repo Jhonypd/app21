@@ -10,8 +10,10 @@ export const apiSlice = createApi({
     'sessao',
     'votos',
     'participantes',
+    'visitantes',
     'pessoa',
     'historias',
   ],
+  keepUnusedDataFor: 60, // Cache válido por 60 segundos
   endpoints: () => ({}),
 });

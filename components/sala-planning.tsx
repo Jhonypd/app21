@@ -13,10 +13,25 @@ import {
   X,
   ListTodo,
   ChevronRight,
-  LogOut,
   Ban,
 } from 'lucide-react';
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
+import { CardParticipante } from './sala/card-participante';
+
+import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
+import { useAdicionarParticipanteSessaoMutation } from '@/services/api/sessoes-api';
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/utils/api-error';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from './ui/dialog';
+import { Input } from './ui/input';
+import { Search } from 'lucide-react';
+import { useSalaAuth } from '@/hooks/salaAuth';
 
 // Interfaces baseadas na estrutura real da API
 interface Proprietario {
@@ -35,6 +50,8 @@ interface Participante {
   id: string;
   nome: string;
   inativo: boolean;
+  role: number; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
+  // mudei a role para obrigatória porque sempre vem da API
 }
 
 interface Voto {
@@ -45,6 +62,13 @@ interface Voto {
   id: string;
   pessoa_id: string;
   valor: number;
+}
+
+interface SessaoAtiva {
+  id: string;
+  criada_em: Date;
+  ativa: boolean;
+  iniciada_por: string; // ID da pessoa que iniciou a sessão
 }
 
 interface SalaData {
@@ -60,12 +84,15 @@ interface SalaData {
   historias: Historia[];
   participantes: Participante[];
   votos: Voto[];
+  sessaoAtiva?: SessaoAtiva; // Dados da sessão ativa
 }
 
 interface SalaPlanningProps {
   sala: SalaData;
   usuarioAtualId: string;
-  aoVoltar: () => void;
+  sessaoId?: string; // ID da sessão ativa (necessário para visitantes)
+  meuRole?: number; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
+  aoVoltar: () => void | Promise<void>;
   aoEnviarVoto?: (valor: number) => Promise<void>;
   aoRevelarVotos?: () => Promise<void>;
   aoResetarVotos?: () => Promise<void>;
@@ -94,6 +121,8 @@ const CARTAS_PLANNING = [
 export function SalaPlanning({
   sala,
   usuarioAtualId,
+  sessaoId,
+  meuRole = 2, // Default: Membro
   aoVoltar,
   aoEnviarVoto,
   aoRevelarVotos,
@@ -112,11 +141,30 @@ export function SalaPlanning({
     useState(false);
   const [historiaAtual, setHistoriaAtual] =
     useState<Historia | null>(null);
+  const [modalVisitantesAberto, setModalVisitantesAberto] =
+    useState(false);
   const [mostrarHistorias, setMostrarHistorias] =
     useState(false);
   const [loadingAcao, setLoadingAcao] = useState(false);
+  const [termoBusca, setTermoBusca] = useState('');
+  const [pessoaSelecionadaId, setPessoaSelecionadaId] =
+    useState('');
 
   const eProprietario = sala.criado_por === usuarioAtualId;
+  // Verificar se o usuário iniciou a sessão (dono ou admin que criou a sessão)
+  const iniciouSessao =
+    sala.sessaoAtiva?.iniciada_por === usuarioAtualId;
+  const podeEncerrarSessao = eProprietario || iniciouSessao;
+
+  // Mutations para visitantes
+  const [
+    adicionarVisitante,
+    { isLoading: adicionandoVisitante },
+  ] = useAdicionarParticipanteSessaoMutation();
+  const [
+    pesquisarPessoas,
+    { data: pessoasEncontradas, isFetching },
+  ] = useLazyPesquisarPorNomeOuEmailQuery();
 
   // Inicializar com a primeira história se existir
   useEffect(() => {
@@ -130,10 +178,10 @@ export function SalaPlanning({
   }, [sala.historias, historiaAtual]);
 
   // Processar participantes com seus votos do array de votos
-  const participantesComVotos = sala.participantes
+  const participantesComVotos = (sala.participantes || [])
     .filter((p) => !p.inativo)
     .map((participante) => {
-      const voto = sala.votos.find(
+      const voto = (sala.votos || []).find(
         (v) => v.pessoa_id === participante.id,
       );
       return {
@@ -146,7 +194,7 @@ export function SalaPlanning({
     });
 
   // Verificar se o usuário atual já votou
-  const votoUsuario = sala.votos.find(
+  const votoUsuario = (sala.votos || []).find(
     (v) => v.pessoa_id === usuarioAtualId,
   );
 
@@ -249,23 +297,52 @@ export function SalaPlanning({
   };
 
   const handleEncerrarSessao = async () => {
-    if (
-      !confirm(
-        'Tem certeza que deseja encerrar esta sessão?',
-      )
-    )
+    // Validar se pode encerrar
+    if (!podeEncerrarSessao) {
+      toast.error(
+        'Apenas o dono ou quem iniciou a sessão pode encerrá-la',
+      );
       return;
+    }
 
     setLoadingAcao(true);
     try {
       if (aoEncerrarSessao) {
         await aoEncerrarSessao();
       }
-      aoVoltar();
     } catch (error) {
       console.error('Erro ao encerrar sessão:', error);
     } finally {
       setLoadingAcao(false);
+    }
+  };
+
+  const handleBuscarPessoas = async (termo: string) => {
+    setTermoBusca(termo);
+    if (termo.length >= 2) {
+      await pesquisarPessoas({ termo });
+    }
+  };
+
+  const handleAdicionarVisitante = async () => {
+    if (!pessoaSelecionadaId || !sessaoId) {
+      toast.error('Selecione uma pessoa para adicionar');
+      return;
+    }
+
+    try {
+      await adicionarVisitante({
+        sessaoId: sessaoId,
+        pessoaId: pessoaSelecionadaId,
+      }).unwrap();
+
+      toast.success('Visitante adicionado com sucesso!');
+      setModalVisitantesAberto(false);
+      setTermoBusca('');
+      setPessoaSelecionadaId('');
+    } catch (erro: unknown) {
+      const errorMessage = getApiErrorMessage(erro);
+      toast.error(errorMessage.Mensagem);
     }
   };
 
@@ -307,7 +384,7 @@ export function SalaPlanning({
         <div className="px-4 py-4">
           <div className="mb-3 flex items-center gap-3">
             <button
-              onClick={aoVoltar}
+              onClick={() => aoVoltar()}
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -323,26 +400,17 @@ export function SalaPlanning({
               </p>
             </div>
 
-            <button
-              onClick={() =>
-                copiarParaAreaTransferencia(sala.codigo)
-              }
-              className="flex items-center gap-2 rounded-xl bg-purple-600/20 px-3 py-2 transition-all hover:bg-purple-600/30 active:scale-95"
-            >
-              <Copy className="h-4 w-4" />
-              <span className="font-mono text-xs">
-                {sala.codigo}
-              </span>
-            </button>
-
-            {eProprietario && (
+            {podeEncerrarSessao && (
               <button
                 onClick={handleEncerrarSessao}
                 disabled={loadingAcao}
                 className="flex items-center gap-2 rounded-xl bg-red-600/20 px-3 py-2 text-red-400 transition-all hover:bg-red-600/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Encerrar sessão para todos"
               >
-                <LogOut className="h-4 w-4" />
-                <span className="text-xs">Encerrar</span>
+                <Ban className="h-4 w-4" />
+                <span className="text-xs">
+                  Encerrar Sessão
+                </span>
               </button>
             )}
           </div>
@@ -436,63 +504,65 @@ export function SalaPlanning({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {participantesComVotos.map((participante) => (
-              <div
-                key={participante.id}
-                className="group relative rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
-                    <span className="text-sm uppercase">
-                      {participante.nome.substring(0, 2)}
-                    </span>
-                  </div>
+          <div className="space-y-2">
+            {sala.participantes?.map((participante) => {
+              const votoParticipante =
+                participantesComVotos.find(
+                  (p) => p.id === participante.id,
+                );
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm">
-                      {participante.nome}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      {participante.votou ? (
-                        votosRevelados ? (
-                          <span className="rounded-lg bg-purple-600 px-2 py-1 font-mono text-xs">
-                            {participante.voto}
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-xs text-green-400">
-                            ✓ Votou
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-xs text-gray-500">
-                          Aguardando...
-                        </span>
-                      )}
+              return (
+                <div
+                  key={participante.id}
+                  className="relative"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <CardParticipante
+                        participante={{
+                          id: participante.id,
+                          nome: participante.nome,
+                          role: participante.role,
+                        }}
+                        jaExistia={true}
+                        meuRole={meuRole}
+                        mostrarAcoes={false} // Desabilitar ações na sala de planning
+                        voto={
+                          votoParticipante?.voto
+                            ? votoParticipante.voto
+                            : null
+                        } // depois tem que buscar o voto real
+                        votosRevelados={votosRevelados}
+                      />
+                    </div>
+
+                    {/* Status do voto */}
+                    <div className="flex items-center gap-2">
+                      {/* Botão anular voto (apenas proprietário) */}
+                      {eProprietario &&
+                        votoParticipante?.votou &&
+                        votoParticipante.votoId &&
+                        participante.id !==
+                          usuarioAtualId && (
+                          <button
+                            onClick={() =>
+                              handleAnularVoto(
+                                votoParticipante.votoId!,
+                                participante.nome,
+                              )
+                            }
+                            disabled={loadingAcao}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20 text-red-400 transition-all hover:bg-red-500/30 disabled:cursor-not-allowed"
+                            title="Anular voto"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </button>
+                        )}
                     </div>
                   </div>
-
-                  {/* Botão anular voto (apenas proprietário) */}
-                  {eProprietario &&
-                    participante.votou &&
-                    participante.votoId &&
-                    participante.id !== usuarioAtualId && (
-                      <button
-                        onClick={() =>
-                          handleAnularVoto(
-                            participante.votoId!,
-                            participante.nome,
-                          )
-                        }
-                        disabled={loadingAcao}
-                        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg bg-red-500/0 text-red-400 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/20 disabled:cursor-not-allowed"
-                      >
-                        <Ban className="h-3 w-3" />
-                      </button>
-                    )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -586,17 +656,18 @@ export function SalaPlanning({
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          {/* Convidar Participantes (compacto) */}
-          <button
-            onClick={() => {
-              const shareText = `Participe da sala "${sala.titulo}" no PlanningHub! Código: ${sala.codigo}`;
-              copiarParaAreaTransferencia(shareText);
-            }}
-            className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-3 transition-all hover:bg-white/10 active:scale-95"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span className="text-sm">Convidar</span>
-          </button>
+          {/* Adicionar Visitante - Apenas Admin/Dono */}
+          {sessaoId && meuRole <= 1 && (
+            <button
+              onClick={() => setModalVisitantesAberto(true)}
+              className="flex items-center gap-2 rounded-xl bg-purple-600/20 px-4 py-3 transition-all hover:bg-purple-600/30 active:scale-95"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="text-sm">
+                Adicionar Visitante
+              </span>
+            </button>
+          )}
 
           {/* Revelar/Resetar (apenas proprietário) */}
           {eProprietario && !votosRevelados ? (
@@ -636,6 +707,99 @@ export function SalaPlanning({
           )}
         </div>
       </div>
+
+      {/* Modal Adicionar Visitante */}
+      <Dialog
+        open={modalVisitantesAberto}
+        onOpenChange={setModalVisitantesAberto}
+      >
+        <DialogContent className="border-slate-700 bg-slate-900 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              Adicionar Visitante
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Campo de busca */}
+            <div className="relative">
+              <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={termoBusca}
+                onChange={(e) =>
+                  handleBuscarPessoas(e.target.value)
+                }
+                className="border-slate-700 bg-slate-800 pl-10 text-white"
+              />
+            </div>
+
+            {/* Lista de resultados */}
+            {isFetching && (
+              <p className="text-center text-sm text-gray-400">
+                Buscando...
+              </p>
+            )}
+
+            {pessoasEncontradas?.Resultado?.pessoas &&
+              pessoasEncontradas.Resultado.pessoas.length >
+                0 && (
+                <div className="max-h-64 space-y-2 overflow-y-auto">
+                  {pessoasEncontradas.Resultado.pessoas.map(
+                    (pessoa: {
+                      id: string;
+                      nome: string;
+                      email: string;
+                    }) => (
+                      <button
+                        key={pessoa.id}
+                        onClick={() =>
+                          setPessoaSelecionadaId(pessoa.id)
+                        }
+                        className={`w-full rounded-lg border p-3 text-left transition-all ${
+                          pessoaSelecionadaId === pessoa.id
+                            ? 'border-purple-500 bg-purple-500/20'
+                            : 'border-slate-700 bg-slate-800 hover:bg-slate-700'
+                        }`}
+                      >
+                        <p className="font-medium">
+                          {pessoa.nome}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {pessoa.email}
+                        </p>
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+          </div>
+
+          <DialogFooter>
+            <button
+              onClick={() => {
+                setModalVisitantesAberto(false);
+                setTermoBusca('');
+                setPessoaSelecionadaId('');
+              }}
+              className="rounded-lg bg-slate-700 px-4 py-2 transition-all hover:bg-slate-600"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleAdicionarVisitante}
+              disabled={
+                !pessoaSelecionadaId || adicionandoVisitante
+              }
+              className="rounded-lg bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {adicionandoVisitante
+                ? 'Adicionando...'
+                : 'Adicionar'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

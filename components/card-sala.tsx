@@ -54,9 +54,9 @@ export function CardSala({
   const [obterSala, { isLoading: carregandoDados }] =
     useLazyObterSalaParaEdicaoQuery();
 
-  const copiarCodigo = (codigo: string) => {
-    copiarParaAreaTransferencia(codigo);
-  };
+  // const copiarCodigo = (codigo: string) => {
+  //   copiarParaAreaTransferencia(codigo);
+  // };
 
   const handleAbrirDialogEditar = async () => {
     try {
@@ -160,7 +160,7 @@ export function CardSala({
               )}
             </div>
 
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 items-start justify-start">
               <div className="mb-1 flex items-center gap-2">
                 <h4 className="truncate text-base">
                   {sala.titulo}
@@ -171,8 +171,8 @@ export function CardSala({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="flex items-center gap-1 text-gray-400">
+              <div className="flex items-center justify-start gap-2 text-xs">
+                <span className="flex items-center justify-start gap-1 text-gray-400">
                   <Users className="h-3 w-3" />
                   {sala.membros > 0
                     ? `${sala.membros} ${sala.membros === 1 ? 'membro' : 'membros'}`
@@ -196,20 +196,10 @@ export function CardSala({
                   {tempoDecorrido}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 truncate text-start text-xs text-gray-500">
                 por {sala.proprietario.nome}
               </p>
             </div>
-
-            <button
-              onClick={() => {
-                const shareText = `Entre na sala ${sala.titulo} com o código: ${sala.codigo}`;
-                copiarParaAreaTransferencia(shareText);
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
 
             {/* Botão Editar (dono ou admin) */}
             {(sala.meuRole === 0 || sala.meuRole === 1) &&
@@ -240,15 +230,7 @@ export function CardSala({
             >
               Entrar <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button
-              onClick={() => copiarCodigo(sala.codigo)}
-              className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-3 transition-all hover:bg-white/10 active:scale-95"
-            >
-              <Copy className="h-4 w-4" />
-              <span className="font-mono text-xs">
-                {sala.codigo}
-              </span>
-            </Button>
+
             {podeIniciarSessao && abrirWizard && (
               <Button
                 disabled={
@@ -261,6 +243,15 @@ export function CardSala({
                 <span className="text-xs">Iniciar</span>
               </Button>
             )}
+            <button
+              onClick={() => {
+                const shareText = `Entre na sala ${sala.titulo} com o código: ${sala.codigo}`;
+                copiarParaAreaTransferencia(shareText);
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
           </div>
         </div>
 

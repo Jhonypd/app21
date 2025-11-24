@@ -6,16 +6,6 @@ export interface AdicionarParticipantePayload {
   pessoaId: string;
 }
 
-export interface AdicionarVisitantesPayload {
-  salaId: string;
-  pessoasIds: string[];
-}
-
-export interface RemoverVisitantePayload {
-  salaId: string;
-  pessoaId: string;
-}
-
 export interface Sessao {
   id: string;
   sala_id: string;
@@ -57,7 +47,7 @@ export const SessoesApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: { pessoaId },
       }),
-      invalidatesTags: ['sessao'],
+      invalidatesTags: ['sessao', 'salaPlaning'],
     }),
 
     // POST /sessoes/:id/revelar
@@ -90,31 +80,6 @@ export const SessoesApi = apiSlice.injectEndpoints({
       providesTags: ['sessao'],
     }),
 
-    // POST /salas/:id/sessoes/visitantes - Adicionar visitantes
-    adicionarVisitantes: builder.mutation<
-      ApiResponse,
-      AdicionarVisitantesPayload
-    >({
-      query: ({ salaId, pessoasIds }) => ({
-        url: `/salas/${salaId}/sessoes/visitantes`,
-        method: 'POST',
-        body: { pessoasIds },
-      }),
-      invalidatesTags: ['sessao'],
-    }),
-
-    // DELETE /salas/:id/sessoes/visitantes/:pessoaId - Remover visitante
-    removerVisitante: builder.mutation<
-      ApiResponse,
-      RemoverVisitantePayload
-    >({
-      query: ({ salaId, pessoaId }) => ({
-        url: `/salas/${salaId}/sessoes/visitantes/${pessoaId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['sessao'],
-    }),
-
     // POST /salas/:id/sessoes/encerrar - Encerrar sessão
     encerrarSessao: builder.mutation<ApiResponse, string>({
       query: (salaId) => ({
@@ -132,7 +97,5 @@ export const {
   useResetarVotosMutation,
   useObterSessaoQuery,
   useLazyObterSessaoQuery,
-  useAdicionarVisitantesMutation,
-  useRemoverVisitanteMutation,
   useEncerrarSessaoMutation,
 } = SessoesApi;
