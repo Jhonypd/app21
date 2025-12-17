@@ -61,6 +61,12 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (result.error?.data as any)?.requer_login === true;
 
+  // Verificar se é erro da SALA especificamente (limpar_token: true)
+  const limparTokenSala =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (result.error?.data as any)?.Resultado?.limpar_token ===
+    true;
+
   // Verificar se é erro de autenticação (401/403) que não teve refresh automático
   const error = result.error;
   const status =
@@ -72,9 +78,24 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   const teveRefreshAutomatico =
     newAccessToken && newRefreshToken;
 
+  // ✅ CORREÇÃO: Se for erro de sala (limpar_token: true), NÃO fazer logout completo
+  if (limparTokenSala && !requerLogin) {
+    // Apenas limpar token da sala, não fazer logout
+    api.dispatch(limparSalaToken());
+    console.log(
+      '🧹 Token da sala limpo (erro com limpar_token)',
+    );
+    return result;
+  }
+
+  // Fazer logout completo APENAS se:
+  // 1. Backend explicitamente pedir (requer_login: true)
+  // 2. OU erro 401/403 sem refresh E sem ser erro de sala
   if (
     requerLogin ||
-    (ehErroAutenticacao && !teveRefreshAutomatico)
+    (ehErroAutenticacao &&
+      !teveRefreshAutomatico &&
+      !limparTokenSala)
   ) {
     // Limpar TODOS os tokens (auth + sala)
     api.dispatch(logout());

@@ -35,14 +35,18 @@ export interface SalaParaEdicao {
 export interface LoginSalaPayload {
   codigo: string;
   senha?: string;
-  visitantes?: string[]; // IDs dos visitantes temporários (apenas para dono)
 }
 
 export interface CriarSalaPayload {
   titulo: string;
-  senha?: string | null;
+  senha?: string;
   salaPrivada: boolean;
   participantesIds?: string[]; // IDs dos participantes permanentes (role 2)
+}
+
+export interface CriarSessaoPayload {
+  salaId: string;
+  visitantes?: string[]; // IDs dos visitantes temporários
 }
 
 export interface ListarSalasQuery {
@@ -182,7 +186,7 @@ export const SalasApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: credenciais,
       }),
-      invalidatesTags: ['salaPlaning'], // Invalidar para recarregar dados da sala
+      invalidatesTags: ['salaPlaning'],
     }),
 
     criarSala: builder.mutation<
@@ -302,11 +306,14 @@ export const SalasApi = apiSlice.injectEndpoints({
     }),
 
     // POST /salas/:id/sessoes - Criar nova sessão
-    // precisa ver sobre o tipo de retorno
-    criarSessao: builder.mutation<ApiResponse, string>({
-      query: (salaId) => ({
+    criarSessao: builder.mutation<
+      ApiResponse,
+      CriarSessaoPayload
+    >({
+      query: ({ salaId, visitantes }) => ({
         url: `/salas/${salaId}/sessoes`,
         method: 'POST',
+        body: visitantes ? { visitantes } : {},
       }),
       invalidatesTags: ['salaPlaning', 'visitantes'],
     }),

@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
     request.cookies.get('refresh_token')?.value;
   const tokenSala =
     request.cookies.get('token_sala')?.value;
-
+  debugger;
   // ==========================================
   // CONTROLE DE NAVEGAÇÃO BASEADO EM SALA
   // ==========================================

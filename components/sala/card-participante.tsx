@@ -12,6 +12,7 @@ interface CardParticipanteProps {
     id: string;
     nome: string;
     role: number;
+    online?: boolean;
   };
   jaExistia: boolean;
   meuRole?: number | null;
@@ -87,22 +88,11 @@ export function CardParticipante({
               {gerarIniciais(participante.nome)}
             </span>
           </div>
-
-          {/* Badge de role no avatar */}
-          {(isDono || isAdmin) && (
-            <div className="absolute -right-1 -bottom-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-slate-900 bg-gradient-to-br from-slate-800 to-slate-900">
-              {isDono ? (
-                <Crown className="h-3 w-3 text-yellow-400" />
-              ) : (
-                <Shield className="h-3 w-3 text-blue-400" />
-              )}
-            </div>
-          )}
         </div>
 
         {/* Info do participante */}
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2">
+          <div className="mb-1 flex w-full items-center justify-between gap-2">
             <p className="truncate text-sm font-medium">
               {participante.nome}
             </p>

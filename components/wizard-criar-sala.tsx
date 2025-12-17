@@ -156,7 +156,7 @@ export function WizardCriarSala({
         senha:
           formData.salaPrivada && formData.senha
             ? formData.senha
-            : null,
+            : undefined,
         salaPrivada: formData.salaPrivada,
         participantesIds:
           participantesIds.length > 0

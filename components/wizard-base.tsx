@@ -32,7 +32,7 @@ interface WizardBaseProps {
   textoBotaoFinal?: string; // Texto do botão final (padrão: "Confirmar")
   permitirPularSteps?: boolean; // Permite pular steps não obrigatórios
   dados?: any; // Dados compartilhados entre steps
-  aoMudarDados?: (dados: any) => void; // Callback quando dados mudam
+  // aoMudarDados?: (dados: any) => void; // Callback quando dados mudam
 }
 
 export function WizardBase({
@@ -45,7 +45,7 @@ export function WizardBase({
   textoBotaoFinal = 'Confirmar',
   permitirPularSteps = false,
   dados,
-  aoMudarDados,
+  // aoMudarDados,
 }: WizardBaseProps) {
   const [stepAtualIndex, setStepAtualIndex] = useState(0);
   const stepAtual = steps[stepAtualIndex];
@@ -179,11 +179,6 @@ export function WizardBase({
           </button>
 
           <div className="flex items-center gap-3">
-            {/* Mostrar progresso */}
-            <span className="text-xs text-gray-400">
-              {stepAtualIndex + 1} de {steps.length}
-            </span>
-
             <button
               onClick={handleProximo}
               disabled={!podeAvancar()}

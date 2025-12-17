@@ -13,7 +13,7 @@ import {
   toastSuccess,
 } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { SalaPlanning } from '@/components/sala-planning';
 import { useEncerrarSessaoMutation } from '@/services/api/sessoes-api';
 import {
@@ -25,6 +25,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { XCircle, Loader2 } from 'lucide-react';
 
 const PageSala = () => {
   const params = useParams();
@@ -35,21 +36,21 @@ const PageSala = () => {
     encerrarSessaoAtiva,
     obterSessaoAtiva,
     limparTokenSala,
-    sessoesAtivas,
   } = useSalaAuth();
 
-  // Estado para controle de diálogo de confirmação
-  const [dialogEncerrarAberto, setDialogEncerrarAberto] =
-    useState(false);
-
-  // Estado para controlar se deve pular a query (após encerrar sessão)
-  const [skipQuery, setSkipQuery] = useState(false);
-
-  // Estado para controlar redirecionamento após encerrar
+  // Estados de loading
+  const [loading, setLoading] = useState(false);
   const [encerrandoSessao, setEncerrandoSessao] =
     useState(false);
+  const [encerrandoDialog, setEncerrandoDialog] =
+    useState(false);
 
-  // Buscar dados da sessão ativa (com histórias e votos filtrados)
+  // Estados de controle
+  const [dialogEncerrarAberto, setDialogEncerrarAberto] =
+    useState(false);
+  const [skipQuery, setSkipQuery] = useState(false);
+
+  // Buscar dados da sessão ativa
   const { data, isLoading, error } =
     useObterDadosSessaoAtivaQuery(codigoSala, {
       skip: !codigoSala || skipQuery,
@@ -58,6 +59,15 @@ const PageSala = () => {
   const [encerrarSessao] = useEncerrarSessaoMutation();
   const [sairDaSala] = useSairDaSalaMutation();
 
+  // Cleanup ao desmontar
+  useEffect(() => {
+    return () => {
+      setSkipQuery(false);
+      setEncerrandoSessao(false);
+    };
+  }, []);
+
+  // Tratar erros da API
   useEffect(() => {
     if (error) {
       const msg = getApiErrorMessage(error);
@@ -68,54 +78,89 @@ const PageSala = () => {
     }
   }, [error]);
 
+  // Helper para tratar erros consistentemente
+  const tratarErro = useCallback(
+    (error: unknown, titulo: string) => {
+      const msg = getApiErrorMessage(error);
+      toastError({
+        title: titulo,
+        description: msg.Detalhe,
+      });
+    },
+    [],
+  );
+
+  // Helper para limpar e sair da sala
+  const limparESair = useCallback(
+    async (salaId: string) => {
+      try {
+        await sairDaSala(salaId).unwrap();
+        encerrarSessaoAtiva(salaId);
+        limparTokenSala();
+        toastSuccess({
+          title: 'Saiu da sala',
+          description: 'Você saiu da sala com sucesso',
+        });
+        router.push('/salas');
+      } catch (error) {
+        tratarErro(error, 'Erro ao sair da sala');
+        // Redireciona mesmo com erro
+        router.push('/salas');
+      }
+    },
+    [
+      sairDaSala,
+      encerrarSessaoAtiva,
+      limparTokenSala,
+      router,
+      tratarErro,
+    ],
+  );
+
+  // Validações
+  const salaResultado = data?.Resultado?.sala;
+  const usuarioId = usuario?.id ?? '';
+  const sessaoAtiva = salaResultado
+    ? obterSessaoAtiva(salaResultado.id)
+    : null;
+  const meuRole =
+    usuario?.id === salaResultado?.criado_por ? 0 : 2;
+
+  // Estados computados
+  const estaCarregando =
+    isLoading || encerrandoSessao || loading;
+  const salaNaoEncontrada =
+    !estaCarregando &&
+    data &&
+    (!data.Sucesso || !data.Resultado?.sala);
+
+  // Handlers
   const handleVoltar = async () => {
-    if (!data?.Resultado?.sala) {
+    setLoading(true);
+
+    if (!salaResultado) {
       router.push('/salas');
+      setLoading(false);
       return;
     }
-
-    const sala = data.Resultado.sala;
-    const sessaoAtiva = obterSessaoAtiva(sala.id);
 
     // Se não há sessão ativa, apenas redireciona
     if (!sessaoAtiva) {
       router.push('/salas');
+      setLoading(false);
       return;
     }
 
-    try {
-      // Sair da sala (marca offline, mas mantém autorização)
-      await sairDaSala(sala.id).unwrap();
+    await limparESair(salaResultado.id);
+    setLoading(false);
+  };
 
-      // Limpar sessão do Redux
-      encerrarSessaoAtiva(sala.id);
-
-      // Limpar token do cookie
-      limparTokenSala();
-
-      toastSuccess({
-        title: 'Saiu da sala',
-        description: 'Você saiu da sala com sucesso',
-      });
-      router.push('/salas');
-    } catch (error) {
-      const msg = getApiErrorMessage(error);
-      toastError({
-        title: 'Erro ao sair da sala',
-        description: msg.Detalhe,
-      });
-      // Redireciona mesmo com erro
-      router.push('/salas');
-    }
+  const handleAbrirDialogEncerrar = async () => {
+    setDialogEncerrarAberto(true);
   };
 
   const handleEncerrarSessao = async () => {
-    if (!data?.Resultado?.sala) return;
-
-    const sala = data.Resultado.sala;
-    const sessaoAtiva = obterSessaoAtiva(sala.id);
-
-    if (!sessaoAtiva) {
+    if (!salaResultado || !sessaoAtiva) {
       toastError({
         title: 'Erro',
         description: 'Nenhuma sessão ativa para encerrar',
@@ -124,14 +169,13 @@ const PageSala = () => {
     }
 
     try {
-      // Desabilitar query antes de encerrar (evita revalidação automática)
       setSkipQuery(true);
       setEncerrandoSessao(true);
+      setEncerrandoDialog(true);
 
-      await encerrarSessao(sala.id).unwrap();
+      await encerrarSessao(salaResultado.id).unwrap();
 
-      // Limpar estado local
-      encerrarSessaoAtiva(sala.id);
+      encerrarSessaoAtiva(salaResultado.id);
       limparTokenSala();
 
       setDialogEncerrarAberto(false);
@@ -141,22 +185,73 @@ const PageSala = () => {
           'A sessão foi encerrada para todos os participantes',
       });
 
-      // Redirecionar
       router.push('/salas');
     } catch (error) {
-      const msg = getApiErrorMessage(error);
       setDialogEncerrarAberto(false);
       setEncerrandoSessao(false);
-      // Reabilitar query em caso de erro
+      setEncerrandoDialog(false);
       setSkipQuery(false);
-      toastError({
-        title: 'Erro ao encerrar sessão',
-        description: msg.Detalhe,
-      });
+      tratarErro(error, 'Erro ao encerrar sessão');
     }
   };
 
-  if (isLoading || encerrandoSessao) {
+  const handleEnviarVoto = async (valor: number) => {
+    try {
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'A votação será implementada após a seleção de histórias',
+      });
+      console.log({ salaId: salaResultado?.id, valor });
+    } catch (error: unknown) {
+      tratarErro(error, 'Erro ao enviar voto');
+    }
+  };
+
+  const handleRevelarVotos = async () => {
+    try {
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'Revelar votos será implementado com gestão de sessões',
+      });
+    } catch (error: unknown) {
+      tratarErro(error, 'Erro ao revelar votos');
+    }
+  };
+
+  const handleResetarVotos = async () => {
+    try {
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'Resetar votos será implementado com gestão de sessões',
+      });
+    } catch (error: unknown) {
+      tratarErro(error, 'Erro ao resetar votos');
+    }
+  };
+
+  const handleSelecionarHistoria = async (
+    historiaId: string,
+  ) => {
+    try {
+      toastError({
+        title: 'Funcionalidade em desenvolvimento',
+        description:
+          'Seleção de história será implementada',
+      });
+      console.log({
+        salaId: salaResultado?.id,
+        historiaId,
+      });
+    } catch (error: unknown) {
+      tratarErro(error, 'Erro ao selecionar história');
+    }
+  };
+
+  // Loading state
+  if (estaCarregando) {
     return (
       <Loading
         active
@@ -165,150 +260,119 @@ const PageSala = () => {
     );
   }
 
-  if (!data?.Sucesso || !data.Resultado?.sala) {
+  // Sala não encontrada (só mostra após loading terminar)
+  if (salaNaoEncontrada) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-white">
-        <div className="text-center">
-          <p className="mb-2 text-lg">
-            Sala não encontrada
-          </p>
-          <button
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="max-w-md space-y-6 text-center">
+          <div className="bg-destructive/10 mx-auto flex h-20 w-20 items-center justify-center rounded-full">
+            <XCircle className="text-destructive h-10 w-10" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-foreground text-2xl font-bold">
+              Sala não encontrada
+            </h2>
+            <p className="text-muted-foreground">
+              A sala{' '}
+              <span className="font-mono font-semibold">
+                {codigoSala}
+              </span>{' '}
+              não existe ou você não tem permissão para
+              acessá-la.
+            </p>
+          </div>
+
+          <Button
             onClick={handleVoltar}
-            className="rounded-xl bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700"
+            size="lg"
+            className="mt-4"
           >
             Voltar para salas
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
-  const salaResultado = data.Resultado.sala;
-  const usuarioId = usuario?.id ?? '';
-  const sessaoAtiva = obterSessaoAtiva(salaResultado.id);
-
-  // Determinar role do usuário (baseado em criado_por temporariamente)
-  // TODO: Buscar role real da API
-  const meuRole =
-    usuario?.id === salaResultado.criado_por ? 0 : 2;
-
-  const handleEnviarVoto = async (valor: number) => {
-    try {
-      // TODO: Obter sessão ativa e historia_sessao_id atual
-      // Por enquanto, mostrar erro que precisa de história ativa
-      toastError({
-        title: 'Funcionalidade em desenvolvimento',
-        description:
-          'A votação será implementada após a seleção de histórias',
-      });
-      console.log({ salaId: salaResultado.id, valor });
-    } catch (error: unknown) {
-      const apiError = getApiErrorMessage(error);
-      toastError({
-        title: apiError.Mensagem,
-        description: apiError.Detalhe,
-      });
-    }
-  };
-
-  const handleRevelarVotos = async () => {
-    try {
-      // TODO: Obter sessão ativa
-      toastError({
-        title: 'Funcionalidade em desenvolvimento',
-        description:
-          'Revelar votos será implementado com gestão de sessões',
-      });
-    } catch (error: unknown) {
-      const apiError = getApiErrorMessage(error);
-      toastError({
-        title: apiError.Mensagem,
-        description: apiError.Detalhe,
-      });
-    }
-  };
-
-  const handleResetarVotos = async () => {
-    try {
-      // TODO: Obter sessão ativa
-      toastError({
-        title: 'Funcionalidade em desenvolvimento',
-        description:
-          'Resetar votos será implementado com gestão de sessões',
-      });
-    } catch (error: unknown) {
-      const apiError = getApiErrorMessage(error);
-      toastError({
-        title: apiError.Mensagem,
-        description: apiError.Detalhe,
-      });
-    }
-  };
-
-  const handleSelecionarHistoria = async (
-    historiaId: string,
-  ) => {
-    try {
-      // TODO: Marcar história como ativa na sessão atual
-      toastError({
-        title: 'Funcionalidade em desenvolvimento',
-        description:
-          'Seleção de história será implementada',
-      });
-      console.log({ salaId: salaResultado.id, historiaId });
-    } catch (error: unknown) {
-      const apiError = getApiErrorMessage(error);
-      toastError({
-        title: apiError.Mensagem,
-        description: apiError.Detalhe,
-      });
-    }
-  };
+  // Overlay de encerramento
+  if (encerrandoSessao) {
+    return (
+      <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div className="space-y-4 text-center">
+          <Loader2 className="text-primary mx-auto h-12 w-12 animate-spin" />
+          <div className="space-y-2">
+            <p className="text-foreground text-lg font-semibold">
+              Encerrando sessão...
+            </p>
+            <p className="text-muted-foreground text-sm">
+              Aguarde enquanto finalizamos a sessão para
+              todos
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <SalaPlanning
         usuarioAtualId={usuarioId}
         aoVoltar={handleVoltar}
-        sala={salaResultado}
+        sala={salaResultado!}
         sessaoId={sessaoAtiva ?? undefined}
         meuRole={meuRole}
         aoEnviarVoto={handleEnviarVoto}
         aoRevelarVotos={handleRevelarVotos}
         aoResetarVotos={handleResetarVotos}
         aoSelecionarHistoria={handleSelecionarHistoria}
-        aoEncerrarSessao={async () =>
-          setDialogEncerrarAberto(true)
-        }
+        aoEncerrarSessao={handleAbrirDialogEncerrar}
       />
 
       {/* Dialog de confirmação para encerrar sessão */}
       <Dialog
         open={dialogEncerrarAberto}
         onOpenChange={setDialogEncerrarAberto}
+        modal={true}
       >
-        <DialogContent>
+        <DialogContent className="border-border bg-popover text-popover-foreground max-w-11/12 rounded-lg border p-6 shadow-lg sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Encerrar sessão?</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-semibold">
+              Encerrar sessão?
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Isso vai encerrar a sessão de Planning Poker
               para todos os participantes.
-              {meuRole === 0 &&
-                ' Como dono da sala, você pode encerrar a sessão a qualquer momento.'}
+              {meuRole === 0 && (
+                <span className="text-primary mt-2 block font-medium">
+                  Como dono da sala, você pode encerrar a
+                  sessão a qualquer momento.
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setDialogEncerrarAberto(false)}
+              disabled={encerrandoDialog}
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={handleEncerrarSessao}
+              disabled={encerrandoDialog}
             >
-              Encerrar Sessão
+              {encerrandoDialog ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Encerrando...
+                </>
+              ) : (
+                'Encerrar Sessão'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

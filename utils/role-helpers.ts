@@ -9,7 +9,7 @@ export interface RoleInfo {
 
 /**
  * Retorna informações visuais sobre um role
- * @param role - 0=Dono, 1=Admin, 2=Membro
+ * @param role - 0=Dono, 1=Admin, 2=Membro, 3=Visitante
  */
 export function getRoleInfo(role: number): RoleInfo {
   switch (role) {
@@ -30,10 +30,17 @@ export function getRoleInfo(role: number): RoleInfo {
           'bg-blue-500/10 text-blue-500 border-blue-500/20',
       };
     case 2:
-    default:
       return {
         icon: User,
         label: 'Membro',
+        color: 'text-gray-400',
+        badgeClass:
+          'bg-gray-500/10 text-gray-400 border-gray-500/20',
+      };
+    default:
+      return {
+        icon: User,
+        label: 'Visitante',
         color: 'text-gray-400',
         badgeClass:
           'bg-gray-500/10 text-gray-400 border-gray-500/20',

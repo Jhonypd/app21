@@ -30,6 +30,12 @@ export interface AtualizarHistoriaPayload {
   descricao?: string;
 }
 
+export interface AdicionarHistoriaDuranteSessaoPayload {
+  salaId: string;
+  titulo: string;
+  descricao?: string;
+}
+
 export const HistoriasApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // POST /salas/:salaId/historias
@@ -54,6 +60,19 @@ export const HistoriasApi = apiSlice.injectEndpoints({
         url: `/salas/${salaId}/historias/lote`,
         method: 'POST',
         body: { historias },
+      }),
+      invalidatesTags: ['historias', 'salaPlaning'],
+    }),
+
+    // POST /salas/:salaId/historias/durante-sessao
+    adicionarHistoriaDuranteSessao: builder.mutation<
+      ApiResponse<{ historia: HistoriaSala }>,
+      AdicionarHistoriaDuranteSessaoPayload
+    >({
+      query: ({ salaId, titulo, descricao }) => ({
+        url: `/salas/${salaId}/historias/durante-sessao`,
+        method: 'POST',
+        body: { titulo, descricao },
       }),
       invalidatesTags: ['historias', 'salaPlaning'],
     }),
@@ -108,6 +127,7 @@ export const HistoriasApi = apiSlice.injectEndpoints({
 export const {
   useCriarHistoriaMutation,
   useCriarVariasHistoriasMutation,
+  useAdicionarHistoriaDuranteSessaoMutation,
   useListarHistoriasQuery,
   useLazyListarHistoriasQuery,
   useObterHistoriaQuery,

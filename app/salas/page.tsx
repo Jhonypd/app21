@@ -327,6 +327,7 @@ const PageSalas = () => {
           </div>
         ) : (
           // Estado vazio
+
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/5">
               <Search className="h-10 w-10 text-gray-500" />

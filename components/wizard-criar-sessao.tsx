@@ -4,7 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { StepConvidados } from './wizard-steps/step-convidados';
 import { StepHistorias } from './wizard-steps/step-historias';
 import { StepConclusao } from './wizard-steps/step-conclusao';
-import { useSalaEntrarMutation } from '@/services/api/salas-api';
+import {
+  useSalaEntrarMutation,
+  useCriarSessaoMutation,
+} from '@/services/api/salas-api';
 import { useCriarVariasHistoriasMutation } from '@/services/api/historias-api';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { toastError, toastSuccess } from './custom-toast';
@@ -49,6 +52,7 @@ export function WizardCriarSessao({
   const [termoBusca, setTermoBusca] = useState('');
 
   const [entrarSala] = useSalaEntrarMutation();
+  const [criarSessao] = useCriarSessaoMutation();
   const [criarHistorias] =
     useCriarVariasHistoriasMutation();
   const [
@@ -86,16 +90,43 @@ export function WizardCriarSessao({
 
   const handleConfirmar = async () => {
     try {
-      // Preparar lista de visitantes para enviar no entrarSala
+      // Preparar lista de visitantes para enviar ao criar sessão
       const visitantes =
         convidadosSelecionados.length > 0
           ? convidadosSelecionados.map((c) => c.id)
           : undefined;
 
-      // 1. Entrar na sala (isso cria a sessão automaticamente e adiciona visitantes)
+      // ✅ 1. CRIAR SESSÃO PRIMEIRO (POST /salas/:id/sessoes)
+      // IMPORTANTE: Visitantes são adicionados AQUI, não no entrarSala
+      console.log(
+        '[WIZARD] Criando sessão para sala:',
+        salaId,
+        'com visitantes:',
+        visitantes,
+      );
+      const resultadoCriarSessao = await criarSessao({
+        salaId,
+        visitantes,
+      }).unwrap();
+
+      if (!resultadoCriarSessao.Sucesso) {
+        throw new Error(
+          resultadoCriarSessao.Mensagem ||
+            'Erro ao criar sessão',
+        );
+      }
+
+      console.log(
+        '[WIZARD] Sessão criada com sucesso!',
+        resultadoCriarSessao,
+      );
+
+      // ✅ 2. ENTRAR NA SALA (POST /salas/:codigo/entrar)
+      // Agora sim a sessão existe, participantes criados (permanentes + visitantes)
+      console.log('[WIZARD] Entrando na sala:', codigoSala);
       const resultadoEntrar = await entrarSala({
         codigo: codigoSala,
-        visitantes, // Visitantes são adicionados na criação da sessão
+        // Não envia mais visitantes - já foram adicionados ao criar sessão
       }).unwrap();
 
       if (!resultadoEntrar.Sucesso) {
@@ -140,7 +171,7 @@ export function WizardCriarSessao({
         );
       }
 
-      // 2. Criar histórias (se houver)
+      // ✅ 3. Criar histórias (se houver)
       if (historias.length > 0) {
         console.log(
           '[WIZARD] Criando histórias...',
@@ -252,7 +283,7 @@ export function WizardCriarSessao({
       titulo="Iniciar Sessão de Planning"
       descricao="Configure sua sessão em 3 passos"
       steps={steps}
-      textoBotaoFinal="Entrar na Sala"
+      textoBotaoFinal="Iniciar Sessão"
       permitirPularSteps={false}
     />
   );

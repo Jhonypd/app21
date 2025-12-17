@@ -2,11 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  ArrowLeft,
   Users,
   Eye,
   RotateCcw,
-  Copy,
   Crown,
   UserPlus,
   Check,
@@ -14,24 +12,17 @@ import {
   ListTodo,
   ChevronRight,
   Ban,
+  DoorOpenIcon,
 } from 'lucide-react';
-import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 import { CardParticipante } from './sala/card-participante';
 
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { useAdicionarParticipanteSessaoMutation } from '@/services/api/sessoes-api';
+import { useAdicionarHistoriaDuranteSessaoMutation } from '@/services/api/historias-api';
 import { toast } from 'sonner';
-import { getApiErrorMessage } from '@/utils/api-error';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from './ui/dialog';
-import { Input } from './ui/input';
-import { Search } from 'lucide-react';
-import { useSalaAuth } from '@/hooks/salaAuth';
+import { BannerModoPratica } from './sala/banner-modo-pratica';
+import { DialogAdicionarHistoria } from './sala/dialog-adicionar-historia';
+import { ModalAdicionarVisitante } from './sala/modal-adicionar-visitante';
 
 // Interfaces baseadas na estrutura real da API
 interface Proprietario {
@@ -51,6 +42,7 @@ interface Participante {
   nome: string;
   inativo: boolean;
   role: number; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
+  online?: boolean;
   // mudei a role para obrigatória porque sempre vem da API
 }
 
@@ -147,8 +139,6 @@ export function SalaPlanning({
     useState(false);
   const [loadingAcao, setLoadingAcao] = useState(false);
   const [termoBusca, setTermoBusca] = useState('');
-  const [pessoaSelecionadaId, setPessoaSelecionadaId] =
-    useState('');
 
   const eProprietario = sala.criado_por === usuarioAtualId;
   // Verificar se o usuário iniciou a sessão (dono ou admin que criou a sessão)
@@ -165,6 +155,14 @@ export function SalaPlanning({
     pesquisarPessoas,
     { data: pessoasEncontradas, isFetching },
   ] = useLazyPesquisarPorNomeOuEmailQuery();
+  const [adicionarHistoriaDuranteSessao] =
+    useAdicionarHistoriaDuranteSessaoMutation();
+
+  // Verifica se está em modo prática (sem histórias)
+  const emModoPratica =
+    !sala.historias || sala.historias.length === 0;
+  const podeAdicionarHistorias =
+    meuRole === 0 || meuRole === 1; // Dono ou Admin
 
   // Inicializar com a primeira história se existir
   useEffect(() => {
@@ -324,26 +322,22 @@ export function SalaPlanning({
     }
   };
 
-  const handleAdicionarVisitante = async () => {
-    if (!pessoaSelecionadaId || !sessaoId) {
-      toast.error('Selecione uma pessoa para adicionar');
+  const handleAdicionarVisitante = async (
+    pessoaId: string,
+  ) => {
+    if (!sessaoId) {
+      toast.error('Sessão não encontrada');
       return;
     }
 
-    try {
-      await adicionarVisitante({
-        sessaoId: sessaoId,
-        pessoaId: pessoaSelecionadaId,
-      }).unwrap();
+    await adicionarVisitante({
+      sessaoId: sessaoId,
+      pessoaId: pessoaId,
+    }).unwrap();
 
-      toast.success('Visitante adicionado com sucesso!');
-      setModalVisitantesAberto(false);
-      setTermoBusca('');
-      setPessoaSelecionadaId('');
-    } catch (erro: unknown) {
-      const errorMessage = getApiErrorMessage(erro);
-      toast.error(errorMessage.Mensagem);
-    }
+    toast.success('Visitante adicionado com sucesso!');
+    setModalVisitantesAberto(false);
+    setTermoBusca('');
   };
 
   const handleAnularVoto = async (
@@ -365,6 +359,16 @@ export function SalaPlanning({
     }
   };
 
+  const handleAdicionarHistoria = async (dados: {
+    titulo: string;
+    descricao?: string;
+  }) => {
+    await adicionarHistoriaDuranteSessao({
+      salaId: sala.id,
+      ...dados,
+    }).unwrap();
+  };
+
   const calcularMedia = () => {
     const votosNumericos = participantesComVotos
       .map((p) => p.voto)
@@ -377,6 +381,10 @@ export function SalaPlanning({
     return (soma / votosNumericos.length).toFixed(1);
   };
 
+  const participantesOnline = sala.participantes?.filter(
+    (p) => p.online,
+  );
+
   return (
     <div className="min-h-screen bg-slate-950 pb-6 text-white">
       {/* Header */}
@@ -385,9 +393,9 @@ export function SalaPlanning({
           <div className="mb-3 flex items-center gap-3">
             <button
               onClick={() => aoVoltar()}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-sm bg-white/5 py-4 transition-all hover:bg-white/10 active:scale-95"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <DoorOpenIcon className="h-5 w-5" />
             </button>
 
             <div className="flex-1">
@@ -491,21 +499,37 @@ export function SalaPlanning({
       </div>
 
       <div className="mt-6 space-y-6 px-4">
+        {/* Banner Modo Prática */}
+        <BannerModoPratica mostrar={emModoPratica} />
+
+        {/* Botão Adicionar História (para Dono/Admin quando em modo prática) */}
+        {emModoPratica && podeAdicionarHistorias && (
+          <div className="flex justify-end">
+            <DialogAdicionarHistoria
+              salaId={sala.id}
+              onAdicionarHistoria={handleAdicionarHistoria}
+              mostrarBotao={true}
+            />
+          </div>
+        )}
+
         {/* Participantes */}
         <div>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Participantes ({participantesComVotos.length})
+              Participantes onlines (
+              {participantesOnline.length} /{' '}
+              {sala.participantes?.length})
             </h2>
             <div className="text-sm text-gray-400">
-              {totalVotos}/{participantesComVotos.length}{' '}
+              {totalVotos}/{participantesOnline.length}{' '}
               votaram
             </div>
           </div>
 
           <div className="space-y-2">
-            {sala.participantes?.map((participante) => {
+            {participantesOnline.map((participante) => {
               const votoParticipante =
                 participantesComVotos.find(
                   (p) => p.id === participante.id,
@@ -686,7 +710,7 @@ export function SalaPlanning({
                   ? 'Revelando...'
                   : todosVotaram
                     ? 'Revelar Votos'
-                    : `Aguardando ${participantesComVotos.length - totalVotos}`}
+                    : `Aguardando ${participantesOnline.length - totalVotos}`}
               </span>
             </button>
           ) : null}
@@ -709,97 +733,18 @@ export function SalaPlanning({
       </div>
 
       {/* Modal Adicionar Visitante */}
-      <Dialog
+      <ModalAdicionarVisitante
         open={modalVisitantesAberto}
         onOpenChange={setModalVisitantesAberto}
-      >
-        <DialogContent className="border-slate-700 bg-slate-900 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl">
-              Adicionar Visitante
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Campo de busca */}
-            <div className="relative">
-              <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar por nome ou email..."
-                value={termoBusca}
-                onChange={(e) =>
-                  handleBuscarPessoas(e.target.value)
-                }
-                className="border-slate-700 bg-slate-800 pl-10 text-white"
-              />
-            </div>
-
-            {/* Lista de resultados */}
-            {isFetching && (
-              <p className="text-center text-sm text-gray-400">
-                Buscando...
-              </p>
-            )}
-
-            {pessoasEncontradas?.Resultado?.pessoas &&
-              pessoasEncontradas.Resultado.pessoas.length >
-                0 && (
-                <div className="max-h-64 space-y-2 overflow-y-auto">
-                  {pessoasEncontradas.Resultado.pessoas.map(
-                    (pessoa: {
-                      id: string;
-                      nome: string;
-                      email: string;
-                    }) => (
-                      <button
-                        key={pessoa.id}
-                        onClick={() =>
-                          setPessoaSelecionadaId(pessoa.id)
-                        }
-                        className={`w-full rounded-lg border p-3 text-left transition-all ${
-                          pessoaSelecionadaId === pessoa.id
-                            ? 'border-purple-500 bg-purple-500/20'
-                            : 'border-slate-700 bg-slate-800 hover:bg-slate-700'
-                        }`}
-                      >
-                        <p className="font-medium">
-                          {pessoa.nome}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          {pessoa.email}
-                        </p>
-                      </button>
-                    ),
-                  )}
-                </div>
-              )}
-          </div>
-
-          <DialogFooter>
-            <button
-              onClick={() => {
-                setModalVisitantesAberto(false);
-                setTermoBusca('');
-                setPessoaSelecionadaId('');
-              }}
-              className="rounded-lg bg-slate-700 px-4 py-2 transition-all hover:bg-slate-600"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleAdicionarVisitante}
-              disabled={
-                !pessoaSelecionadaId || adicionandoVisitante
-              }
-              className="rounded-lg bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {adicionandoVisitante
-                ? 'Adicionando...'
-                : 'Adicionar'}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        termoBusca={termoBusca}
+        onBuscar={handleBuscarPessoas}
+        pessoas={
+          pessoasEncontradas?.Resultado?.pessoas || []
+        }
+        carregando={isFetching}
+        onAdicionar={handleAdicionarVisitante}
+        adicionando={adicionandoVisitante}
+      />
     </div>
   );
 }
