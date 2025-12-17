@@ -3,7 +3,8 @@ import type { RootState } from '@/services/api/configs/store/store';
 
 export const rawBaseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL,
-  credentials: 'include',
+  // ❌ REMOVIDO: credentials: 'include' - não precisamos que o backend envie cookies
+  // Tokens são gerenciados via Redux + cookies do lado do cliente apenas
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth
       .accessToken;
@@ -11,6 +12,18 @@ export const rawBaseQuery = fetchBaseQuery({
       .refreshToken;
     const tokenSala = (getState() as RootState).salaAuth
       ?.tokenSala;
+
+    console.log('🔍 [rawBaseQuery] Preparando headers:', {
+      hasToken: !!token,
+      hasRefreshToken: !!refreshToken,
+      hasTokenSala: !!tokenSala,
+      tokenPreview: token
+        ? `${token.substring(0, 20)}...`
+        : 'undefined',
+      refreshTokenPreview: refreshToken
+        ? `${refreshToken.substring(0, 20)}...`
+        : 'undefined',
+    });
 
     // Headers padrão
     headers.set('Content-Type', 'application/json');

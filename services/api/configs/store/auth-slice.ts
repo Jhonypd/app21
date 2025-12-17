@@ -3,7 +3,6 @@ import {
   PayloadAction,
 } from '@reduxjs/toolkit';
 import { DadosContaPessoa as Usuario } from '../../pessoas.api';
-import { deleteCookie, setCookie } from 'cookies-next';
 
 interface AuthState {
   accessToken: string | null;
@@ -28,25 +27,26 @@ const authSlice = createSlice({
         refreshToken?: string;
       }>,
     ) => {
-      state.accessToken = action.payload.accessToken;
-      setCookie(
-        'access_token',
-        action.payload.accessToken,
+      console.log(
+        '💾 [auth-slice] setCredentials chamado:',
         {
-          path: '/',
-          maxAge: 15 * 60,
+          hasAccessToken: !!action.payload.accessToken,
+          hasRefreshToken: !!action.payload.refreshToken,
+          accessTokenPreview: action.payload.accessToken
+            ? `${action.payload.accessToken.substring(0, 20)}...`
+            : 'undefined',
+          refreshTokenPreview: action.payload.refreshToken
+            ? `${action.payload.refreshToken.substring(0, 20)}...`
+            : 'undefined',
         },
       );
+
+      // ✅ Apenas atualizar o Redux state
+      // Redux Persist salvará automaticamente no localStorage
+      state.accessToken = action.payload.accessToken;
+
       if (action.payload.refreshToken) {
         state.refreshToken = action.payload.refreshToken;
-        setCookie(
-          'refresh_token',
-          action.payload.refreshToken,
-          {
-            path: '/',
-            maxAge: 60 * 60 * 24 * 3,
-          },
-        );
       }
     },
     setUser: (
@@ -56,12 +56,11 @@ const authSlice = createSlice({
       state.usuario = action.payload;
     },
     logout: (state) => {
+      // ✅ Apenas limpar o Redux state
+      // Redux Persist limpará automaticamente o localStorage
       state.accessToken = null;
       state.refreshToken = null;
       state.usuario = null;
-
-      deleteCookie('access_token');
-      deleteCookie('refresh_token');
     },
   },
 });

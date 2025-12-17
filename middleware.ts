@@ -38,28 +38,16 @@ function decodeJwtPayload(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Rotas públicas que não precisam de autenticação
-  const publicRoutes = [
-    '/auth/login',
-    '/auth/cadastro',
-    '/confirmacao-email',
-  ];
-
   // Rotas de API não precisam de redirect
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
-  // Verifica cookies de autenticação
-  const token = request.cookies.get('access_token')?.value;
-  const refreshToken =
-    request.cookies.get('refresh_token')?.value;
-  const tokenSala =
-    request.cookies.get('token_sala')?.value;
-  debugger;
   // ==========================================
   // CONTROLE DE NAVEGAÇÃO BASEADO EM SALA
   // ==========================================
+  // Token de sala ainda pode estar em cookie para SSR
+  const tokenSala = request.cookies.get('token_sala')?.value;
 
   // Se tem token_sala, usuário está "locked" em uma sessão de sala
   if (tokenSala) {
@@ -67,12 +55,20 @@ export async function middleware(request: NextRequest) {
     const decoded = decodeJwtPayload(tokenSala);
     const codigoSala = decoded?.Sala_Co;
 
-    // Permitir apenas rotas da sala específica ou rotas públicas
-    const isRotaSalaCorreta =
-      codigoSala && pathname === `/salas/${codigoSala}`;
+    // Rotas públicas permitidas mesmo com token_sala
+    const publicRoutes = [
+      '/auth/login',
+      '/auth/cadastro', 
+      '/confirmacao-email',
+    ];
+    
     const isRotaPublica = publicRoutes.some((route) =>
       pathname.startsWith(route),
     );
+
+    // Permitir apenas rotas da sala específica ou rotas públicas
+    const isRotaSalaCorreta =
+      codigoSala && pathname === `/salas/${codigoSala}`;
 
     if (!isRotaSalaCorreta && !isRotaPublica) {
       // Redirecionar para a sala correta se temos o código
@@ -101,26 +97,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ==========================================
-  // AUTENTICAÇÃO GERAL
+  // SEM VALIDAÇÃO DE AUTH NO MIDDLEWARE
   // ==========================================
-
-  // Se não tem token e não está em rota pública, redireciona para login
-  if (
-    !token &&
-    !refreshToken &&
-    !publicRoutes.some((route) =>
-      pathname.startsWith(route),
-    )
-  ) {
-    const loginUrl = new URL('/auth/login', request.url);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Se tem token e está na página de login, redireciona para dashboard
-  if (token && pathname === '/auth/login') {
-    const dashboardUrl = new URL('/', request.url);
-    return NextResponse.redirect(dashboardUrl);
-  }
+  // Auth é gerenciada via Redux + localStorage no cliente
+  // Backend valida tokens via headers em cada requisição
 
   return NextResponse.next();
 }

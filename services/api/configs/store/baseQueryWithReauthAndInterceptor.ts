@@ -12,6 +12,22 @@ import {
 } from '@/services/api/configs/store/auth-slice';
 import { limparSalaToken } from './sala-auth-slice';
 
+// Flag para ignorar headers X-New-* temporariamente
+let ignoreRefreshHeaders = false;
+
+export function setIgnoreRefreshHeaders(value: boolean) {
+  ignoreRefreshHeaders = value;
+  if (value) {
+    console.log(
+      '⏸️ [interceptor] Headers X-New-* serão ignorados temporariamente',
+    );
+  } else {
+    console.log(
+      '▶️ [interceptor] Headers X-New-* voltaram a ser processados',
+    );
+  }
+}
+
 export type ApiError = FetchBaseQueryError & {
   status: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +59,22 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       'x-new-refresh-token',
     );
 
-  if (newAccessToken && newRefreshToken) {
+  if (
+    newAccessToken &&
+    newRefreshToken &&
+    !ignoreRefreshHeaders
+  ) {
+    console.log(
+      '⚠️ [interceptor] Headers X-New-* detectados:',
+      {
+        url: typeof args === 'string' ? args : args.url,
+        accessTokenPreview:
+          newAccessToken.substring(0, 30) + '...',
+        refreshTokenPreview:
+          newRefreshToken.substring(0, 30) + '...',
+      },
+    );
+
     // Backend fez refresh automático - atualizar tokens
     api.dispatch(
       setCredentials({
@@ -53,6 +84,14 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     );
     console.log(
       '🔄 Tokens atualizados automaticamente pelo backend',
+    );
+  } else if (
+    newAccessToken &&
+    newRefreshToken &&
+    ignoreRefreshHeaders
+  ) {
+    console.log(
+      '⏭️ [interceptor] Headers X-New-* ignorados (logo após login)',
     );
   }
 
@@ -97,9 +136,23 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       !teveRefreshAutomatico &&
       !limparTokenSala)
   ) {
+    console.log(
+      '🚨 [interceptor] Logout forçado - sessão inválida',
+    );
+
     // Limpar TODOS os tokens (auth + sala)
     api.dispatch(logout());
     api.dispatch(limparSalaToken());
+
+    // PURGE completo do Redux Persist
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('persist:root');
+      console.log('🗑️ localStorage limpo pelo interceptor');
+    }
+
+    console.log(
+      '🔒 Logout completo - tokens removidos do Redux/localStorage',
+    );
 
     if (typeof window !== 'undefined') {
       const mensagem = requerLogin
@@ -109,11 +162,13 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       toastError({
         title: mensagem,
         description:
-          'Você será redirecionado para o login em 3 segundos.',
+          'Você será redirecionado para o login em 2 segundos.',
       });
+
+      // Redirecionar após delay - cookies já foram limpos
       setTimeout(() => {
         window.location.href = '/auth/login';
-      }, 3000);
+      }, 2000);
     }
 
     return result;

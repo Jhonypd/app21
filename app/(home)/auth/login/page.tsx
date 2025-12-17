@@ -31,9 +31,12 @@ import {
   setCredentials,
   setUser,
 } from '@/services/api/configs/store/auth-slice';
+import { limparSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 import { useLazyObterDadosContaQuery } from '@/services/api/pessoas.api';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { persistor } from '@/services/api/configs/store/store';
+import { setIgnoreRefreshHeaders } from '@/services/api/configs/store/baseQueryWithReauthAndInterceptor';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -53,12 +56,64 @@ const Auth = () => {
 
     try {
       if (action === 'login') {
+        // 🔒 PURGE COMPLETO do Redux Persist + localStorage
+        console.log(
+          '🧹 Limpando estado completo antes do login...',
+        );
+
+        // 1. PAUSAR Redux Persist para evitar rehydration automática
+        persistor.pause();
+        console.log('⏸️ Redux Persist pausado');
+
+        // 2. PURGE do persistor
+        await persistor.purge();
+
+        // 3. Limpar Redux state
+        dispatch(logout());
+        dispatch(limparSalaToken());
+
+        // 4. Limpar localStorage manualmente
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('persist:root');
+          // Limpar TODOS os items de persist
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('persist:')) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
+
+        // 5. Aguardar para garantir que tudo foi limpo
+        await new Promise((resolve) =>
+          setTimeout(resolve, 200),
+        );
+
+        console.log('✅ Estado limpo, iniciando login...');
+
         const payload = {
           email: (data as LoginFormValues).email,
           senha: (data as LoginFormValues).senha,
         };
 
         const result = await login(payload).unwrap();
+
+        console.log('📥 [login] Resposta do backend:', {
+          sucesso: result?.Sucesso,
+          hasTokenAcesso:
+            !!result.Resultado?.tokenAcesso?.token,
+          hasRefreshToken:
+            !!result.Resultado?.refreshToken?.token,
+          tokenPreview:
+            result.Resultado?.tokenAcesso?.token?.substring(
+              0,
+              30,
+            ) + '...',
+          refreshPreview:
+            result.Resultado?.refreshToken?.token?.substring(
+              0,
+              30,
+            ) + '...',
+        });
 
         if (!result?.Sucesso) {
           setLoading(false);
@@ -69,12 +124,42 @@ const Auth = () => {
         const refresh =
           result.Resultado?.refreshToken?.token;
 
+        console.log(
+          '🔑 [login] Tokens extraídos da resposta:',
+          {
+            accessPreview: access
+              ? access.substring(0, 30) + '...'
+              : 'undefined',
+            refreshPreview: refresh
+              ? refresh.substring(0, 30) + '...'
+              : 'undefined',
+          },
+        );
+
         if (access && refresh) {
+          console.log(
+            '💾 [login] Salvando tokens no Redux...',
+          );
+
+          // CRÍTICO: Ignorar headers X-New-* por 5 segundos após login
+          setIgnoreRefreshHeaders(true);
+          setTimeout(
+            () => setIgnoreRefreshHeaders(false),
+            5000,
+          );
+
           dispatch(
             setCredentials({
               accessToken: access,
               refreshToken: refresh,
             }),
+          );
+
+          // CRÍTICO: Forçar flush e retomar persistor
+          await persistor.flush();
+          persistor.persist();
+          console.log(
+            '✅ [login] Tokens persistidos e Redux Persist retomado',
           );
 
           try {

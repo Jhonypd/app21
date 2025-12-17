@@ -70,10 +70,11 @@ const PageSalas = () => {
     if (error) {
       toastError({
         title: 'Erro ao carregar salas',
-        description: `${error}`,
+        description: `${error.data?.Mensagem}`,
       });
     }
-  }, [error]);
+    debugger;
+  }, [data, error]);
 
   // Filtrar salas
   const salasFiltradas = listaSalas.filter((sala) => {
