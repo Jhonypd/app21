@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { toast } from 'sonner';
 import { TextInput } from '@/components/inputs/input-text';
 import { TextAreaInput } from '@/components/inputs/input-textArea';
 import { ModalBase } from './modal-base';
+import { toastError, toastSuccess } from '../custom-toast';
 
 interface DialogAdicionarHistoriaProps {
   salaId: string;
@@ -28,7 +28,7 @@ export function DialogAdicionarHistoria({
 
   const handleSubmit = async () => {
     if (!titulo.trim()) {
-      toast.error('O título é obrigatório');
+      toastError({ description: 'O título é obrigatório' });
       return;
     }
 
@@ -39,7 +39,9 @@ export function DialogAdicionarHistoria({
         descricao: descricao.trim() || undefined,
       });
 
-      toast.success('História adicionada com sucesso!');
+      toastSuccess({
+        description: 'História adicionada com sucesso!',
+      });
       setTitulo('');
       setDescricao('');
       setOpen(false);
@@ -47,10 +49,11 @@ export function DialogAdicionarHistoria({
       const errorMessage = erro as {
         data?: { Mensagem?: string };
       };
-      toast.error(
-        errorMessage?.data?.Mensagem ||
+      toastError({
+        description:
+          errorMessage?.data?.Mensagem ||
           'Erro ao adicionar história',
-      );
+      });
     } finally {
       setCarregando(false);
     }

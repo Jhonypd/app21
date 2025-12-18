@@ -73,7 +73,6 @@ const PageSalas = () => {
         description: `${error.data?.Mensagem}`,
       });
     }
-    debugger;
   }, [data, error]);
 
   // Filtrar salas

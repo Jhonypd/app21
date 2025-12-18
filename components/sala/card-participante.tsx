@@ -1,11 +1,7 @@
-import {
-  TimerIcon,
-  Trash2,
-  Crown,
-  Shield,
-} from 'lucide-react';
+import { TimerIcon, Trash2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { getRoleInfo } from '@/utils/role-helpers';
+import { Card, CardContent } from '../ui/card';
 
 interface CardParticipanteProps {
   participante: {
@@ -16,7 +12,7 @@ interface CardParticipanteProps {
   };
   jaExistia: boolean;
   meuRole?: number | null;
-  mostrarAcoes?: boolean; // Controla se mostra botões de promover/rebaixar/remover
+  mostrarAcoes?: boolean;
   onAlterarRole?: (
     pessoaId: string,
     novoRole: 1 | 2,
@@ -27,10 +23,12 @@ interface CardParticipanteProps {
   }) => void;
   voto?: string | null;
   votosRevelados?: boolean;
+  layout?: 'horizontal' | 'vertical';
 }
 
 export function CardParticipante({
   participante,
+  layout = 'horizontal',
   jaExistia,
   meuRole,
   mostrarAcoes = true,
@@ -68,9 +66,137 @@ export function CardParticipante({
     return 'from-purple-500 to-pink-500';
   };
 
+  // Layout Vertical
+  if (layout === 'vertical') {
+    return (
+      <Card className="group hover:shadow-primary/10 relative w-40 overflow-hidden border-0 transition-all hover:shadow-lg">
+        {/* Indicador de role no topo */}
+        {isDono && (
+          <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500" />
+        )}
+        {isAdmin && !isDono && (
+          <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500" />
+        )}
+
+        <CardContent className="flex flex-col items-center gap-3 p-4 text-center">
+          {/* Avatar */}
+          <div className="relative">
+            <div
+              className={`flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br ${getAvatarGradient()} shadow-lg transition-all group-hover:scale-105`}
+            >
+              <span className="text-lg font-medium text-white uppercase">
+                {gerarIniciais(participante.nome)}
+              </span>
+            </div>
+          </div>
+
+          {/* Nome */}
+          <div className="w-full space-y-1">
+            <p className="truncate text-sm font-medium">
+              {participante.nome}
+            </p>
+
+            {/* Badge de role */}
+            <Badge
+              variant="outline"
+              className={`text-xs ${roleInfo.badgeClass}`}
+            >
+              <Icon className="mr-1 h-3 w-3" />
+              {roleInfo.label}
+            </Badge>
+          </div>
+
+          {/* Status do voto */}
+          <div className="w-full">
+            {voto && votosRevelados ? (
+              <div className="flex items-center justify-center gap-1.5 rounded-lg bg-green-600/20 px-3 py-2 dark:bg-green-600/30">
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                  {voto}
+                </span>
+              </div>
+            ) : voto && !votosRevelados ? (
+              <div className="bg-primary/20 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2">
+                <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
+                <span className="text-primary text-xs">
+                  Votou
+                </span>
+              </div>
+            ) : (
+              <div className="bg-muted flex items-center justify-center gap-1.5 rounded-lg px-3 py-2">
+                <TimerIcon className="text-muted-foreground h-3 w-3" />
+                <span className="text-muted-foreground text-xs">
+                  Aguardando
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Ações */}
+          {mostrarAcoes &&
+            (podeAlterarRole || podeRemoverEste) && (
+              <div className="flex w-full flex-col gap-2 border-t pt-3">
+                {/* Alterar Role */}
+                {podeAlterarRole &&
+                  !isDono &&
+                  jaExistia &&
+                  onAlterarRole && (
+                    <div className="flex gap-2">
+                      {participante.role === 2 && (
+                        <button
+                          onClick={() =>
+                            onAlterarRole(
+                              participante.id,
+                              1,
+                            )
+                          }
+                          className="flex-1 rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs text-blue-600 transition-all hover:bg-blue-600/30 active:scale-95 dark:text-blue-400"
+                        >
+                          ↑ Promover
+                        </button>
+                      )}
+                      {participante.role === 1 && (
+                        <button
+                          onClick={() =>
+                            onAlterarRole(
+                              participante.id,
+                              2,
+                            )
+                          }
+                          className="bg-muted text-muted-foreground hover:bg-muted/80 flex-1 rounded-lg px-3 py-1.5 text-xs transition-all active:scale-95"
+                        >
+                          ↓ Rebaixar
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                {/* Remover */}
+                {podeRemoverEste && onRemover && (
+                  <button
+                    onClick={() =>
+                      onRemover({
+                        id: participante.id,
+                        nome: participante.nome,
+                      })
+                    }
+                    className="bg-destructive/20 text-destructive hover:bg-destructive/30 flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-all active:scale-95"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Remover
+                  </button>
+                )}
+              </div>
+            )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Layout Horizontal (padrão)
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10 hover:shadow-lg hover:shadow-purple-500/10">
-      {/* Indicador de role no topo (linha colorida) */}
+    <Card className="group hover:shadow-primary/10 relative overflow-hidden transition-all hover:shadow-lg">
+      {/* Indicador de role no topo */}
       {isDono && (
         <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500" />
       )}
@@ -78,13 +204,13 @@ export function CardParticipante({
         <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500" />
       )}
 
-      <div className="flex items-center gap-4 p-4">
+      <CardContent className="flex items-center gap-4 p-4">
         {/* Avatar com iniciais */}
         <div className="relative flex-shrink-0">
           <div
             className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${getAvatarGradient()} shadow-lg transition-all group-hover:scale-105`}
           >
-            <span className="text-sm font-medium uppercase">
+            <span className="text-sm font-medium text-white uppercase">
               {gerarIniciais(participante.nome)}
             </span>
           </div>
@@ -110,23 +236,23 @@ export function CardParticipante({
           {/* Status do voto */}
           <div className="flex items-center gap-2">
             {voto && votosRevelados ? (
-              <div className="flex items-center gap-1.5 rounded-lg bg-green-600/20 px-2 py-1">
+              <div className="flex items-center gap-1.5 rounded-lg bg-green-600/20 px-2 py-1 dark:bg-green-600/30">
                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
-                <span className="text-xs font-medium text-green-400">
+                <span className="text-xs font-medium text-green-600 dark:text-green-400">
                   Votou: {voto}
                 </span>
               </div>
             ) : voto && !votosRevelados ? (
-              <div className="flex items-center gap-1.5 rounded-lg bg-purple-600/20 px-2 py-1">
-                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-400" />
-                <span className="text-xs text-purple-400">
+              <div className="bg-primary/20 flex items-center gap-1.5 rounded-lg px-2 py-1">
+                <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
+                <span className="text-primary text-xs">
                   Votou
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 rounded-lg bg-gray-600/20 px-2 py-1">
-                <TimerIcon className="h-3 w-3 text-gray-400" />
-                <span className="text-xs text-gray-400">
+              <div className="bg-muted flex items-center gap-1.5 rounded-lg px-2 py-1">
+                <TimerIcon className="text-muted-foreground h-3 w-3" />
+                <span className="text-muted-foreground text-xs">
                   Aguardando...
                 </span>
               </div>
@@ -137,7 +263,7 @@ export function CardParticipante({
         {/* Ações - só mostrar se mostrarAcoes = true */}
         {mostrarAcoes && (
           <div className="flex flex-shrink-0 flex-col gap-2">
-            {/* Alterar Role - apenas dono pode fazer E participante já deve existir no banco */}
+            {/* Alterar Role */}
             {podeAlterarRole &&
               !isDono &&
               jaExistia &&
@@ -148,7 +274,7 @@ export function CardParticipante({
                       onClick={() =>
                         onAlterarRole(participante.id, 1)
                       }
-                      className="rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs text-blue-400 transition-all hover:bg-blue-600/30 active:scale-95"
+                      className="rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs text-blue-600 transition-all hover:bg-blue-600/30 active:scale-95 dark:text-blue-400"
                     >
                       ↑ Promover
                     </button>
@@ -158,7 +284,7 @@ export function CardParticipante({
                       onClick={() =>
                         onAlterarRole(participante.id, 2)
                       }
-                      className="rounded-lg bg-gray-600/20 px-3 py-1.5 text-xs text-gray-400 transition-all hover:bg-gray-600/30 active:scale-95"
+                      className="bg-muted text-muted-foreground hover:bg-muted/80 rounded-lg px-3 py-1.5 text-xs transition-all active:scale-95"
                     >
                       ↓ Rebaixar
                     </button>
@@ -175,7 +301,7 @@ export function CardParticipante({
                     nome: participante.nome,
                   })
                 }
-                className="flex items-center justify-center rounded-lg bg-red-600/20 p-2 text-red-400 transition-all hover:scale-110 hover:bg-red-600/30 active:scale-95"
+                className="bg-destructive/20 text-destructive hover:bg-destructive/30 flex items-center justify-center rounded-lg p-2 transition-all hover:scale-110 active:scale-95"
                 title="Remover participante"
               >
                 <Trash2 className="h-4 w-4" />
@@ -183,7 +309,7 @@ export function CardParticipante({
             )}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

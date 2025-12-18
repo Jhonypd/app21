@@ -5,24 +5,20 @@ import {
   Users,
   Eye,
   RotateCcw,
-  Crown,
   UserPlus,
-  Check,
-  X,
   ListTodo,
   ChevronRight,
-  Ban,
-  DoorOpenIcon,
 } from 'lucide-react';
-import { CardParticipante } from './sala/card-participante';
-
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { useAdicionarParticipanteSessaoMutation } from '@/services/api/sessoes-api';
 import { useAdicionarHistoriaDuranteSessaoMutation } from '@/services/api/historias-api';
 import { toast } from 'sonner';
-import { BannerModoPratica } from './sala/banner-modo-pratica';
 import { DialogAdicionarHistoria } from './sala/dialog-adicionar-historia';
 import { ModalAdicionarVisitante } from './sala/modal-adicionar-visitante';
+import { Button } from './ui/button';
+import CardVotos from './sala/card-votos';
+import ListaParticipantes from './sala/lista-participantes';
+import HeaderSala from './sala/header-sala';
 
 // Interfaces baseadas na estrutura real da API
 interface Proprietario {
@@ -94,21 +90,6 @@ interface SalaPlanningProps {
   aoEncerrarSessao?: () => Promise<void>;
   aoAnularVoto?: (votoId: string) => Promise<void>;
 }
-
-const CARTAS_PLANNING = [
-  '1',
-  '2',
-  '3',
-  '5',
-  '8',
-  '13',
-  '21',
-  '34',
-  '55',
-  '89',
-  '?',
-  '☕',
-];
 
 export function SalaPlanning({
   sala,
@@ -390,45 +371,21 @@ export function SalaPlanning({
       {/* Header */}
       <div className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
         <div className="px-4 py-4">
-          <div className="mb-3 flex items-center gap-3">
-            <button
-              onClick={() => aoVoltar()}
-              className="flex h-10 w-10 items-center justify-center rounded-sm bg-white/5 py-4 transition-all hover:bg-white/10 active:scale-95"
-            >
-              <DoorOpenIcon className="h-5 w-5" />
-            </button>
-
-            <div className="flex-1">
-              <h1 className="text-xl">{sala.titulo}</h1>
-              <p className="text-xs text-gray-400">
-                por {sala.proprietario.nome}
-                {eProprietario && (
-                  <Crown className="ml-1 inline h-3 w-3 text-yellow-400" />
-                )}
-              </p>
-            </div>
-
-            {podeEncerrarSessao && (
-              <button
-                onClick={handleEncerrarSessao}
-                disabled={loadingAcao}
-                className="flex items-center gap-2 rounded-xl bg-red-600/20 px-3 py-2 text-red-400 transition-all hover:bg-red-600/30 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                title="Encerrar sessão para todos"
-              >
-                <Ban className="h-4 w-4" />
-                <span className="text-xs">
-                  Encerrar Sessão
-                </span>
-              </button>
-            )}
-          </div>
+          <HeaderSala
+            aoVoltar={aoVoltar}
+            titulo={sala.titulo}
+            subtitulo={sala.proprietario.nome}
+            podeEncerrarSessao={podeEncerrarSessao}
+            handleEncerrarSessao={handleEncerrarSessao}
+            loadingAcao={loadingAcao}
+          />
 
           {/* História Atual */}
           {eProprietario &&
             sala.historias &&
             sala.historias.length > 0 && (
               <div className="mb-3">
-                <button
+                <Button
                   onClick={() =>
                     setMostrarHistorias(!mostrarHistorias)
                   }
@@ -447,12 +404,12 @@ export function SalaPlanning({
                       className={`h-4 w-4 transition-transform ${mostrarHistorias ? 'rotate-90' : ''}`}
                     />
                   </div>
-                </button>
+                </Button>
 
                 {mostrarHistorias && (
                   <div className="mt-2 max-h-60 space-y-2 overflow-y-auto rounded-xl border border-white/10 bg-slate-900/50 p-2">
                     {sala.historias.map((historia) => (
-                      <button
+                      <Button
                         key={historia.id}
                         onClick={() =>
                           handleSelecionarHistoriaItem(
@@ -473,7 +430,7 @@ export function SalaPlanning({
                             {historia.descricao}
                           </p>
                         )}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -483,7 +440,7 @@ export function SalaPlanning({
           {historiaAtual && (
             <div className="rounded-xl border border-purple-500/30 bg-purple-600/10 px-4 py-3">
               <p className="text-xs text-purple-300">
-                Estimando agora:
+                Votando agora:
               </p>
               <p className="text-sm">
                 {historiaAtual.titulo}
@@ -499,9 +456,6 @@ export function SalaPlanning({
       </div>
 
       <div className="mt-6 space-y-6 px-4">
-        {/* Banner Modo Prática */}
-        <BannerModoPratica mostrar={emModoPratica} />
-
         {/* Botão Adicionar História (para Dono/Admin quando em modo prática) */}
         {emModoPratica && podeAdicionarHistorias && (
           <div className="flex justify-end">
@@ -514,8 +468,8 @@ export function SalaPlanning({
         )}
 
         {/* Participantes */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
+        <div className="mx-auto w-11/12 sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
+          <div className="mb-3 flex w-full items-center justify-between">
             <h2 className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Participantes onlines (
@@ -528,66 +482,16 @@ export function SalaPlanning({
             </div>
           </div>
 
-          <div className="space-y-2">
-            {participantesOnline.map((participante) => {
-              const votoParticipante =
-                participantesComVotos.find(
-                  (p) => p.id === participante.id,
-                );
-
-              return (
-                <div
-                  key={participante.id}
-                  className="relative"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <CardParticipante
-                        participante={{
-                          id: participante.id,
-                          nome: participante.nome,
-                          role: participante.role,
-                        }}
-                        jaExistia={true}
-                        meuRole={meuRole}
-                        mostrarAcoes={false} // Desabilitar ações na sala de planning
-                        voto={
-                          votoParticipante?.voto
-                            ? votoParticipante.voto
-                            : null
-                        } // depois tem que buscar o voto real
-                        votosRevelados={votosRevelados}
-                      />
-                    </div>
-
-                    {/* Status do voto */}
-                    <div className="flex items-center gap-2">
-                      {/* Botão anular voto (apenas proprietário) */}
-                      {eProprietario &&
-                        votoParticipante?.votou &&
-                        votoParticipante.votoId &&
-                        participante.id !==
-                          usuarioAtualId && (
-                          <button
-                            onClick={() =>
-                              handleAnularVoto(
-                                votoParticipante.votoId!,
-                                participante.nome,
-                              )
-                            }
-                            disabled={loadingAcao}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20 text-red-400 transition-all hover:bg-red-500/30 disabled:cursor-not-allowed"
-                            title="Anular voto"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </button>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ListaParticipantes
+            participantesOnline={participantesOnline}
+            participantesComVotos={participantesComVotos}
+            meuRole={meuRole}
+            votosRevelados={votosRevelados}
+            eProprietario={eProprietario}
+            usuarioAtualId={usuarioAtualId}
+            loadingAcao={loadingAcao}
+            handleAnularVoto={handleAnularVoto}
+          />
         </div>
 
         {/* Resultados */}
@@ -623,66 +527,23 @@ export function SalaPlanning({
           </div>
         )}
 
-        {/* Cards de Planning */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2>Selecione sua estimativa</h2>
-            {votoSelecionado && !votoConfirmado && (
-              <button
-                onClick={handleCancelarVoto}
-                className="flex items-center gap-1 rounded-lg bg-red-500/20 px-3 py-1 text-xs text-red-400 transition-all hover:bg-red-500/30"
-              >
-                <X className="h-3 w-3" />
-                Cancelar
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            {CARTAS_PLANNING.map((carta) => (
-              <button
-                key={carta}
-                onClick={() => handleSelecionarVoto(carta)}
-                disabled={votosRevelados || votoConfirmado}
-                className={`aspect-[3/4] rounded-2xl border-2 transition-all active:scale-95 ${
-                  votoSelecionado === carta
-                    ? 'scale-105 border-purple-400 bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg shadow-purple-500/50'
-                    : 'border-white/10 bg-white/5 hover:border-purple-500/50 hover:bg-white/10'
-                } ${votosRevelados || votoConfirmado ? 'cursor-not-allowed opacity-50' : ''} flex items-center justify-center text-2xl`}
-              >
-                {carta}
-              </button>
-            ))}
-          </div>
-
-          {votoSelecionado && !votoConfirmado && (
-            <button
-              onClick={handleConfirmarVoto}
-              disabled={loadingAcao}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 py-4 transition-all hover:from-green-700 hover:to-emerald-700 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Check className="h-5 w-5" />
-              {loadingAcao
-                ? 'Confirmando...'
-                : 'Confirmar Voto'}
-            </button>
-          )}
-
-          {votoConfirmado && !votosRevelados && (
-            <div className="mt-4 rounded-xl border border-green-500/30 bg-green-600/10 px-4 py-3 text-center">
-              <p className="flex items-center justify-center gap-2 text-sm text-green-400">
-                <Check className="h-4 w-4" />
-                Voto confirmado: {votoSelecionado}
-              </p>
-            </div>
-          )}
-        </div>
+        {/* Cards de votos */}
+        <CardVotos
+          emModoPratica={emModoPratica}
+          votosRevelados={votosRevelados}
+          votoSelecionado={votoSelecionado}
+          votoConfirmado={votoConfirmado}
+          loadingAcao={loadingAcao}
+          handleSelecionarVoto={handleSelecionarVoto}
+          handleConfirmarVoto={handleConfirmarVoto}
+          handleCancelarVoto={handleCancelarVoto}
+        />
 
         {/* Action Buttons */}
         <div className="flex gap-3">
           {/* Adicionar Visitante - Apenas Admin/Dono */}
           {sessaoId && meuRole <= 1 && (
-            <button
+            <Button
               onClick={() => setModalVisitantesAberto(true)}
               className="flex items-center gap-2 rounded-xl bg-purple-600/20 px-4 py-3 transition-all hover:bg-purple-600/30 active:scale-95"
             >
@@ -690,12 +551,12 @@ export function SalaPlanning({
               <span className="text-sm">
                 Adicionar Visitante
               </span>
-            </button>
+            </Button>
           )}
 
           {/* Revelar/Resetar (apenas proprietário) */}
           {eProprietario && !votosRevelados ? (
-            <button
+            <Button
               onClick={handleRevelarVotos}
               disabled={!todosVotaram || loadingAcao}
               className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 transition-all ${
@@ -712,11 +573,11 @@ export function SalaPlanning({
                     ? 'Revelar Votos'
                     : `Aguardando ${participantesOnline.length - totalVotos}`}
               </span>
-            </button>
+            </Button>
           ) : null}
 
           {eProprietario && votosRevelados && (
-            <button
+            <Button
               onClick={handleResetarVotacao}
               disabled={loadingAcao}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 transition-all hover:from-purple-700 hover:to-pink-700 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50"
@@ -727,7 +588,7 @@ export function SalaPlanning({
                   ? 'Resetando...'
                   : 'Nova Votação'}
               </span>
-            </button>
+            </Button>
           )}
         </div>
       </div>

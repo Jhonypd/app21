@@ -10,22 +10,17 @@ import {
 import Loading from '@/components/loading';
 import {
   toastError,
+  toastInfo,
   toastSuccess,
 } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useEffect, useState, useCallback } from 'react';
 import { SalaPlanning } from '@/components/sala-planning';
 import { useEncerrarSessaoMutation } from '@/services/api/sessoes-api';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+
 import { Button } from '@/components/ui/button';
-import { XCircle, Loader2 } from 'lucide-react';
+import { XCircle } from 'lucide-react';
+import DialogConfirmacao from '@/components/DialogConfirmacao';
 
 const PageSala = () => {
   const params = useParams();
@@ -251,14 +246,14 @@ const PageSala = () => {
   };
 
   // Loading state
-  if (estaCarregando) {
-    return (
-      <Loading
-        active
-        type="transaction"
-      />
-    );
-  }
+  // if (estaCarregando) {
+  //   return (
+  //     <Loading
+  //       active
+  //       type="transaction"
+  //     />
+  //   );
+  // }
 
   // Sala não encontrada (só mostra após loading terminar)
   if (salaNaoEncontrada) {
@@ -297,86 +292,49 @@ const PageSala = () => {
 
   // Overlay de encerramento
   if (encerrandoSessao) {
-    return (
-      <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-        <div className="space-y-4 text-center">
-          <Loader2 className="text-primary mx-auto h-12 w-12 animate-spin" />
-          <div className="space-y-2">
-            <p className="text-foreground text-lg font-semibold">
-              Encerrando sessão...
-            </p>
-            <p className="text-muted-foreground text-sm">
-              Aguarde enquanto finalizamos a sessão para
-              todos
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    toastInfo({
+      title: 'Encerrando sessão',
+      description:
+        'Aguarde enquanto a sessão é encerrada para todos os participantes.',
+    });
   }
 
   return (
     <>
-      <SalaPlanning
-        usuarioAtualId={usuarioId}
-        aoVoltar={handleVoltar}
-        sala={salaResultado!}
-        sessaoId={sessaoAtiva ?? undefined}
-        meuRole={meuRole}
-        aoEnviarVoto={handleEnviarVoto}
-        aoRevelarVotos={handleRevelarVotos}
-        aoResetarVotos={handleResetarVotos}
-        aoSelecionarHistoria={handleSelecionarHistoria}
-        aoEncerrarSessao={handleAbrirDialogEncerrar}
-      />
+      {encerrandoSessao ||
+        (estaCarregando && (
+          <Loading
+            active
+            type="transaction"
+          />
+        ))}
+
+      {estaCarregando === false && (
+        <SalaPlanning
+          usuarioAtualId={usuarioId}
+          aoVoltar={handleVoltar}
+          sala={salaResultado!}
+          sessaoId={sessaoAtiva ?? undefined}
+          meuRole={meuRole}
+          aoEnviarVoto={handleEnviarVoto}
+          aoRevelarVotos={handleRevelarVotos}
+          aoResetarVotos={handleResetarVotos}
+          aoSelecionarHistoria={handleSelecionarHistoria}
+          aoEncerrarSessao={handleAbrirDialogEncerrar}
+        />
+      )}
 
       {/* Dialog de confirmação para encerrar sessão */}
-      <Dialog
-        open={dialogEncerrarAberto}
-        onOpenChange={setDialogEncerrarAberto}
-        modal={true}
-      >
-        <DialogContent className="border-border bg-popover text-popover-foreground max-w-11/12 rounded-lg border p-6 shadow-lg sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              Encerrar sessão?
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Isso vai encerrar a sessão de Planning Poker
-              para todos os participantes.
-              {meuRole === 0 && (
-                <span className="text-primary mt-2 block font-medium">
-                  Como dono da sala, você pode encerrar a
-                  sessão a qualquer momento.
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setDialogEncerrarAberto(false)}
-              disabled={encerrandoDialog}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleEncerrarSessao}
-              disabled={encerrandoDialog}
-            >
-              {encerrandoDialog ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Encerrando...
-                </>
-              ) : (
-                'Encerrar Sessão'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+      <DialogConfirmacao
+        textoPadrao="Isso vai encerrar a sessão de Planning Poker
+              para todos os participantes. Deseja continuar?"
+        dialogAberto={dialogEncerrarAberto}
+        setDialogAberto={setDialogEncerrarAberto}
+        dialogLoading={encerrandoDialog}
+        handleSubmit={handleEncerrarSessao}
+        titulo="Encerrar sessão?"
+      />
     </>
   );
 };
