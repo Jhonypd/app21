@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useCallback } from 'react';
 
 interface ModalBaseProps {
   open: boolean;
@@ -33,12 +34,22 @@ export function ModalBase({
   botoes,
   maxWidth = 'lg',
 }: ModalBaseProps) {
+  const handlePreventInteraction = useCallback(
+    (event: Event) => {
+      event.preventDefault();
+    },
+    [],
+  );
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
     >
       <DialogContent
+        onPointerDownOutside={handlePreventInteraction}
+        onInteractOutside={handlePreventInteraction}
+        onEscapeKeyDown={handlePreventInteraction}
+        onCloseAutoFocus={handlePreventInteraction}
         className={`max-w-11/12 rounded-sm border-slate-700 bg-slate-900 text-white ${maxWidthClasses[maxWidth]}`}
       >
         <DialogHeader>

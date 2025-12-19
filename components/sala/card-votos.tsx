@@ -44,21 +44,41 @@ const CardVotos: React.FC<CardVotosProps> = ({
         <BannerModoSemHistoria mostrar={emModoPratica} />
       </div>
 
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-9">
-        {CARTAS_PLANNING.map((carta) => (
+      <div
+        className={`${votoSelecionado ? 'p-4' : 'grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-9'}`}
+      >
+        {!votoSelecionado &&
+          !votoConfirmado &&
+          CARTAS_PLANNING.map((carta) => (
+            <Button
+              key={carta}
+              onClick={() => handleSelecionarVoto(carta)}
+              disabled={votosRevelados || votoConfirmado}
+              className={`aspect-[3/4] h-28 rounded-2xl border-2 transition-all active:scale-95 ${
+                votoSelecionado === carta
+                  ? 'scale-105 border-purple-400 bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg shadow-purple-500/50'
+                  : 'border-white/10 bg-white/5 hover:border-purple-500/50 hover:bg-white/10'
+              } ${votosRevelados || votoConfirmado ? 'cursor-not-allowed opacity-50' : ''} mx-auto flex items-center justify-center text-2xl`}
+            >
+              {carta}
+            </Button>
+          ))}
+
+        {votoSelecionado && (
           <Button
-            key={carta}
-            onClick={() => handleSelecionarVoto(carta)}
+            onClick={() =>
+              handleSelecionarVoto(votoSelecionado)
+            }
             disabled={votosRevelados || votoConfirmado}
-            className={`aspect-[3/4] h-28 rounded-2xl border-2 transition-all active:scale-95 ${
-              votoSelecionado === carta
+            className={`mx-auto aspect-[3/4] h-96 rounded-2xl border-2 transition-all active:scale-95 ${
+              votoSelecionado
                 ? 'scale-105 border-purple-400 bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg shadow-purple-500/50'
                 : 'border-white/10 bg-white/5 hover:border-purple-500/50 hover:bg-white/10'
-            } ${votosRevelados || votoConfirmado ? 'cursor-not-allowed opacity-50' : ''} mx-auto flex items-center justify-center text-2xl`}
+            } ${votosRevelados || votoConfirmado ? 'cursor-not-allowed opacity-50' : ''} mx-auto flex items-center justify-center text-9xl`}
           >
-            {carta}
+            {votoSelecionado}
           </Button>
-        ))}
+        )}
       </div>
 
       {votoSelecionado && !votoConfirmado && (

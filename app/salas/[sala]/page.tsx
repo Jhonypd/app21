@@ -20,7 +20,7 @@ import { useEncerrarSessaoMutation } from '@/services/api/sessoes-api';
 
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
-import DialogConfirmacao from '@/components/DialogConfirmacao';
+import DialogConfirmacao from '@/components/dialog-confirmacao';
 
 const PageSala = () => {
   const params = useParams();

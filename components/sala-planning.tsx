@@ -6,8 +6,6 @@ import {
   Eye,
   RotateCcw,
   UserPlus,
-  ListTodo,
-  ChevronRight,
 } from 'lucide-react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { useAdicionarParticipanteSessaoMutation } from '@/services/api/sessoes-api';
@@ -19,6 +17,7 @@ import { Button } from './ui/button';
 import CardVotos from './sala/card-votos';
 import ListaParticipantes from './sala/lista-participantes';
 import HeaderSala from './sala/header-sala';
+import { ListaHistorias } from './sala/lista-historias';
 
 // Interfaces baseadas na estrutura real da API
 interface Proprietario {
@@ -30,16 +29,15 @@ interface Proprietario {
 interface Historia {
   id: string;
   titulo: string;
-  descricao: string;
+  descricao?: string;
 }
 
 interface Participante {
   id: string;
   nome: string;
   inativo: boolean;
-  role: number; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
+  role: number;
   online?: boolean;
-  // mudei a role para obrigatória porque sempre vem da API
 }
 
 interface Voto {
@@ -56,7 +54,7 @@ interface SessaoAtiva {
   id: string;
   criada_em: Date;
   ativa: boolean;
-  iniciada_por: string; // ID da pessoa que iniciou a sessão
+  iniciada_por: string;
 }
 
 interface SalaData {
@@ -72,14 +70,14 @@ interface SalaData {
   historias: Historia[];
   participantes: Participante[];
   votos: Voto[];
-  sessaoAtiva?: SessaoAtiva; // Dados da sessão ativa
+  sessaoAtiva?: SessaoAtiva;
 }
 
 interface SalaPlanningProps {
   sala: SalaData;
   usuarioAtualId: string;
-  sessaoId?: string; // ID da sessão ativa (necessário para visitantes)
-  meuRole?: number; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
+  sessaoId?: string;
+  meuRole?: number;
   aoVoltar: () => void | Promise<void>;
   aoEnviarVoto?: (valor: number) => Promise<void>;
   aoRevelarVotos?: () => Promise<void>;
@@ -89,13 +87,16 @@ interface SalaPlanningProps {
   ) => Promise<void>;
   aoEncerrarSessao?: () => Promise<void>;
   aoAnularVoto?: (votoId: string) => Promise<void>;
+  aoReordenarHistorias?: (
+    historias: Historia[],
+  ) => Promise<void>;
 }
 
 export function SalaPlanning({
   sala,
   usuarioAtualId,
   sessaoId,
-  meuRole = 2, // Default: Membro
+  meuRole = 2,
   aoVoltar,
   aoEnviarVoto,
   aoRevelarVotos,
@@ -103,6 +104,7 @@ export function SalaPlanning({
   aoSelecionarHistoria,
   aoEncerrarSessao,
   aoAnularVoto,
+  aoReordenarHistorias,
 }: SalaPlanningProps) {
   // Estados
   const [votoSelecionado, setVotoSelecionado] = useState<
@@ -112,22 +114,20 @@ export function SalaPlanning({
     useState(false);
   const [votosRevelados, setVotosRevelados] =
     useState(false);
-  const [historiaAtual, setHistoriaAtual] =
-    useState<Historia | null>(null);
+  const [historiaAtualId, setHistoriaAtualId] = useState<
+    string | null
+  >(null);
   const [modalVisitantesAberto, setModalVisitantesAberto] =
-    useState(false);
-  const [mostrarHistorias, setMostrarHistorias] =
     useState(false);
   const [loadingAcao, setLoadingAcao] = useState(false);
   const [termoBusca, setTermoBusca] = useState('');
 
   const eProprietario = sala.criado_por === usuarioAtualId;
-  // Verificar se o usuário iniciou a sessão (dono ou admin que criou a sessão)
   const iniciouSessao =
     sala.sessaoAtiva?.iniciada_por === usuarioAtualId;
   const podeEncerrarSessao = eProprietario || iniciouSessao;
 
-  // Mutations para visitantes
+  // Mutations
   const [
     adicionarVisitante,
     { isLoading: adicionandoVisitante },
@@ -143,20 +143,20 @@ export function SalaPlanning({
   const emModoPratica =
     !sala.historias || sala.historias.length === 0;
   const podeAdicionarHistorias =
-    meuRole === 0 || meuRole === 1; // Dono ou Admin
+    meuRole === 0 || meuRole === 1;
 
   // Inicializar com a primeira história se existir
   useEffect(() => {
     if (
       sala.historias &&
       sala.historias.length > 0 &&
-      !historiaAtual
+      !historiaAtualId
     ) {
-      setHistoriaAtual(sala.historias[0]);
+      setHistoriaAtualId(sala.historias[0].id);
     }
-  }, [sala.historias, historiaAtual]);
+  }, [sala.historias, historiaAtualId]);
 
-  // Processar participantes com seus votos do array de votos
+  // Processar participantes com seus votos
   const participantesComVotos = (sala.participantes || [])
     .filter((p) => !p.inativo)
     .map((participante) => {
@@ -190,6 +190,9 @@ export function SalaPlanning({
   const totalVotos = participantesComVotos.filter(
     (p) => p.votou,
   ).length;
+  const participantesOnline = sala.participantes?.filter(
+    (p) => p.online,
+  );
 
   // Handlers
   const handleSelecionarVoto = (carta: string) => {
@@ -264,19 +267,30 @@ export function SalaPlanning({
     }
   };
 
-  const handleSelecionarHistoriaItem = async (
-    historia: Historia,
+  const handleMudarHistoria = async (
+    historiaId: string,
   ) => {
-    setHistoriaAtual(historia);
-    setMostrarHistorias(false);
+    setHistoriaAtualId(historiaId);
 
     if (aoSelecionarHistoria) {
-      await aoSelecionarHistoria(historia.id);
+      await aoSelecionarHistoria(historiaId);
+    }
+
+    // Resetar votação ao mudar de história
+    setVotosRevelados(false);
+    setVotoSelecionado(null);
+    setVotoConfirmado(false);
+  };
+
+  const handleReordenarHistorias = async (
+    novasHistorias: Historia[],
+  ) => {
+    if (aoReordenarHistorias) {
+      await aoReordenarHistorias(novasHistorias);
     }
   };
 
   const handleEncerrarSessao = async () => {
-    // Validar se pode encerrar
     if (!podeEncerrarSessao) {
       toast.error(
         'Apenas o dono ou quem iniciou a sessão pode encerrá-la',
@@ -362,10 +376,6 @@ export function SalaPlanning({
     return (soma / votosNumericos.length).toFixed(1);
   };
 
-  const participantesOnline = sala.participantes?.filter(
-    (p) => p.online,
-  );
-
   return (
     <div className="min-h-screen bg-slate-950 pb-6 text-white">
       {/* Header */}
@@ -380,83 +390,25 @@ export function SalaPlanning({
             loadingAcao={loadingAcao}
           />
 
-          {/* História Atual */}
-          {eProprietario &&
-            sala.historias &&
-            sala.historias.length > 0 && (
-              <div className="mb-3">
-                <Button
-                  onClick={() =>
-                    setMostrarHistorias(!mostrarHistorias)
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-all hover:bg-white/10"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ListTodo className="h-4 w-4 text-purple-400" />
-                      <span className="text-sm">
-                        {historiaAtual
-                          ? historiaAtual.titulo
-                          : 'Selecione uma história'}
-                      </span>
-                    </div>
-                    <ChevronRight
-                      className={`h-4 w-4 transition-transform ${mostrarHistorias ? 'rotate-90' : ''}`}
-                    />
-                  </div>
-                </Button>
-
-                {mostrarHistorias && (
-                  <div className="mt-2 max-h-60 space-y-2 overflow-y-auto rounded-xl border border-white/10 bg-slate-900/50 p-2">
-                    {sala.historias.map((historia) => (
-                      <Button
-                        key={historia.id}
-                        onClick={() =>
-                          handleSelecionarHistoriaItem(
-                            historia,
-                          )
-                        }
-                        className={`w-full rounded-lg p-3 text-left transition-all ${
-                          historiaAtual?.id === historia.id
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-white/5 hover:bg-white/10'
-                        }`}
-                      >
-                        <p className="text-sm">
-                          {historia.titulo}
-                        </p>
-                        {historia.descricao && (
-                          <p className="mt-1 text-xs text-gray-400">
-                            {historia.descricao}
-                          </p>
-                        )}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-          {historiaAtual && (
-            <div className="rounded-xl border border-purple-500/30 bg-purple-600/10 px-4 py-3">
-              <p className="text-xs text-purple-300">
-                Votando agora:
-              </p>
-              <p className="text-sm">
-                {historiaAtual.titulo}
-              </p>
-              {historiaAtual.descricao && (
-                <p className="mt-1 text-xs text-gray-400">
-                  {historiaAtual.descricao}
-                </p>
-              )}
+          {/* Lista de Histórias - apenas se não estiver em modo prática */}
+          {!emModoPratica && eProprietario && (
+            <div className="mt-4">
+              <ListaHistorias
+                historias={sala.historias}
+                historiaAtualId={
+                  historiaAtualId || undefined
+                }
+                votacaoFinalizada={votosRevelados}
+                onMudarHistoria={handleMudarHistoria}
+                onReordenar={handleReordenarHistorias}
+              />
             </div>
           )}
         </div>
       </div>
 
       <div className="mt-6 space-y-6 px-4">
-        {/* Botão Adicionar História (para Dono/Admin quando em modo prática) */}
+        {/* Botão Adicionar História (modo prática) */}
         {emModoPratica && podeAdicionarHistorias && (
           <div className="flex justify-end">
             <DialogAdicionarHistoria
@@ -472,7 +424,7 @@ export function SalaPlanning({
           <div className="mb-3 flex w-full items-center justify-between">
             <h2 className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Participantes onlines (
+              Participantes online (
               {participantesOnline.length} /{' '}
               {sala.participantes?.length})
             </h2>
@@ -541,7 +493,7 @@ export function SalaPlanning({
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          {/* Adicionar Visitante - Apenas Admin/Dono */}
+          {/* Adicionar Visitante */}
           {sessaoId && meuRole <= 1 && (
             <Button
               onClick={() => setModalVisitantesAberto(true)}
@@ -554,7 +506,7 @@ export function SalaPlanning({
             </Button>
           )}
 
-          {/* Revelar/Resetar (apenas proprietário) */}
+          {/* Revelar/Resetar */}
           {eProprietario && !votosRevelados ? (
             <Button
               onClick={handleRevelarVotos}
