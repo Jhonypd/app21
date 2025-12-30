@@ -16,7 +16,7 @@ export interface Salas {
   membros: number; // Quantidade de membros
   meuRole?: number | null; // 0=Dono, 1=Admin, 2=Membro, null=não participante
   temSessaoAtiva: boolean; // Se possui sessão ativa
-  status: 'online' | null; // 'online' se tem sessão ativa com participantes
+  status: 'online' | 'offline'; // 'online' se tem sessão ativa com participantes
   data_ultima_sessao: Date | null; // Data da última sessão ativa
 }
 
@@ -47,6 +47,7 @@ export interface CriarSalaPayload {
 export interface CriarSessaoPayload {
   salaId: string;
   visitantes?: string[]; // IDs dos visitantes temporários
+  historias?: Array<{ titulo: string; descricao?: string }>; // Histórias para vincular à sessão
 }
 
 export interface ListarSalasQuery {
@@ -310,10 +311,17 @@ export const SalasApi = apiSlice.injectEndpoints({
       ApiResponse,
       CriarSessaoPayload
     >({
-      query: ({ salaId, visitantes }) => ({
+      query: ({ salaId, visitantes, historias }) => ({
         url: `/salas/${salaId}/sessoes`,
         method: 'POST',
-        body: visitantes ? { visitantes } : {},
+        body: {
+          ...(visitantes && visitantes.length > 0
+            ? { visitantes }
+            : {}),
+          ...(historias && historias.length > 0
+            ? { historias }
+            : {}),
+        },
       }),
       invalidatesTags: ['salaPlaning', 'visitantes'],
     }),

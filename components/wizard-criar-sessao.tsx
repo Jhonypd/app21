@@ -8,7 +8,6 @@ import {
   useSalaEntrarMutation,
   useCriarSessaoMutation,
 } from '@/services/api/salas-api';
-import { useCriarVariasHistoriasMutation } from '@/services/api/historias-api';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -53,8 +52,6 @@ export function WizardCriarSessao({
 
   const [entrarSala] = useSalaEntrarMutation();
   const [criarSessao] = useCriarSessaoMutation();
-  const [criarHistorias] =
-    useCriarVariasHistoriasMutation();
   const [
     buscarPessoas,
     { data: dadosPessoas, isLoading: buscandoPessoas },
@@ -90,23 +87,39 @@ export function WizardCriarSessao({
 
   const handleConfirmar = async () => {
     try {
+      // Validar histórias antes de prosseguir
+      if (historias.length === 0) {
+        toastError({
+          title: 'Histórias obrigatórias',
+          description:
+            'É necessário adicionar pelo menos uma história para iniciar a sessão.',
+        });
+        return;
+      }
+
       // Preparar lista de visitantes para enviar ao criar sessão
       const visitantes =
         convidadosSelecionados.length > 0
           ? convidadosSelecionados.map((c) => c.id)
           : undefined;
 
-      // ✅ 1. CRIAR SESSÃO PRIMEIRO (POST /salas/:id/sessoes)
-      // IMPORTANTE: Visitantes são adicionados AQUI, não no entrarSala
+      // ✅ 1. CRIAR SESSÃO COM HISTÓRIAS (POST /salas/:id/sessoes)
+      // Agora envia as histórias junto com a sessão
       console.log(
         '[WIZARD] Criando sessão para sala:',
         salaId,
         'com visitantes:',
         visitantes,
+        'e historias:',
+        historias.length,
       );
       const resultadoCriarSessao = await criarSessao({
         salaId,
         visitantes,
+        historias: historias.map((h) => ({
+          titulo: h.titulo,
+          descricao: h.descricao,
+        })),
       }).unwrap();
 
       if (!resultadoCriarSessao.Sucesso) {
@@ -168,24 +181,6 @@ export function WizardCriarSessao({
         console.warn(
           '[WIZARD] sessaoId não recebido na resposta:',
           resultadoEntrar,
-        );
-      }
-
-      // ✅ 3. Criar histórias (se houver)
-      if (historias.length > 0) {
-        console.log(
-          '[WIZARD] Criando histórias...',
-          historias.length,
-        );
-        await criarHistorias({
-          salaId,
-          historias: historias.map((h) => ({
-            titulo: h.titulo,
-            descricao: h.descricao,
-          })),
-        }).unwrap();
-        console.log(
-          '[WIZARD] Histórias criadas com sucesso!',
         );
       }
 
@@ -256,8 +251,8 @@ export function WizardCriarSessao({
           aoMudarHistorias={setHistorias}
         />
       ),
-      // validar: () => historias.length > 0,
-      obrigatorio: false,
+      validar: () => historias.length > 0,
+      obrigatorio: true,
     },
     {
       id: 'conclusao',

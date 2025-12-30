@@ -8,6 +8,7 @@ import {
   Code,
   Sparkles,
 } from 'lucide-react';
+import { toastSuccess } from '../custom-toast';
 
 interface StepConclusaoProps {
   tituloSala: string;
@@ -22,6 +23,13 @@ export function StepConclusao({
   totalConvidados,
   totalHistorias,
 }: StepConclusaoProps) {
+  const copyTexto = async (text: string, msg: string) => {
+    await navigator.clipboard.writeText(text);
+    toastSuccess({
+      title: 'Copiado!',
+      description: msg,
+    });
+  };
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
       {/* Header de Sucesso */}
@@ -61,9 +69,11 @@ export function StepConclusao({
               {codigoSala}
             </code>
             <button
-              onClick={() =>
-                navigator.clipboard.writeText(codigoSala)
-              }
+              onClick={copyTexto.bind(
+                null,
+                codigoSala,
+                'Código da sala copiado para a área de transferência',
+              )}
               className="bg-primary/10 text-primary hover:bg-primary/20 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
             >
               Copiar

@@ -9,9 +9,7 @@ import {
 } from 'lucide-react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { useAdicionarParticipanteSessaoMutation } from '@/services/api/sessoes-api';
-import { useAdicionarHistoriaDuranteSessaoMutation } from '@/services/api/historias-api';
 import { toast } from 'sonner';
-import { DialogAdicionarHistoria } from './sala/dialog-adicionar-historia';
 import { ModalAdicionarVisitante } from './sala/modal-adicionar-visitante';
 import { Button } from './ui/button';
 import CardVotos from './sala/card-votos';
@@ -136,14 +134,10 @@ export function SalaPlanning({
     pesquisarPessoas,
     { data: pessoasEncontradas, isFetching },
   ] = useLazyPesquisarPorNomeOuEmailQuery();
-  const [adicionarHistoriaDuranteSessao] =
-    useAdicionarHistoriaDuranteSessaoMutation();
 
   // Verifica se está em modo prática (sem histórias)
   const emModoPratica =
     !sala.historias || sala.historias.length === 0;
-  const podeAdicionarHistorias =
-    meuRole === 0 || meuRole === 1;
 
   // Inicializar com a primeira história se existir
   useEffect(() => {
@@ -354,16 +348,6 @@ export function SalaPlanning({
     }
   };
 
-  const handleAdicionarHistoria = async (dados: {
-    titulo: string;
-    descricao?: string;
-  }) => {
-    await adicionarHistoriaDuranteSessao({
-      salaId: sala.id,
-      ...dados,
-    }).unwrap();
-  };
-
   const calcularMedia = () => {
     const votosNumericos = participantesComVotos
       .map((p) => p.voto)
@@ -391,34 +375,20 @@ export function SalaPlanning({
           />
 
           {/* Lista de Histórias - apenas se não estiver em modo prática */}
-          {!emModoPratica && eProprietario && (
-            <div className="mt-4">
-              <ListaHistorias
-                historias={sala.historias}
-                historiaAtualId={
-                  historiaAtualId || undefined
-                }
-                votacaoFinalizada={votosRevelados}
-                onMudarHistoria={handleMudarHistoria}
-                onReordenar={handleReordenarHistorias}
-              />
-            </div>
-          )}
+
+          <div className="mt-4">
+            <ListaHistorias
+              historias={sala.historias}
+              historiaAtualId={historiaAtualId || undefined}
+              votacaoFinalizada={votosRevelados}
+              onMudarHistoria={handleMudarHistoria}
+              onReordenar={handleReordenarHistorias}
+            />
+          </div>
         </div>
       </div>
 
       <div className="mt-6 space-y-6 px-4">
-        {/* Botão Adicionar História (modo prática) */}
-        {emModoPratica && podeAdicionarHistorias && (
-          <div className="flex justify-end">
-            <DialogAdicionarHistoria
-              salaId={sala.id}
-              onAdicionarHistoria={handleAdicionarHistoria}
-              mostrarBotao={true}
-            />
-          </div>
-        )}
-
         {/* Participantes */}
         <div className="mx-auto w-11/12 sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
           <div className="mb-3 flex w-full items-center justify-between">

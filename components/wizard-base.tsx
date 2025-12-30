@@ -18,8 +18,8 @@ export interface WizardStep {
   titulo: string;
   descricao?: string;
   conteudo: ReactNode;
-  validar?: () => boolean; // Função de validação opcional
-  obrigatorio?: boolean; // Se é obrigatório para avançar
+  validar?: () => boolean;
+  obrigatorio?: boolean;
 }
 
 interface WizardBaseProps {
@@ -29,9 +29,9 @@ interface WizardBaseProps {
   titulo: string;
   descricao?: string;
   steps: WizardStep[];
-  textoBotaoFinal?: string; // Texto do botão final (padrão: "Confirmar")
-  permitirPularSteps?: boolean; // Permite pular steps não obrigatórios
-  dados?: any; // Dados compartilhados entre steps
+  textoBotaoFinal?: string;
+  permitirPularSteps?: boolean;
+  dados?: any;
   // aoMudarDados?: (dados: any) => void; // Callback quando dados mudam
 }
 

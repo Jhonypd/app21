@@ -6,7 +6,6 @@ import DialogConfirmacao from '@/components/dialog-confirmacao';
 import {
   ArrowRight,
   ArrowLeft,
-  ListOrdered,
 } from 'lucide-react';
 import {
   DndContext,
@@ -151,26 +150,13 @@ export function ListaHistorias({
       <div className="space-y-3">
         {/* História atual em destaque */}
         {historiaAtual && (
-          <div className="flex items-center gap-1">
-            <div className="border-primary/30 bg-primary/10 flex h-full w-full gap-2 rounded-lg border p-4 text-base font-medium">
-              <p className="text-muted-foreground">
-                Votando agora:
-              </p>
-              <p className="text-foreground truncate font-semibold text-ellipsis">
-                {historiaAtual.titulo}
-              </p>
-            </div>
-            {/* Botão Reordenar */}
-            <Button
-              onClick={() => {
-                setHistoriasOrdenadas(historiasIniciais);
-                setModalReordenarAberto(true);
-              }}
-              className="p-7"
-              variant="outline"
-            >
-              <ListOrdered size={28} />
-            </Button>
+          <div className="border-primary/30 bg-primary/10 flex h-full w-full gap-2 rounded-lg border p-4 text-base font-medium">
+            <p className="text-muted-foreground">
+              Votando agora:
+            </p>
+            <p className="text-foreground truncate font-semibold text-ellipsis">
+              {historiaAtual.titulo}
+            </p>
           </div>
         )}
 

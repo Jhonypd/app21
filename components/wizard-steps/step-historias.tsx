@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
   Plus,
   Upload,
-  X,
   FileText,
   Trash2,
 } from 'lucide-react';

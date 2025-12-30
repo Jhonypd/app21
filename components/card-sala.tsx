@@ -6,7 +6,6 @@ import {
   Edit,
   Play,
   ChevronRight,
-  Copy,
   HousePlugIcon,
   UnplugIcon,
 } from 'lucide-react';
@@ -96,6 +95,7 @@ export function CardSala({
   const calcularTempoDecorrido = (data: string) => {
     const agora = new Date();
     const dataAlteracao = new Date(data);
+    console.log({ dataAlteracao });
     const diferencaMs =
       agora.getTime() - dataAlteracao.getTime();
 
@@ -125,11 +125,15 @@ export function CardSala({
   };
 
   const eProprietario = sala.meuRole === 0;
-  const tempoDecorrido = sala.data_ultima_sessao
-    ? calcularTempoDecorrido(
-        sala.data_ultima_sessao.toString(),
-      )
-    : calcularTempoDecorrido(sala.data_criacao.toString());
+  console.log({
+    'ultima sessão ativa': sala.data_ultima_sessao,
+  });
+  const tempoDecorrido =
+    sala.data_ultima_sessao &&
+    calcularTempoDecorrido(
+      sala.data_ultima_sessao.toString(),
+    );
+  // : calcularTempoDecorrido(sala.data_criacao.toString());
   const avatar = gerarAvatar(sala.titulo);
   const corAvatar = gerarCorAvatar(sala.id);
 
