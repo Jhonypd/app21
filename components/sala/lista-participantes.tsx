@@ -9,19 +9,15 @@ import {
 import { CardParticipante } from './card-participante';
 import { Button } from '../ui/button';
 import { BanIcon } from 'lucide-react';
+import CardVotacaoSimples from './card-participante-simples';
+
 interface Participante {
   id: string;
   nome: string;
   inativo: boolean;
-  role: number; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
+  role: number;
   online?: boolean;
-  // mudei a role para obrigatória porque sempre vem da API
 }
-// id: participante.id,
-//         nome: participante.nome,
-//         voto: voto ? voto.valor.toString() : null,
-//         votou: !!voto,
-//         votoId: voto?.id,
 
 interface ParticipanteComVoto
   extends Pick<Participante, 'id' | 'nome'> {
@@ -70,12 +66,30 @@ const ListaParticipantes: React.FC<
               (p) => p.id === participante.id,
             );
 
+          // Roles 2 e 3: Card simples com flip
+          if (meuRole >= 2) {
+            return (
+              <CarouselItem
+                key={participante.id}
+                className="basis-1/2 pl-2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5"
+              >
+                <CardVotacaoSimples
+                  participante={participante}
+                  voto={votoParticipante?.voto || null}
+                  votou={votoParticipante?.votou || false}
+                  votosRevelados={votosRevelados}
+                />
+              </CarouselItem>
+            );
+          }
+
+          // Roles 0 e 1: Card completo (Dono/Admin)
           return (
             <CarouselItem
               key={participante.id}
-              className="basis-1/2 md:basis-1/2 lg:basis-1/3"
+              className="basis-1/2 pl-2 md:basis-1/2 lg:basis-1/3"
             >
-              <div className="flex items-center">
+              <div className="space-y-2">
                 <CardParticipante
                   layout="vertical"
                   participante={{
@@ -85,37 +99,32 @@ const ListaParticipantes: React.FC<
                   }}
                   jaExistia={true}
                   meuRole={meuRole}
-                  mostrarAcoes={false} // Desabilitar ações na sala de planning
-                  voto={
-                    votoParticipante?.voto
-                      ? votoParticipante.voto
-                      : null
-                  } // depois tem que buscar o voto real
+                  mostrarAcoes={false}
+                  voto={votoParticipante?.voto || null}
                   votosRevelados={votosRevelados}
                 />
 
-                {/* Status do voto */}
-                <div className="flex items-center gap-2">
-                  {/* Botão anular voto (apenas proprietário) */}
-                  {eProprietario &&
-                    votoParticipante?.votou &&
-                    votoParticipante.votoId &&
-                    participante.id !== usuarioAtualId && (
-                      <Button
-                        onClick={() =>
-                          handleAnularVoto(
-                            votoParticipante.votoId!,
-                            participante.nome,
-                          )
-                        }
-                        disabled={loadingAcao}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20 text-red-400 transition-all hover:bg-red-500/30 disabled:cursor-not-allowed"
-                        title="Anular voto"
-                      >
-                        <BanIcon className="h-4 w-4" />
-                      </Button>
-                    )}
-                </div>
+                {/* Botão anular voto (apenas proprietário) */}
+                {eProprietario &&
+                  votoParticipante?.votou &&
+                  votoParticipante.votoId &&
+                  participante.id !== usuarioAtualId && (
+                    <Button
+                      onClick={() =>
+                        handleAnularVoto(
+                          votoParticipante.votoId!,
+                          participante.nome,
+                        )
+                      }
+                      disabled={loadingAcao}
+                      size="sm"
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      <BanIcon className="mr-2 h-4 w-4" />
+                      Anular Voto
+                    </Button>
+                  )}
               </div>
             </CarouselItem>
           );

@@ -2,6 +2,11 @@ import { TimerIcon, Trash2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { getRoleInfo } from '@/utils/role-helpers';
 import { Card, CardContent } from '../ui/card';
+import {
+  gerarIniciais,
+  getAvatarGradient,
+  getAvatarGradientPorRole,
+} from '@/utils/avatar-cores-helper';
 
 interface CardParticipanteProps {
   participante: {
@@ -50,21 +55,13 @@ export function CardParticipante({
   const podeRemoverEste =
     podeRemover && !isDono && (meuRole === 0 || !isAdmin);
 
-  // Gerar iniciais do nome
-  const gerarIniciais = (nome: string) => {
-    const palavras = nome.trim().split(' ');
-    if (palavras.length >= 2) {
-      return palavras[0][0] + palavras[1][0];
-    }
-    return nome.substring(0, 2);
-  };
-
-  // Cor do avatar baseada no role
-  const getAvatarGradient = () => {
-    if (isDono) return 'from-yellow-500 to-orange-500';
-    if (isAdmin) return 'from-blue-500 to-cyan-500';
-    return 'from-purple-500 to-pink-500';
-  };
+  const fundoAvatar =
+    participante && participante.role >= 2
+      ? getAvatarGradient(participante.id)
+      : getAvatarGradientPorRole(
+          participante.id,
+          participante.role,
+        );
 
   // Layout Vertical
   if (layout === 'vertical') {
@@ -82,7 +79,7 @@ export function CardParticipante({
           {/* Avatar */}
           <div className="relative">
             <div
-              className={`flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br ${getAvatarGradient()} shadow-lg transition-all group-hover:scale-105`}
+              className={`flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br ${fundoAvatar} shadow-lg transition-all group-hover:scale-105`}
             >
               <span className="text-lg font-medium text-white uppercase">
                 {gerarIniciais(participante.nome)}
@@ -208,7 +205,7 @@ export function CardParticipante({
         {/* Avatar com iniciais */}
         <div className="relative flex-shrink-0">
           <div
-            className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${getAvatarGradient()} shadow-lg transition-all group-hover:scale-105`}
+            className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${fundoAvatar} shadow-lg transition-all group-hover:scale-105`}
           >
             <span className="text-sm font-medium text-white uppercase">
               {gerarIniciais(participante.nome)}

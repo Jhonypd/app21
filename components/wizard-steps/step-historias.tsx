@@ -21,7 +21,6 @@ interface StepHistoriasProps {
 }
 
 export function StepHistorias({
-  salaId,
   historias,
   aoMudarHistorias,
 }: StepHistoriasProps) {

@@ -10,7 +10,6 @@ import {
 import Loading from '@/components/loading';
 import {
   toastError,
-  toastInfo,
   toastSuccess,
 } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -289,15 +288,6 @@ const PageSala = () => {
       </div>
     );
   }
-
-  // // Overlay de encerramento
-  // if (encerrandoSessao) {
-  //   toastInfo({
-  //     title: 'Encerrando sessão',
-  //     description:
-  //       'Aguarde enquanto a sessão é encerrada para todos os participantes.',
-  //   });
-  // }
 
   return (
     <>
