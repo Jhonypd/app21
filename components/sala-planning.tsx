@@ -451,6 +451,7 @@ export function SalaPlanning({
 
         {/* Cards de votos */}
         <CardVotos
+          role={meuRole}
           emModoPratica={emModoPratica}
           votosRevelados={votosRevelados}
           votoSelecionado={votoSelecionado}

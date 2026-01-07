@@ -290,14 +290,14 @@ const PageSala = () => {
     );
   }
 
-  // Overlay de encerramento
-  if (encerrandoSessao) {
-    toastInfo({
-      title: 'Encerrando sessão',
-      description:
-        'Aguarde enquanto a sessão é encerrada para todos os participantes.',
-    });
-  }
+  // // Overlay de encerramento
+  // if (encerrandoSessao) {
+  //   toastInfo({
+  //     title: 'Encerrando sessão',
+  //     description:
+  //       'Aguarde enquanto a sessão é encerrada para todos os participantes.',
+  //   });
+  // }
 
   return (
     <>

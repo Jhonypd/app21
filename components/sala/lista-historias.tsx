@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import DialogConfirmacao from '@/components/dialog-confirmacao';
-import {
-  ArrowRight,
-  ArrowLeft,
-} from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -151,7 +148,7 @@ export function ListaHistorias({
         {/* História atual em destaque */}
         {historiaAtual && (
           <div className="border-primary/30 bg-primary/10 flex h-full w-full gap-2 rounded-lg border p-4 text-base font-medium">
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-nowrap">
               Votando agora:
             </p>
             <p className="text-foreground truncate font-semibold text-ellipsis">

@@ -226,24 +226,26 @@ export function StepHistorias({
       )}
 
       {/* Dica sobre formato CSV */}
-      <div className="rounded-lg border border-blue-500/30 bg-blue-600/10 p-3">
-        <p className="mb-1 text-xs text-blue-300">
-          💡 Formato do CSV
-        </p>
-        <p className="text-xs text-gray-400">
-          Cada linha deve conter:{' '}
-          <code className="text-blue-300">
-            titulo,descricao
-          </code>
-        </p>
-        <p className="text-xs text-gray-500">
-          Exemplo:{' '}
-          <code>
-            Implementar login,Criar tela de login com
-            autenticação
-          </code>
-        </p>
-      </div>
+      {historias.length === 0 && (
+        <div className="rounded-lg border border-blue-500/30 bg-blue-600/10 p-3">
+          <p className="mb-1 text-xs text-blue-300">
+            💡 Formato do CSV
+          </p>
+          <p className="text-xs text-gray-400">
+            Cada linha deve conter:{' '}
+            <code className="text-blue-300">
+              titulo,descricao
+            </code>
+          </p>
+          <p className="text-xs text-gray-500">
+            Exemplo:{' '}
+            <code>
+              Implementar login,Criar tela de login com
+              autenticação
+            </code>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
