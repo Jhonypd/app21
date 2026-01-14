@@ -7,8 +7,6 @@ import {
   CarouselPrevious,
 } from '../ui/carousel';
 import { CardParticipante } from './card-participante';
-import { Button } from '../ui/button';
-import { BanIcon } from 'lucide-react';
 import CardVotacaoSimples from './card-participante-simples';
 
 interface Participante {
@@ -31,9 +29,6 @@ interface ListaParticipantesProps {
   participantesComVotos: ParticipanteComVoto[];
   meuRole: number;
   votosRevelados: boolean;
-  eProprietario: boolean;
-  usuarioAtualId: string;
-  loadingAcao: boolean;
   handleAnularVoto: (
     votoId: string,
     nomeParticipante: string,
@@ -47,10 +42,7 @@ const ListaParticipantes: React.FC<
   participantesComVotos,
   meuRole,
   votosRevelados,
-  eProprietario,
   handleAnularVoto,
-  usuarioAtualId,
-  loadingAcao,
 }) => {
   return (
     <Carousel
@@ -102,29 +94,9 @@ const ListaParticipantes: React.FC<
                   mostrarAcoes={false}
                   voto={votoParticipante?.voto || null}
                   votosRevelados={votosRevelados}
+                  votoId={votoParticipante?.votoId}
+                  onAnularVoto={handleAnularVoto}
                 />
-
-                {/* Botão anular voto (apenas proprietário) */}
-                {eProprietario &&
-                  votoParticipante?.votou &&
-                  votoParticipante.votoId &&
-                  participante.id !== usuarioAtualId && (
-                    <Button
-                      onClick={() =>
-                        handleAnularVoto(
-                          votoParticipante.votoId!,
-                          participante.nome,
-                        )
-                      }
-                      disabled={loadingAcao}
-                      size="sm"
-                      variant="destructive"
-                      className="w-full"
-                    >
-                      <BanIcon className="mr-2 h-4 w-4" />
-                      Anular Voto
-                    </Button>
-                  )}
               </div>
             </CarouselItem>
           );

@@ -56,14 +56,8 @@ const Auth = () => {
 
     try {
       if (action === 'login') {
-        // 🔒 PURGE COMPLETO do Redux Persist + localStorage
-        console.log(
-          '🧹 Limpando estado completo antes do login...',
-        );
-
         // 1. PAUSAR Redux Persist para evitar rehydration automática
         persistor.pause();
-        console.log('⏸️ Redux Persist pausado');
 
         // 2. PURGE do persistor
         await persistor.purge();
@@ -88,32 +82,12 @@ const Auth = () => {
           setTimeout(resolve, 200),
         );
 
-        console.log('✅ Estado limpo, iniciando login...');
-
         const payload = {
           email: (data as LoginFormValues).email,
           senha: (data as LoginFormValues).senha,
         };
 
         const result = await login(payload).unwrap();
-
-        console.log('📥 [login] Resposta do backend:', {
-          sucesso: result?.Sucesso,
-          hasTokenAcesso:
-            !!result.Resultado?.tokenAcesso?.token,
-          hasRefreshToken:
-            !!result.Resultado?.refreshToken?.token,
-          tokenPreview:
-            result.Resultado?.tokenAcesso?.token?.substring(
-              0,
-              30,
-            ) + '...',
-          refreshPreview:
-            result.Resultado?.refreshToken?.token?.substring(
-              0,
-              30,
-            ) + '...',
-        });
 
         if (!result?.Sucesso) {
           setLoading(false);
@@ -124,23 +98,7 @@ const Auth = () => {
         const refresh =
           result.Resultado?.refreshToken?.token;
 
-        console.log(
-          '🔑 [login] Tokens extraídos da resposta:',
-          {
-            accessPreview: access
-              ? access.substring(0, 30) + '...'
-              : 'undefined',
-            refreshPreview: refresh
-              ? refresh.substring(0, 30) + '...'
-              : 'undefined',
-          },
-        );
-
         if (access && refresh) {
-          console.log(
-            '💾 [login] Salvando tokens no Redux...',
-          );
-
           // CRÍTICO: Ignorar headers X-New-* por 5 segundos após login
           setIgnoreRefreshHeaders(true);
           setTimeout(
@@ -158,9 +116,6 @@ const Auth = () => {
           // CRÍTICO: Forçar flush e retomar persistor
           await persistor.flush();
           persistor.persist();
-          console.log(
-            '✅ [login] Tokens persistidos e Redux Persist retomado',
-          );
 
           try {
             const resp = await loadDadosConta().unwrap();

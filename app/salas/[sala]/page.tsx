@@ -6,7 +6,10 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   useObterDadosSessaoAtivaQuery,
   useSairDaSalaMutation,
+  useSelecionarHistoriaAtualMutation,
 } from '@/services/api/salas-api';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/services/api/configs/store/store';
 import Loading from '@/components/loading';
 import {
   toastError,
@@ -15,7 +18,12 @@ import {
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useEffect, useState, useCallback } from 'react';
 import { SalaPlanning } from '@/components/sala-planning';
-import { useEncerrarSessaoMutation } from '@/services/api/sessoes-api';
+import {
+  useEncerrarSessaoMutation,
+  useRevelarVotosMutation,
+  useResetarVotosMutation,
+} from '@/services/api/sessoes-api';
+import { useVotarMutation } from '@/services/api/votos-api';
 
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
@@ -43,6 +51,10 @@ const PageSala = () => {
   const [dialogEncerrarAberto, setDialogEncerrarAberto] =
     useState(false);
   const [skipQuery, setSkipQuery] = useState(false);
+  const [modoVisualizacao, setModoVisualizacao] =
+    useState(false);
+  const [historiaVisualizadaId, setHistoriaVisualizadaId] =
+    useState<string | null>(null);
 
   // Buscar dados da sessão ativa
   const { data, isLoading, error } =
@@ -52,6 +64,26 @@ const PageSala = () => {
 
   const [encerrarSessao] = useEncerrarSessaoMutation();
   const [sairDaSala] = useSairDaSalaMutation();
+  const [
+    selecionarHistoriaAtual,
+    { reset: resetSelecionarHistoria },
+  ] = useSelecionarHistoriaAtualMutation();
+  const [votar] = useVotarMutation();
+  const [revelarVotos] = useRevelarVotosMutation();
+  const [resetarVotos] = useResetarVotosMutation();
+
+  // Debug: Verificar tokens do Redux
+  const currentRefreshToken = useSelector(
+    (state: RootState) => state.auth.refreshToken,
+  );
+
+  useEffect(() => {
+    console.log('🔐 [PageSala] Token atual do Redux:', {
+      refreshTokenPreview:
+        currentRefreshToken?.substring(0, 30) + '...',
+      refreshTokenFull: currentRefreshToken,
+    });
+  }, [currentRefreshToken]);
 
   // Cleanup ao desmontar
   useEffect(() => {
@@ -117,8 +149,61 @@ const PageSala = () => {
   const sessaoAtiva = salaResultado
     ? obterSessaoAtiva(salaResultado.id)
     : null;
+
+  // Determinar role do usuário
+  const participanteAtual =
+    salaResultado?.participantes?.find(
+      (p) => p.id === usuario?.id,
+    );
   const meuRole =
-    usuario?.id === salaResultado?.criado_por ? 0 : 2;
+    usuario?.id === salaResultado?.criado_por
+      ? 0
+      : (participanteAtual?.role ?? 2);
+
+  // Auto-selecionar primeira história ao entrar na sala
+  useEffect(() => {
+    const autoSelecionarPrimeiraHistoria = async () => {
+      if (
+        !salaResultado?.id ||
+        !salaResultado.sessaoAtiva?.id ||
+        salaResultado.historia_atual_id || // Já tem história selecionada
+        !salaResultado.historias?.length ||
+        (meuRole !== 0 && meuRole !== 1) // Apenas Dono/Admin
+      ) {
+        return;
+      }
+
+      const primeiraHistoria = salaResultado.historias[0];
+
+      console.log(
+        '[AUTO-SELECT] Selecionando primeira história automaticamente:',
+        primeiraHistoria.titulo,
+      );
+
+      try {
+        await selecionarHistoriaAtual({
+          salaId: salaResultado.id,
+          historiaId: primeiraHistoria.id,
+        }).unwrap();
+      } catch (error) {
+        console.error(
+          '[AUTO-SELECT] Erro ao selecionar primeira história:',
+          error,
+        );
+      }
+    };
+
+    setTimeout(() => {
+      autoSelecionarPrimeiraHistoria();
+    }, 3000);
+  }, [
+    salaResultado?.id,
+    salaResultado?.historia_atual_id,
+    salaResultado?.historias,
+    salaResultado?.sessaoAtiva?.id,
+    meuRole,
+    selecionarHistoriaAtual,
+  ]);
 
   // Estados computados
   const estaCarregando =
@@ -189,25 +274,55 @@ const PageSala = () => {
     }
   };
 
-  const handleEnviarVoto = async (valor: number) => {
-    try {
+  const handleEnviarVoto = async (
+    valor: number,
+    participaVotacao: boolean,
+  ) => {
+    const sessaoId = salaResultado?.sessaoAtiva?.id;
+    const historiaId = salaResultado?.historia_atual_id;
+
+    if (!sessaoId || !historiaId) {
       toastError({
-        title: 'Funcionalidade em desenvolvimento',
+        title: 'Erro ao votar',
         description:
-          'A votação será implementada após a seleção de histórias',
+          'Nenhuma história selecionada para votação',
       });
-      console.log({ salaId: salaResultado?.id, valor });
+      return;
+    }
+
+    try {
+      await votar({
+        sessaoId,
+        valor,
+        historia_id: historiaId,
+        participa_votacao: participaVotacao,
+      }).unwrap();
+
+      toastSuccess({
+        description: participaVotacao
+          ? 'Voto registrado com sucesso!'
+          : 'Você não está participando da votação',
+      });
     } catch (error: unknown) {
       tratarErro(error, 'Erro ao enviar voto');
     }
   };
 
   const handleRevelarVotos = async () => {
-    try {
+    if (!salaResultado?.sessaoAtiva?.id) {
       toastError({
-        title: 'Funcionalidade em desenvolvimento',
-        description:
-          'Revelar votos será implementado com gestão de sessões',
+        title: 'Erro',
+        description: 'Nenhuma sessão ativa encontrada',
+      });
+      return;
+    }
+
+    try {
+      await revelarVotos(
+        salaResultado.sessaoAtiva.id,
+      ).unwrap();
+      toastSuccess({
+        description: 'Votos revelados com sucesso!',
       });
     } catch (error: unknown) {
       tratarErro(error, 'Erro ao revelar votos');
@@ -215,11 +330,21 @@ const PageSala = () => {
   };
 
   const handleResetarVotos = async () => {
-    try {
+    if (!salaResultado?.sessaoAtiva?.id) {
       toastError({
-        title: 'Funcionalidade em desenvolvimento',
+        title: 'Erro',
+        description: 'Nenhuma sessão ativa encontrada',
+      });
+      return;
+    }
+
+    try {
+      await resetarVotos(
+        salaResultado.sessaoAtiva.id,
+      ).unwrap();
+      toastSuccess({
         description:
-          'Resetar votos será implementado com gestão de sessões',
+          'Votos resetados! Podem votar novamente.',
       });
     } catch (error: unknown) {
       tratarErro(error, 'Erro ao resetar votos');
@@ -230,18 +355,51 @@ const PageSala = () => {
     historiaId: string,
   ) => {
     try {
-      toastError({
-        title: 'Funcionalidade em desenvolvimento',
-        description:
-          'Seleção de história será implementada',
-      });
-      console.log({
-        salaId: salaResultado?.id,
+      if (!salaResultado?.id) return;
+
+      console.log(
+        '🎯 [handleSelecionarHistoria] Iniciando seleção:',
+        {
+          salaId: salaResultado.id,
+          historiaId,
+          timestamp: new Date().toISOString(),
+          currentRefreshToken:
+            currentRefreshToken?.substring(0, 30) + '...',
+        },
+      );
+
+      // Limpar cache da mutation antes de chamar
+      resetSelecionarHistoria();
+
+      await selecionarHistoriaAtual({
+        salaId: salaResultado.id,
         historiaId,
+      }).unwrap();
+
+      console.log(
+        '✅ [handleSelecionarHistoria] Seleção concluída com sucesso',
+      );
+
+      toastSuccess({
+        title: 'História alterada',
+        description:
+          'Todos os participantes foram notificados',
       });
     } catch (error: unknown) {
+      console.error(
+        '❌ [handleSelecionarHistoria] Erro:',
+        error,
+      );
       tratarErro(error, 'Erro ao selecionar história');
     }
+  };
+
+  const handleModoVisualizacaoChange = (
+    ativo: boolean,
+    historiaId?: string,
+  ) => {
+    setModoVisualizacao(ativo);
+    setHistoriaVisualizadaId(historiaId || null);
   };
 
   // Loading state
@@ -311,6 +469,11 @@ const PageSala = () => {
           aoResetarVotos={handleResetarVotos}
           aoSelecionarHistoria={handleSelecionarHistoria}
           aoEncerrarSessao={handleAbrirDialogEncerrar}
+          modoVisualizacao={modoVisualizacao}
+          historiaVisualizadaId={historiaVisualizadaId}
+          onModoVisualizacaoChange={
+            handleModoVisualizacaoChange
+          }
         />
       )}
 

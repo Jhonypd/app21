@@ -36,6 +36,7 @@ interface Participante {
   inativo: boolean;
   role: number;
   online?: boolean;
+  participa_votacao?: boolean;
 }
 
 interface Voto {
@@ -64,6 +65,8 @@ interface SalaData {
   data_criacao: Date;
   data_alteracao: Date | null;
   criado_por: string;
+  historia_atual_id: string | null;
+  votos_revelados: boolean;
   proprietario: Proprietario;
   historias: Historia[];
   participantes: Participante[];
@@ -77,7 +80,10 @@ interface SalaPlanningProps {
   sessaoId?: string;
   meuRole?: number;
   aoVoltar: () => void | Promise<void>;
-  aoEnviarVoto?: (valor: number) => Promise<void>;
+  aoEnviarVoto?: (
+    valor: number,
+    participaVotacao: boolean,
+  ) => Promise<void>;
   aoRevelarVotos?: () => Promise<void>;
   aoResetarVotos?: () => Promise<void>;
   aoSelecionarHistoria?: (
@@ -88,6 +94,12 @@ interface SalaPlanningProps {
   aoReordenarHistorias?: (
     historias: Historia[],
   ) => Promise<void>;
+  modoVisualizacao?: boolean;
+  historiaVisualizadaId?: string | null;
+  onModoVisualizacaoChange?: (
+    ativo: boolean,
+    historiaId?: string,
+  ) => void;
 }
 
 export function SalaPlanning({
@@ -103,6 +115,8 @@ export function SalaPlanning({
   aoEncerrarSessao,
   aoAnularVoto,
   aoReordenarHistorias,
+  modoVisualizacao = false,
+  onModoVisualizacaoChange,
 }: SalaPlanningProps) {
   // Estados
   const [votoSelecionado, setVotoSelecionado] = useState<
@@ -139,16 +153,24 @@ export function SalaPlanning({
   const emModoPratica =
     !sala.historias || sala.historias.length === 0;
 
-  // Inicializar com a primeira história se existir
+  // Inicializar com a história atual da sala (ou primeira se não houver)
   useEffect(() => {
     if (
       sala.historias &&
       sala.historias.length > 0 &&
       !historiaAtualId
     ) {
-      setHistoriaAtualId(sala.historias[0].id);
+      // Priorizar historia_atual_id da sala
+      const historiaInicial = sala.historia_atual_id
+        ? sala.historia_atual_id
+        : sala.historias[0].id;
+      setHistoriaAtualId(historiaInicial);
     }
-  }, [sala.historias, historiaAtualId]);
+  }, [
+    sala.historias,
+    sala.historia_atual_id,
+    historiaAtualId,
+  ]);
 
   // Processar participantes com seus votos
   const participantesComVotos = (sala.participantes || [])
@@ -157,12 +179,22 @@ export function SalaPlanning({
       const voto = (sala.votos || []).find(
         (v) => v.pessoa_id === participante.id,
       );
+      // Definir se deve participar da votação:
+      // - Membros e Observadores (role 2, 3) sempre participam
+      // - Donos/Admin (role 0, 1) participam se participa_votacao !== false
+      const deveParticipar =
+        participante.role === 2 ||
+        participante.role === 3 ||
+        (participante.role <= 1 &&
+          participante.participa_votacao !== false);
+
       return {
         id: participante.id,
         nome: participante.nome,
         voto: voto ? voto.valor.toString() : null,
         votou: !!voto,
         votoId: voto?.id,
+        deveParticipar,
       };
     });
 
@@ -178,11 +210,14 @@ export function SalaPlanning({
     }
   }, [votoUsuario]);
 
-  const todosVotaram = participantesComVotos.every(
-    (p) => p.votou,
-  );
+  const todosVotaram = participantesComVotos
+    .filter((p) => p.deveParticipar)
+    .every((p) => p.votou);
   const totalVotos = participantesComVotos.filter(
     (p) => p.votou,
+  ).length;
+  const totalDevemVotar = participantesComVotos.filter(
+    (p) => p.deveParticipar,
   ).length;
   const participantesOnline = sala.participantes?.filter(
     (p) => p.online,
@@ -190,7 +225,8 @@ export function SalaPlanning({
 
   // Handlers
   const handleSelecionarVoto = (carta: string) => {
-    if (votoConfirmado) return;
+    // Desabilitar seleção se estiver em modo visualização
+    if (votoConfirmado || modoVisualizacao) return;
 
     if (votoSelecionado === carta) {
       setVotoSelecionado(null);
@@ -199,8 +235,16 @@ export function SalaPlanning({
     }
   };
 
-  const handleConfirmarVoto = async () => {
-    if (!votoSelecionado || votoConfirmado) return;
+  const handleConfirmarVoto = async (
+    participaVotacao: boolean,
+  ) => {
+    // Desabilitar confirmação se estiver em modo visualização
+    if (
+      !votoSelecionado ||
+      votoConfirmado ||
+      modoVisualizacao
+    )
+      return;
 
     setLoadingAcao(true);
     try {
@@ -214,7 +258,7 @@ export function SalaPlanning({
       }
 
       if (aoEnviarVoto) {
-        await aoEnviarVoto(valorNumerico);
+        await aoEnviarVoto(valorNumerico, participaVotacao);
       }
       setVotoConfirmado(true);
     } catch (error) {
@@ -378,11 +422,15 @@ export function SalaPlanning({
 
           <div className="mt-4">
             <ListaHistorias
+              role={meuRole}
               historias={sala.historias}
               historiaAtualId={historiaAtualId || undefined}
               votacaoFinalizada={votosRevelados}
               onMudarHistoria={handleMudarHistoria}
               onReordenar={handleReordenarHistorias}
+              onModoVisualizacaoChange={
+                onModoVisualizacaoChange
+              }
             />
           </div>
         </div>
@@ -399,8 +447,7 @@ export function SalaPlanning({
               {sala.participantes?.length})
             </h2>
             <div className="text-sm text-gray-400">
-              {totalVotos}/{participantesOnline.length}{' '}
-              votaram
+              {totalVotos}/{totalDevemVotar} votaram
             </div>
           </div>
 
@@ -409,9 +456,6 @@ export function SalaPlanning({
             participantesComVotos={participantesComVotos}
             meuRole={meuRole}
             votosRevelados={votosRevelados}
-            eProprietario={eProprietario}
-            usuarioAtualId={usuarioAtualId}
-            loadingAcao={loadingAcao}
             handleAnularVoto={handleAnularVoto}
           />
         </div>
@@ -457,6 +501,12 @@ export function SalaPlanning({
           votoSelecionado={votoSelecionado}
           votoConfirmado={votoConfirmado}
           loadingAcao={loadingAcao}
+          sessaoId={sessaoId}
+          participaVotacaoInicial={
+            sala.participantes?.find(
+              (p) => p.id === usuarioAtualId,
+            )?.participa_votacao
+          }
           handleSelecionarVoto={handleSelecionarVoto}
           handleConfirmarVoto={handleConfirmarVoto}
           handleCancelarVoto={handleCancelarVoto}
@@ -494,7 +544,7 @@ export function SalaPlanning({
                   ? 'Revelando...'
                   : todosVotaram
                     ? 'Revelar Votos'
-                    : `Aguardando ${participantesOnline.length - totalVotos}`}
+                    : `Aguardando ${totalDevemVotar - totalVotos}`}
               </span>
             </Button>
           ) : null}

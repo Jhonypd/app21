@@ -114,6 +114,8 @@ export interface SalaPorCodigo {
     data_criacao: Date;
     data_alteracao: Date | null;
     criado_por: string;
+    historia_atual_id: string | null;
+    votos_revelados: boolean;
     sessaoAtiva?: SessaoAtiva; // Dados da sessão ativa
   };
 }
@@ -346,6 +348,23 @@ export const SalasApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['salaPlaning', 'listarSalas'],
     }),
+
+    // PUT /salas/:id/historia-atual - Selecionar história atual
+    selecionarHistoriaAtual: builder.mutation<
+      ApiResponse,
+      { salaId: string; historiaId: string }
+    >({
+      query: ({ salaId, historiaId }) => ({
+        url: `/salas/${salaId}/historia-atual`,
+        method: 'PUT',
+        body: { historia_id: historiaId },
+      }),
+      invalidatesTags: ['salaPlaning'],
+      // Forçar bypass de cache para garantir que sempre usa tokens atuais
+      extraOptions: {
+        maxRetries: 0, // Sem retry automático
+      },
+    }),
   }),
 });
 
@@ -368,4 +387,5 @@ export const {
   useObterDadosSessaoAtivaQuery,
   useLazyObterDadosSessaoAtivaQuery,
   useSairDaSalaMutation,
+  useSelecionarHistoriaAtualMutation,
 } = SalasApi;

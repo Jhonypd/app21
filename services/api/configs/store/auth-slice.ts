@@ -27,20 +27,6 @@ const authSlice = createSlice({
         refreshToken?: string;
       }>,
     ) => {
-      console.log(
-        '💾 [auth-slice] setCredentials chamado:',
-        {
-          hasAccessToken: !!action.payload.accessToken,
-          hasRefreshToken: !!action.payload.refreshToken,
-          accessTokenPreview: action.payload.accessToken
-            ? `${action.payload.accessToken.substring(0, 20)}...`
-            : 'undefined',
-          refreshTokenPreview: action.payload.refreshToken
-            ? `${action.payload.refreshToken.substring(0, 20)}...`
-            : 'undefined',
-        },
-      );
-
       // ✅ Apenas atualizar o Redux state
       // Redux Persist salvará automaticamente no localStorage
       state.accessToken = action.payload.accessToken;

@@ -29,11 +29,16 @@ interface Historia {
 }
 
 interface ListaHistoriasProps {
+  role: number;
   historias: Historia[];
   historiaAtualId?: string;
   votacaoFinalizada: boolean;
   onMudarHistoria: (historiaId: string) => Promise<void>;
   onReordenar?: (historias: Historia[]) => void;
+  onModoVisualizacaoChange?: (
+    ativo: boolean,
+    historiaId?: string,
+  ) => void;
 }
 
 export function ListaHistorias({
@@ -42,6 +47,8 @@ export function ListaHistorias({
   votacaoFinalizada,
   onMudarHistoria,
   onReordenar,
+  onModoVisualizacaoChange,
+  role,
 }: ListaHistoriasProps) {
   const [modalReordenarAberto, setModalReordenarAberto] =
     useState(false);
@@ -52,6 +59,10 @@ export function ListaHistorias({
   const [proximaHistoriaId, setProximaHistoriaId] =
     useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modoVisualizacao, setModoVisualizacao] =
+    useState(false);
+  const [historiaVisualizadaId, setHistoriaVisualizadaId] =
+    useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -60,9 +71,20 @@ export function ListaHistorias({
     }),
   );
 
+  // História exibida (atual ou visualizada)
+  const historiaExibidaId = modoVisualizacao
+    ? historiaVisualizadaId
+    : historiaAtualId;
+
   const indiceAtual = historiaAtualId
     ? historiasIniciais.findIndex(
         (h) => h.id === historiaAtualId,
+      )
+    : -1;
+
+  const indiceExibido = historiaExibidaId
+    ? historiasIniciais.findIndex(
+        (h) => h.id === historiaExibidaId,
       )
     : -1;
 
@@ -70,7 +92,7 @@ export function ListaHistorias({
     indiceAtual >= 0 &&
     indiceAtual < historiasIniciais.length - 1;
   const temAnterior = indiceAtual > 0;
-  const historiaAtual = historiasIniciais[indiceAtual];
+  const historiaExibida = historiasIniciais[indiceExibido];
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -114,6 +136,15 @@ export function ListaHistorias({
   };
 
   const handleProxima = () => {
+    // Se está em modo visualização, desativa e volta para atual
+    if (modoVisualizacao) {
+      setModoVisualizacao(false);
+      setHistoriaVisualizadaId(null);
+      onModoVisualizacaoChange?.(false);
+      return;
+    }
+
+    // Senão, avança normalmente
     if (temProxima) {
       const proximaHistoria =
         historiasIniciais[indiceAtual + 1];
@@ -125,7 +156,12 @@ export function ListaHistorias({
     if (temAnterior) {
       const historiaAnterior =
         historiasIniciais[indiceAtual - 1];
-      handleSolicitarMudanca(historiaAnterior.id);
+
+      // NÃO chama onMudarHistoria (não atualiza banco)
+      // Apenas ativa modo visualização
+      setModoVisualizacao(true);
+      setHistoriaVisualizadaId(historiaAnterior.id);
+      onModoVisualizacaoChange?.(true, historiaAnterior.id);
     }
   };
 
@@ -142,17 +178,38 @@ export function ListaHistorias({
     return null;
   }
 
+  const podeMudarHistoria = role < 2;
+
   return (
     <>
       <div className="space-y-3">
-        {/* História atual em destaque */}
-        {historiaAtual && (
-          <div className="border-primary/30 bg-primary/10 flex h-full w-full gap-2 rounded-lg border p-4 text-base font-medium">
+        {/* Banner de modo visualização */}
+        {modoVisualizacao && (
+          <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm">
+            <span className="text-2xl">👁️</span>
+            <p className="text-muted-foreground">
+              Visualizando história anterior - Não é
+              possível votar
+            </p>
+          </div>
+        )}
+
+        {/* História atual/visualizada em destaque */}
+        {historiaExibida && (
+          <div
+            className={`flex h-full w-full gap-2 rounded-lg border p-4 text-base font-medium ${
+              modoVisualizacao
+                ? 'border-blue-500/30 bg-blue-500/10'
+                : 'border-primary/30 bg-primary/10'
+            }`}
+          >
             <p className="text-muted-foreground text-nowrap">
-              Votando agora:
+              {modoVisualizacao
+                ? 'Visualizando:'
+                : 'Votando agora:'}
             </p>
             <p className="text-foreground truncate font-semibold text-ellipsis">
-              {historiaAtual.titulo}
+              {historiaExibida.titulo}
             </p>
           </div>
         )}
@@ -162,13 +219,19 @@ export function ListaHistorias({
           {/* Botão Anterior */}
           <Button
             onClick={handleAnterior}
-            disabled={!votacaoFinalizada || !temAnterior}
+            disabled={
+              !temAnterior ||
+              modoVisualizacao ||
+              !podeMudarHistoria
+            }
             variant="outline"
             className="flex-1"
             title={
-              !votacaoFinalizada
-                ? 'Finalize a votação primeiro'
-                : ''
+              modoVisualizacao
+                ? 'Já está visualizando'
+                : !temAnterior
+                  ? 'Não há história anterior'
+                  : ''
             }
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -176,10 +239,10 @@ export function ListaHistorias({
           </Button>
 
           {/* Indicador de progresso */}
-          {indiceAtual >= 0 && (
+          {indiceExibido >= 0 && (
             <div className="text-muted-foreground flex items-center justify-between text-sm">
               <span>
-                {indiceAtual + 1} de{' '}
+                {indiceExibido + 1} de{' '}
                 {historiasIniciais.length}
               </span>
             </div>
@@ -187,17 +250,28 @@ export function ListaHistorias({
           {/* Botão Próxima */}
           <Button
             onClick={handleProxima}
-            disabled={!votacaoFinalizada || !temProxima}
+            disabled={
+              !modoVisualizacao &&
+              (!votacaoFinalizada ||
+                !temProxima ||
+                !podeMudarHistoria)
+            }
             variant="default"
             className="flex-1"
             title={
-              !votacaoFinalizada
-                ? 'Finalize a votação primeiro'
-                : ''
+              modoVisualizacao
+                ? 'Voltar para história atual'
+                : !votacaoFinalizada
+                  ? 'Finalize a votação primeiro'
+                  : ''
             }
           >
-            Próxima
-            <ArrowRight className="ml-2 h-4 w-4" />
+            {modoVisualizacao
+              ? 'Voltar para Atual'
+              : 'Próxima'}
+            {!modoVisualizacao && (
+              <ArrowRight className="ml-2 h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>

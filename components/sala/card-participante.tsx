@@ -1,4 +1,4 @@
-import { TimerIcon, Trash2 } from 'lucide-react';
+import { TimerIcon, Trash2, XIcon } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { getRoleInfo } from '@/utils/role-helpers';
 import { Card, CardContent } from '../ui/card';
@@ -7,6 +7,7 @@ import {
   getAvatarGradient,
   getAvatarGradientPorRole,
 } from '@/utils/avatar-cores-helper';
+import { Button } from '../ui/button';
 
 interface CardParticipanteProps {
   participante: {
@@ -29,6 +30,11 @@ interface CardParticipanteProps {
   voto?: string | null;
   votosRevelados?: boolean;
   layout?: 'horizontal' | 'vertical';
+  votoId?: string;
+  onAnularVoto?: (
+    votoId: string,
+    nomeParticipante: string,
+  ) => void;
 }
 
 export function CardParticipante({
@@ -41,6 +47,8 @@ export function CardParticipante({
   onRemover,
   voto,
   votosRevelados,
+  votoId,
+  onAnularVoto,
 }: CardParticipanteProps) {
   const roleInfo = getRoleInfo(participante.role);
   const Icon = roleInfo.icon;
@@ -104,29 +112,39 @@ export function CardParticipante({
           </div>
 
           {/* Status do voto */}
-          <div className="w-full">
-            {voto && votosRevelados ? (
-              <div className="flex items-center justify-center gap-1.5 rounded-lg bg-green-600/20 px-3 py-2 dark:bg-green-600/30">
-                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                  {voto}
-                </span>
-              </div>
-            ) : voto && !votosRevelados ? (
-              <div className="bg-primary/20 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2">
-                <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
-                <span className="text-primary text-xs">
-                  Votou
-                </span>
-              </div>
-            ) : (
-              <div className="bg-muted flex items-center justify-center gap-1.5 rounded-lg px-3 py-2">
-                <TimerIcon className="text-muted-foreground h-3 w-3" />
-                <span className="text-muted-foreground text-xs">
-                  Aguardando
-                </span>
-              </div>
-            )}
+          <div className="flex w-full items-center justify-center gap-2">
+            <Badge
+              variant={'secondary'}
+              className="flex w-full items-center justify-around gap-2"
+            >
+              <p className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-lg font-medium">
+                {voto ? (
+                  <span>{voto}</span>
+                ) : (
+                  <TimerIcon size={18} />
+                )}
+              </p>
+
+              {onAnularVoto &&
+                (meuRole === 0 || meuRole === 1) && (
+                  <Button
+                    variant={'destructive'}
+                    size={'icon'}
+                    onClick={() =>
+                      onAnularVoto(
+                        votoId!,
+                        participante.nome,
+                      )
+                    }
+                    className="h-fit w-fit p-2"
+                    title="Anular voto"
+                    disabled={!voto || !votoId}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                )}
+            </Badge>
+            {/* Botão Anular Voto  */}
           </div>
 
           {/* Ações */}
@@ -239,6 +257,16 @@ export function CardParticipante({
                   Votou: {voto}
                 </span>
               </div>
+            ) : voto &&
+              !votosRevelados &&
+              (meuRole === 0 || meuRole === 1) ? (
+              // Admin/Dono veem o voto antes de revelar
+              <div className="flex items-center gap-1.5 rounded-lg bg-purple-600/20 px-2 py-1 dark:bg-purple-600/30">
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-purple-400" />
+                <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                  {voto}
+                </span>
+              </div>
             ) : voto && !votosRevelados ? (
               <div className="bg-primary/20 flex items-center gap-1.5 rounded-lg px-2 py-1">
                 <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
@@ -249,11 +277,27 @@ export function CardParticipante({
             ) : (
               <div className="bg-muted flex items-center gap-1.5 rounded-lg px-2 py-1">
                 <TimerIcon className="text-muted-foreground h-3 w-3" />
-                <span className="text-muted-foreground text-xs">
+                {/* <span className="text-muted-foreground text-xs">
                   Aguardando...
-                </span>
+                </span> */}
               </div>
             )}
+
+            {/* Botão Anular Voto (discreto) */}
+            {voto &&
+              votoId &&
+              onAnularVoto &&
+              (meuRole === 0 || meuRole === 1) && (
+                <button
+                  onClick={() =>
+                    onAnularVoto(votoId, participante.nome)
+                  }
+                  className="text-muted-foreground hover:text-destructive text-xs opacity-50 transition-opacity hover:opacity-100"
+                  title="Anular voto"
+                >
+                  Anular
+                </button>
+              )}
           </div>
         </div>
 

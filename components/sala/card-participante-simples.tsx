@@ -61,19 +61,19 @@ function CardVotacaoSimples({
             )}
 
             {/* Status - Aguardando */}
-            {!votou && (
+            {/* {!votou && (
               <div className="bg-muted flex items-center gap-1.5 rounded-full px-2.5 py-1">
                 <div className="bg-muted-foreground h-2 w-2 animate-pulse rounded-full" />
                 <span className="text-muted-foreground text-xs">
                   Aguardando
                 </span>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
         {/* Verso - Voto */}
-        <div className="border-primary from-primary/20 via-primary/10 absolute inset-0 rotate-y-180 rounded-xl border-2 bg-gradient-to-br to-transparent p-3 shadow-lg backface-hidden">
+        <div className="border-primary from-primary/20 via-primary/10 absolute inset-0 [transform:rotateY(180deg)] rounded-xl border-2 bg-gradient-to-br to-transparent p-3 shadow-lg backface-hidden">
           <div className="flex h-full flex-col items-center justify-center gap-3">
             {/* Voto grande */}
             <div className="bg-primary ring-primary/20 flex h-16 w-16 items-center justify-center rounded-xl shadow-lg ring-2">

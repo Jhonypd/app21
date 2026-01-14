@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BannerModoSemHistoria } from './banner-modo-sem-historias';
 import { Button } from '../ui/button';
-import { toastSuccess } from '../custom-toast';
+import { toastSuccess, toastError } from '../custom-toast';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import { useAtualizarParticipaVotacaoMutation } from '@/services/api/sessoes-api';
+
 interface CardVotosProps {
   role: number;
   emModoPratica: boolean;
@@ -11,8 +13,10 @@ interface CardVotosProps {
   votoSelecionado: string | null;
   votoConfirmado: boolean;
   loadingAcao: boolean;
+  sessaoId?: string;
+  participaVotacaoInicial?: boolean;
   handleSelecionarVoto: (carta: string) => void;
-  handleConfirmarVoto: () => void;
+  handleConfirmarVoto: (participaVotacao: boolean) => void;
   handleCancelarVoto: () => void;
 }
 
@@ -38,16 +42,34 @@ const CardVotos: React.FC<CardVotosProps> = ({
   votoSelecionado,
   votoConfirmado,
   loadingAcao,
+  sessaoId,
+  participaVotacaoInicial,
   handleSelecionarVoto,
   handleConfirmarVoto,
   handleCancelarVoto,
 }) => {
   const participaSempre = role === 2 || role === 3;
 
-  const [participaVotacao, setParticipaVotacao] =
-    useState(participaSempre);
+  const [participaVotacao, setParticipaVotacao] = useState(
+    participaSempre
+      ? true
+      : (participaVotacaoInicial ?? true),
+  );
 
-  const toggleParticipacao = (ativo: boolean) => {
+  const [atualizarParticipaVotacao] =
+    useAtualizarParticipaVotacaoMutation();
+
+  // Atualizar estado quando prop mudar
+  useEffect(() => {
+    if (
+      !participaSempre &&
+      participaVotacaoInicial !== undefined
+    ) {
+      setParticipaVotacao(participaVotacaoInicial);
+    }
+  }, [participaVotacaoInicial, participaSempre]);
+
+  const toggleParticipacao = async (ativo: boolean) => {
     if (participaSempre) return;
 
     setParticipaVotacao(ativo);
@@ -56,11 +78,34 @@ const CardVotos: React.FC<CardVotosProps> = ({
       handleCancelarVoto();
     }
 
-    toastSuccess({
-      description: ativo
-        ? 'Agora você está participando da votação'
-        : 'Agora você não está participando da votação',
-    });
+    // Chamar API para persistir a mudança
+    if (sessaoId) {
+      try {
+        await atualizarParticipaVotacao({
+          sessaoId,
+          participaVotacao: ativo,
+        }).unwrap();
+
+        toastSuccess({
+          description: ativo
+            ? 'Agora você está participando da votação'
+            : 'Agora você não está participando da votação',
+        });
+      } catch (error) {
+        toastError({
+          title: 'Erro ao atualizar participação',
+          description: 'Tente novamente',
+        });
+        // Reverter estado em caso de erro
+        setParticipaVotacao(!ativo);
+      }
+    } else {
+      toastSuccess({
+        description: ativo
+          ? 'Agora você está participando da votação'
+          : 'Agora você não está participando da votação',
+      });
+    }
   };
 
   const podeVotar =
@@ -133,7 +178,9 @@ const CardVotos: React.FC<CardVotosProps> = ({
           </Button>
 
           <Button
-            onClick={handleConfirmarVoto}
+            onClick={() =>
+              handleConfirmarVoto(participaVotacao)
+            }
             disabled={loadingAcao}
             className="min-w-40 bg-gradient-to-r from-green-600 to-emerald-600 uppercase"
           >

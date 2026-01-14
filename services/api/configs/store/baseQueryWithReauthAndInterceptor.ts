@@ -17,15 +17,6 @@ let ignoreRefreshHeaders = false;
 
 export function setIgnoreRefreshHeaders(value: boolean) {
   ignoreRefreshHeaders = value;
-  if (value) {
-    console.log(
-      '⏸️ [interceptor] Headers X-New-* serão ignorados temporariamente',
-    );
-  } else {
-    console.log(
-      '▶️ [interceptor] Headers X-New-* voltaram a ser processados',
-    );
-  }
 }
 
 export type ApiError = FetchBaseQueryError & {
@@ -64,17 +55,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     newRefreshToken &&
     !ignoreRefreshHeaders
   ) {
-    console.log(
-      '⚠️ [interceptor] Headers X-New-* detectados:',
-      {
-        url: typeof args === 'string' ? args : args.url,
-        accessTokenPreview:
-          newAccessToken.substring(0, 30) + '...',
-        refreshTokenPreview:
-          newRefreshToken.substring(0, 30) + '...',
-      },
-    );
-
     // Backend fez refresh automático - atualizar tokens
     api.dispatch(
       setCredentials({
@@ -82,20 +62,8 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
         refreshToken: newRefreshToken,
       }),
     );
-    console.log(
-      '🔄 Tokens atualizados automaticamente pelo backend',
-    );
-  } else if (
-    newAccessToken &&
-    newRefreshToken &&
-    ignoreRefreshHeaders
-  ) {
-    console.log(
-      '⏭️ [interceptor] Headers X-New-* ignorados (logo após login)',
-    );
   }
 
-  // ⚠️ Verificar se backend pediu login (refresh falhou ou sessão inválida)
   const requerLogin =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (result.error?.data as any)?.requer_login === true;
@@ -117,13 +85,10 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   const teveRefreshAutomatico =
     newAccessToken && newRefreshToken;
 
-  // ✅ CORREÇÃO: Se for erro de sala (limpar_token: true), NÃO fazer logout completo
   if (limparTokenSala && !requerLogin) {
     // Apenas limpar token da sala, não fazer logout
     api.dispatch(limparSalaToken());
-    console.log(
-      '🧹 Token da sala limpo (erro com limpar_token)',
-    );
+
     return result;
   }
 
@@ -136,10 +101,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       !teveRefreshAutomatico &&
       !limparTokenSala)
   ) {
-    console.log(
-      '🚨 [interceptor] Logout forçado - sessão inválida',
-    );
-
     // Limpar TODOS os tokens (auth + sala)
     api.dispatch(logout());
     api.dispatch(limparSalaToken());
@@ -147,12 +108,7 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     // PURGE completo do Redux Persist
     if (typeof window !== 'undefined') {
       localStorage.removeItem('persist:root');
-      console.log('🗑️ localStorage limpo pelo interceptor');
     }
-
-    console.log(
-      '🔒 Logout completo - tokens removidos do Redux/localStorage',
-    );
 
     if (typeof window !== 'undefined') {
       const mensagem = requerLogin
@@ -223,9 +179,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((data.Resultado as any)?.limpar_token === true) {
     api.dispatch(limparSalaToken());
-    console.log(
-      '🧹 Token da sala limpo (resposta de sucesso)',
-    );
   }
 
   if (!data.Sucesso) {
