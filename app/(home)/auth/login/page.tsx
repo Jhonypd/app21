@@ -35,7 +35,7 @@ import { limparSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 import { useLazyObterDadosContaQuery } from '@/services/api/pessoas.api';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
-import { persistor } from '@/services/api/configs/store/store';
+import { clearTokensFromStorage } from '@/services/api/configs/store/auth-slice';
 import { setIgnoreRefreshHeaders } from '@/services/api/configs/store/baseQueryWithReauthAndInterceptor';
 
 const Auth = () => {
@@ -56,31 +56,15 @@ const Auth = () => {
 
     try {
       if (action === 'login') {
-        // 1. PAUSAR Redux Persist para evitar rehydration automática
-        persistor.pause();
-
-        // 2. PURGE do persistor
-        await persistor.purge();
-
-        // 3. Limpar Redux state
+        // 🔥 SIMPLIFICADO: Limpar tokens diretamente do localStorage
+        clearTokensFromStorage();
         dispatch(logout());
         dispatch(limparSalaToken());
 
-        // 4. Limpar localStorage manualmente
+        // Limpar localStorage legado do Redux Persist (se existir)
         if (typeof window !== 'undefined') {
           localStorage.removeItem('persist:root');
-          // Limpar TODOS os items de persist
-          Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith('persist:')) {
-              localStorage.removeItem(key);
-            }
-          });
         }
-
-        // 5. Aguardar para garantir que tudo foi limpo
-        await new Promise((resolve) =>
-          setTimeout(resolve, 200),
-        );
 
         const payload = {
           email: (data as LoginFormValues).email,
@@ -113,9 +97,7 @@ const Auth = () => {
             }),
           );
 
-          // CRÍTICO: Forçar flush e retomar persistor
-          await persistor.flush();
-          persistor.persist();
+          // 🔥 Tokens já são salvos no localStorage via setCredentials
 
           try {
             const resp = await loadDadosConta().unwrap();

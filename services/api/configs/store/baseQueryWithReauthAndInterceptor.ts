@@ -5,12 +5,19 @@ import {
   FetchArgs,
   FetchBaseQueryError,
 } from '@reduxjs/toolkit/query';
-import { rawBaseQuery } from './rawBaseQuery';
+import {
+  rawBaseQuery,
+  RawBaseQueryMeta,
+} from './rawBaseQuery';
 import {
   logout,
   setCredentials,
+  getTokensFromStorage,
+  saveTokensToStorage,
+  clearTokensFromStorage,
 } from '@/services/api/configs/store/auth-slice';
 import { limparSalaToken } from './sala-auth-slice';
+import type { RootState } from './store';
 
 // Flag para ignorar headers X-New-* temporariamente
 let ignoreRefreshHeaders = false;
@@ -21,8 +28,7 @@ export function setIgnoreRefreshHeaders(value: boolean) {
 
 export type ApiError = FetchBaseQueryError & {
   status: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: ApiResponse<any>;
+  data: ApiResponse<unknown>;
 };
 
 function isApiError(err: unknown): err is ApiError {
@@ -34,21 +40,68 @@ function isApiError(err: unknown): err is ApiError {
   );
 }
 
+// Interface para tipar o Resultado com limpar_token
+interface ResultadoComLimparToken {
+  limpar_token?: boolean;
+}
+
 const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   string | FetchArgs,
-  ApiResponse,
-  FetchBaseQueryError
+  unknown,
+  FetchBaseQueryError,
+  object,
+  RawBaseQueryMeta
 > = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
+  const {
+    accessToken: tokenStorage,
+    refreshToken: refreshStorage,
+  } = getTokensFromStorage();
+  const state = api.getState() as RootState;
+  const tokenSalaAtual = state.salaAuth?.tokenSala;
 
-  // 🔄 Verificar se backend enviou novos tokens (refresh automático)
-  const newAccessToken = result.meta?.response?.headers.get(
+  const tokenAtual = tokenStorage;
+  const refreshTokenAtual = refreshStorage;
+
+  // Criar headers com tokens do localStorage
+  const headersObj: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+
+  if (tokenAtual) {
+    headersObj['Authorization'] = `Bearer ${tokenAtual}`;
+  }
+
+  if (refreshTokenAtual) {
+    headersObj['X-Refresh-Token'] = refreshTokenAtual;
+  }
+
+  if (tokenSalaAtual) {
+    headersObj['x-token-sala'] = tokenSalaAtual;
+  }
+
+  // Montar args com headers atualizados
+  const argsWithHeaders: FetchArgs =
+    typeof args === 'string'
+      ? { url: args, headers: headersObj }
+      : { ...args, headers: headersObj };
+
+  const result = await rawBaseQuery(
+    argsWithHeaders,
+    api,
+    extraOptions,
+  );
+
+  // Tipar o meta corretamente
+  const meta = result.meta as RawBaseQueryMeta | undefined;
+
+  // Verificar se backend enviou novos tokens (refresh automático)
+  const newAccessToken = meta?.response?.headers.get(
     'x-new-access-token',
   );
-  const newRefreshToken =
-    result.meta?.response?.headers.get(
-      'x-new-refresh-token',
-    );
+  const newRefreshToken = meta?.response?.headers.get(
+    'x-new-refresh-token',
+  );
 
   if (
     newAccessToken &&
@@ -62,17 +115,23 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
         refreshToken: newRefreshToken,
       }),
     );
+    // Também salvar diretamente no localStorage
+    saveTokensToStorage(newAccessToken, newRefreshToken);
   }
 
-  const requerLogin =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (result.error?.data as any)?.requer_login === true;
+  type ErrorData = {
+    requer_login?: boolean;
+    Resultado?: { limpar_token?: boolean };
+  };
+  const errorData = result.error?.data as
+    | ErrorData
+    | undefined;
+
+  const requerLogin = errorData?.requer_login === true;
 
   // Verificar se é erro da SALA especificamente (limpar_token: true)
   const limparTokenSala =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (result.error?.data as any)?.Resultado?.limpar_token ===
-    true;
+    errorData?.Resultado?.limpar_token === true;
 
   // Verificar se é erro de autenticação (401/403) que não teve refresh automático
   const error = result.error;
@@ -88,7 +147,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   if (limparTokenSala && !requerLogin) {
     // Apenas limpar token da sala, não fazer logout
     api.dispatch(limparSalaToken());
-
     return result;
   }
 
@@ -105,7 +163,8 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     api.dispatch(logout());
     api.dispatch(limparSalaToken());
 
-    // PURGE completo do Redux Persist
+    // Limpar localStorage diretamente
+    clearTokensFromStorage();
     if (typeof window !== 'undefined') {
       localStorage.removeItem('persist:root');
     }
@@ -121,7 +180,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
           'Você será redirecionado para o login em 2 segundos.',
       });
 
-      // Redirecionar após delay - cookies já foram limpos
       setTimeout(() => {
         window.location.href = '/auth/login';
       }, 2000);
@@ -132,14 +190,11 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
   if (result.error) {
     if (isApiError(result.error)) {
-      // Verificar se o backend pede para limpar token da sala
-      const limparToken =
-        result.error.data?.Resultado?.limpar_token;
+      const errorResultado = result.error.data
+        ?.Resultado as ResultadoComLimparToken | undefined;
+      const limparToken = errorResultado?.limpar_token;
       if (limparToken === true) {
         api.dispatch(limparSalaToken());
-        console.log(
-          '🧹 Token da sala limpo (backend solicitou)',
-        );
       }
 
       return {
@@ -157,7 +212,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
         },
       };
     }
-    console.log('result', result);
 
     return {
       error: {
@@ -173,11 +227,11 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     };
   }
 
-  const data = result.data as ApiResponse;
+  const data = result.data as ApiResponse<{
+    limpar_token?: boolean;
+  }>;
 
-  // Verificar se precisa limpar token da sala (mesmo em sucesso)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((data.Resultado as any)?.limpar_token === true) {
+  if (data.Resultado?.limpar_token === true) {
     api.dispatch(limparSalaToken());
   }
 
@@ -189,9 +243,9 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     return {
       error: {
         status: data.CodigoRetorno ?? 400,
-        data,
-      }, // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
+        data: data as ApiResponse<unknown>,
+      },
+    };
   }
 
   return { data };

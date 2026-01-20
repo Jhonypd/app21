@@ -1,27 +1,66 @@
-import { fetchBaseQuery } from '@reduxjs/toolkit/query';
-import type { RootState } from '@/services/api/configs/store/store';
+import {
+  BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
+} from '@reduxjs/toolkit/query';
 
-export const rawBaseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL,
-  prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth
-      .accessToken;
-    const refreshToken = (getState() as RootState).auth
-      .refreshToken;
-    const tokenSala = (getState() as RootState).salaAuth
-      ?.tokenSala;
+const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    // Headers padrão
-    headers.set('Content-Type', 'application/json');
-    headers.set('Accept', 'application/json');
+// Tipo do meta retornado pelo rawBaseQuery
+export interface RawBaseQueryMeta {
+  response?: Response;
+  request?: { headers: HeadersInit };
+}
 
-    // Tokens de autenticação
-    if (token)
-      headers.set('Authorization', `Bearer ${token}`);
-    if (refreshToken)
-      headers.set('X-Refresh-Token', refreshToken); // Enviar refresh em toda requisição
-    if (tokenSala) headers.set('x-token-sala', tokenSala);
+// fetch NATIVO para controle total dos headers
+// O fetchBaseQuery do RTK Query estava ignorando/mesclando headers de forma incorreta
+export const rawBaseQuery: BaseQueryFn<
+  FetchArgs,
+  unknown,
+  FetchBaseQueryError,
+  object,
+  RawBaseQueryMeta
+> = async (args) => {
+  const { url, method = 'GET', body, headers } = args;
 
-    return headers;
-  },
-});
+  const fullUrl = `${baseUrl}${url}`;
+
+  try {
+    const response = await fetch(fullUrl, {
+      method,
+      headers: headers as HeadersInit,
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        error: {
+          status: response.status,
+          data: data,
+        } as FetchBaseQueryError,
+        meta: {
+          response,
+          request: { headers: headers as HeadersInit },
+        },
+      };
+    }
+
+    return {
+      data,
+      meta: {
+        response,
+        request: { headers: headers as HeadersInit },
+      },
+    };
+  } catch (error) {
+    return {
+      error: {
+        status: 'FETCH_ERROR',
+        error: String(error),
+      } as FetchBaseQueryError,
+    };
+  }
+};

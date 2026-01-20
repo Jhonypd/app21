@@ -68,12 +68,13 @@ const PageSalas = () => {
   // Exibe erro se houver
   useEffect(() => {
     if (error) {
+      const { Mensagem } = getApiErrorMessage(error);
       toastError({
         title: 'Erro ao carregar salas',
-        description: `${error.data?.Mensagem}`,
+        description: Mensagem,
       });
     }
-  }, [data, error]);
+  }, [error]);
 
   // Filtrar salas
   const salasFiltradas = listaSalas.filter((sala) => {
@@ -191,13 +192,6 @@ const PageSalas = () => {
             (s) => s.codigo === codigo,
           );
           if (sala) {
-            console.log(
-              '[ENTRAR CARD] Salvando sessão no Redux:',
-              {
-                salaId: sala.id,
-                sessaoId: result.Resultado.sessaoId,
-              },
-            );
             dispatch(
               iniciarSessao({
                 salaId: sala.id,

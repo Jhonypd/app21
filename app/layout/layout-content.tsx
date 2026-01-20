@@ -11,7 +11,6 @@ import { Navegacao } from '@/components/navegacao';
 import { Header } from '@/components/header';
 import { Greeting } from '@/components/greeting';
 import { useAuth } from '@/hooks/useAuth';
-import { useSalaAuth } from '@/hooks/salaAuth';
 
 interface LayoutContentProps {
   children: ReactNode;
@@ -74,9 +73,8 @@ const LayoutContent = memo(
     const [abaAtiva, setAbaAtiva] = useState('/');
     const pathname = usePathname();
     const { usuario, logout } = useAuth();
-    const { sala } = useSalaAuth();
 
-    // Memoizar a verificação do path para evitar recálculos
+    // Memorizar a verificação do path para evitar recálculos
     const shouldHideSidebar = useMemo(() => {
       return HIDDEN_SIDEBAR_PREFIXES.some((prefix) =>
         pathname.startsWith(prefix),
@@ -95,7 +93,7 @@ const LayoutContent = memo(
       setAbaAtiva(path.length > 0 ? `${path}` : '/');
     }, [pathname]);
 
-    // Memoizar o conteúdo baseado na condição
+    // Memorizar o conteúdo baseado na condição
     const content = useMemo(() => {
       return (
         <NoSidebarLayout>

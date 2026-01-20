@@ -183,17 +183,6 @@ export function ListaHistorias({
   return (
     <>
       <div className="space-y-3">
-        {/* Banner de modo visualização */}
-        {modoVisualizacao && (
-          <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm">
-            <span className="text-2xl">👁️</span>
-            <p className="text-muted-foreground">
-              Visualizando história anterior - Não é
-              possível votar
-            </p>
-          </div>
-        )}
-
         {/* História atual/visualizada em destaque */}
         {historiaExibida && (
           <div

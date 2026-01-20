@@ -77,14 +77,6 @@ const PageSala = () => {
     (state: RootState) => state.auth.refreshToken,
   );
 
-  useEffect(() => {
-    console.log('🔐 [PageSala] Token atual do Redux:', {
-      refreshTokenPreview:
-        currentRefreshToken?.substring(0, 30) + '...',
-      refreshTokenFull: currentRefreshToken,
-    });
-  }, [currentRefreshToken]);
-
   // Cleanup ao desmontar
   useEffect(() => {
     return () => {
