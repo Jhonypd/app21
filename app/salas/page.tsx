@@ -165,7 +165,7 @@ const PageSalas = () => {
         codigo,
         senha: senha || undefined,
       };
-
+      debugger;
       const result =
         await salaEntrar(loginPayload).unwrap();
 

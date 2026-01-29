@@ -22,6 +22,7 @@ import {
   useEncerrarSessaoMutation,
   useRevelarVotosMutation,
   useResetarVotosMutation,
+  useLazyObterVotosPorHistoriaQuery,
 } from '@/services/api/sessoes-api';
 import { useVotarMutation } from '@/services/api/votos-api';
 
@@ -71,6 +72,8 @@ const PageSala = () => {
   const [votar] = useVotarMutation();
   const [revelarVotos] = useRevelarVotosMutation();
   const [resetarVotos] = useResetarVotosMutation();
+  const [buscarVotosPorHistoria] =
+    useLazyObterVotosPorHistoriaQuery();
 
   // Debug: Verificar tokens do Redux
   const currentRefreshToken = useSelector(
@@ -394,6 +397,41 @@ const PageSala = () => {
     setHistoriaVisualizadaId(historiaId || null);
   };
 
+  const handleBuscarVotosPorHistoria = async (
+    historiaId: string,
+  ) => {
+    const sessaoId = salaResultado?.sessaoAtiva?.id;
+
+    if (!sessaoId) {
+      console.warn(
+        'Nenhuma sessão ativa para buscar votos',
+      );
+      return [];
+    }
+
+    try {
+      const resultado = await buscarVotosPorHistoria({
+        sessaoId,
+        historiaId,
+      }).unwrap();
+
+      // O resultado vem com formato { votos: [...] }
+      const votos = resultado.Resultado?.votos || [];
+      return votos.map((v) => ({
+        id: v.id,
+        pessoa_id: v.pessoa_id,
+        valor: v.valor,
+        pessoa: v.pessoa,
+      }));
+    } catch (error) {
+      console.error(
+        'Erro ao buscar votos da história:',
+        error,
+      );
+      return [];
+    }
+  };
+
   // Loading state
   // if (estaCarregando) {
   //   return (
@@ -461,6 +499,9 @@ const PageSala = () => {
           aoResetarVotos={handleResetarVotos}
           aoSelecionarHistoria={handleSelecionarHistoria}
           aoEncerrarSessao={handleAbrirDialogEncerrar}
+          aoBuscarVotosPorHistoria={
+            handleBuscarVotosPorHistoria
+          }
           modoVisualizacao={modoVisualizacao}
           historiaVisualizadaId={historiaVisualizadaId}
           onModoVisualizacaoChange={

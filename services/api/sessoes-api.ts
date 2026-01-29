@@ -101,6 +101,28 @@ export const SessoesApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['salaPlaning'],
     }),
+
+    // GET /sessoes/:sessaoId/historias/:historiaId/votos - Obter votos de uma história específica
+    obterVotosPorHistoria: builder.query<
+      ApiResponse<{
+        votos: {
+          id: string;
+          pessoa_id: string;
+          valor: number;
+          pessoa: {
+            nome: string;
+            inativo: boolean;
+          };
+        }[];
+      }>,
+      { sessaoId: string; historiaId: string }
+    >({
+      query: ({ sessaoId, historiaId }) => ({
+        url: `/sessoes/${sessaoId}/historias/${historiaId}/votos`,
+        method: 'GET',
+      }),
+      providesTags: ['votos'],
+    }),
   }),
 });
 
@@ -112,4 +134,6 @@ export const {
   useLazyObterSessaoQuery,
   useEncerrarSessaoMutation,
   useAtualizarParticipaVotacaoMutation,
+  useObterVotosPorHistoriaQuery,
+  useLazyObterVotosPorHistoriaQuery,
 } = SessoesApi;

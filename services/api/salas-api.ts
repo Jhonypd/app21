@@ -189,8 +189,6 @@ export const SalasApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: credenciais,
       }),
-      // 🔥 CRÍTICO: Não cachear headers desta mutation
-      // Sempre usar tokens frescos do Redux
       extraOptions: { maxRetries: 0 },
       invalidatesTags: ['salaPlaning'],
     }),

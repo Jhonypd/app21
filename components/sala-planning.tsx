@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Users,
   Eye,
@@ -94,6 +94,9 @@ interface SalaPlanningProps {
   aoReordenarHistorias?: (
     historias: Historia[],
   ) => Promise<void>;
+  aoBuscarVotosPorHistoria?: (
+    historiaId: string,
+  ) => Promise<Voto[]>;
   modoVisualizacao?: boolean;
   historiaVisualizadaId?: string | null;
   onModoVisualizacaoChange?: (
@@ -115,7 +118,9 @@ export function SalaPlanning({
   aoEncerrarSessao,
   aoAnularVoto,
   aoReordenarHistorias,
+  aoBuscarVotosPorHistoria,
   modoVisualizacao = false,
+  historiaVisualizadaId,
   onModoVisualizacaoChange,
 }: SalaPlanningProps) {
   // Estados
@@ -133,6 +138,13 @@ export function SalaPlanning({
     useState(false);
   const [loadingAcao, setLoadingAcao] = useState(false);
   const [termoBusca, setTermoBusca] = useState('');
+
+  // Estado para votos carregados (pode ser da história atual ou de outra)
+  const [votosCarregados, setVotosCarregados] = useState<
+    Voto[]
+  >([]);
+  const [carregandoVotos, setCarregandoVotos] =
+    useState(false);
 
   const eProprietario = sala.criado_por === usuarioAtualId;
   const iniciouSessao =
@@ -153,6 +165,61 @@ export function SalaPlanning({
   const emModoPratica =
     !sala.historias || sala.historias.length === 0;
 
+  // Ref para controlar se já buscou votos da história visualizada
+  const historiaVisualizadaAnterior = useRef<
+    string | null | undefined
+  >(null);
+
+  // Buscar votos quando entrar em modo visualização (história anterior)
+  useEffect(() => {
+    // Só buscar se a história visualizada mudou
+    if (
+      historiaVisualizadaId ===
+      historiaVisualizadaAnterior.current
+    ) {
+      return;
+    }
+    historiaVisualizadaAnterior.current =
+      historiaVisualizadaId;
+
+    const buscarVotosHistoriaVisualizada = async () => {
+      if (
+        modoVisualizacao &&
+        historiaVisualizadaId &&
+        aoBuscarVotosPorHistoria
+      ) {
+        setCarregandoVotos(true);
+        try {
+          const votos = await aoBuscarVotosPorHistoria(
+            historiaVisualizadaId,
+          );
+          setVotosCarregados(votos);
+        } catch (error) {
+          console.error(
+            'Erro ao buscar votos da história visualizada:',
+            error,
+          );
+          setVotosCarregados([]);
+        } finally {
+          setCarregandoVotos(false);
+        }
+      } else if (!modoVisualizacao) {
+        // Voltou do modo visualização, restaurar votos da sala
+        setVotosCarregados(sala.votos || []);
+      }
+    };
+
+    buscarVotosHistoriaVisualizada();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modoVisualizacao, historiaVisualizadaId]);
+
+  // Sincronizar votos da sala quando não estiver em modo visualização
+  useEffect(() => {
+    if (!modoVisualizacao) {
+      setVotosCarregados(sala.votos || []);
+    }
+  }, [sala.votos, modoVisualizacao]);
+
   // Inicializar com a história atual da sala (ou primeira se não houver)
   useEffect(() => {
     if (
@@ -172,11 +239,14 @@ export function SalaPlanning({
     historiaAtualId,
   ]);
 
+  // Usar votos carregados (pode ser da história visualizada ou atual)
+  const votosAtivos = votosCarregados;
+
   // Processar participantes com seus votos
   const participantesComVotos = (sala.participantes || [])
     .filter((p) => !p.inativo)
     .map((participante) => {
-      const voto = (sala.votos || []).find(
+      const voto = votosAtivos.find(
         (v) => v.pessoa_id === participante.id,
       );
       // Definir se deve participar da votação:
@@ -198,17 +268,24 @@ export function SalaPlanning({
       };
     });
 
-  // Verificar se o usuário atual já votou
-  const votoUsuario = (sala.votos || []).find(
+  // Verificar se o usuário atual já votou (usando votos ativos)
+  const votoUsuario = votosAtivos.find(
     (v) => v.pessoa_id === usuarioAtualId,
   );
 
+  // Atualizar estado do voto quando mudar o voto do usuário
+  const votoUsuarioId = votoUsuario?.id;
+  const votoUsuarioValor = votoUsuario?.valor;
   useEffect(() => {
-    if (votoUsuario) {
-      setVotoSelecionado(votoUsuario.valor.toString());
+    if (votoUsuarioId && votoUsuarioValor !== undefined) {
+      setVotoSelecionado(votoUsuarioValor.toString());
       setVotoConfirmado(true);
+    } else {
+      // Se não há voto do usuário (mudou de história), resetar estado
+      setVotoSelecionado(null);
+      setVotoConfirmado(false);
     }
-  }, [votoUsuario]);
+  }, [votoUsuarioId, votoUsuarioValor]);
 
   const todosVotaram = participantesComVotos
     .filter((p) => p.deveParticipar)
@@ -310,14 +387,30 @@ export function SalaPlanning({
   ) => {
     setHistoriaAtualId(historiaId);
 
+    // Buscar votos da história selecionada
+    if (aoBuscarVotosPorHistoria) {
+      setCarregandoVotos(true);
+      try {
+        const votos =
+          await aoBuscarVotosPorHistoria(historiaId);
+        setVotosCarregados(votos);
+      } catch (error) {
+        console.error(
+          'Erro ao buscar votos da história:',
+          error,
+        );
+        setVotosCarregados([]);
+      } finally {
+        setCarregandoVotos(false);
+      }
+    }
+
     if (aoSelecionarHistoria) {
       await aoSelecionarHistoria(historiaId);
     }
 
-    // Resetar votação ao mudar de história
+    // Resetar estado de votação revelada ao mudar de história
     setVotosRevelados(false);
-    setVotoSelecionado(null);
-    setVotoConfirmado(false);
   };
 
   const handleReordenarHistorias = async (
@@ -447,7 +540,13 @@ export function SalaPlanning({
               {sala.participantes?.length})
             </h2>
             <div className="text-sm text-gray-400">
-              {totalVotos}/{totalDevemVotar} votaram
+              {carregandoVotos ? (
+                <span className="animate-pulse">
+                  Carregando votos...
+                </span>
+              ) : (
+                `${totalVotos}/${totalDevemVotar} votaram`
+              )}
             </div>
           </div>
 
