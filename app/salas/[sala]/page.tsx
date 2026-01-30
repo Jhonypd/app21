@@ -7,8 +7,9 @@ import {
   useObterDadosSessaoAtivaQuery,
   useSairDaSalaMutation,
   useSelecionarHistoriaAtualMutation,
+  SalasApi,
 } from '@/services/api/salas-api';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/services/api/configs/store/store';
 import Loading from '@/components/loading';
 import {
@@ -33,6 +34,7 @@ import DialogConfirmacao from '@/components/dialog-confirmacao';
 const PageSala = () => {
   const params = useParams();
   const router = useRouter();
+  const dispatch = useDispatch();
   const codigoSala = params.sala as string;
   const { usuario } = useAuth();
   const {
@@ -118,6 +120,15 @@ const PageSala = () => {
         await sairDaSala(salaId).unwrap();
         encerrarSessaoAtiva(salaId);
         limparTokenSala();
+
+        // Invalidar cache das salas para recarregar lista atualizada
+        dispatch(
+          SalasApi.util.invalidateTags([
+            'listarSalas',
+            'salaPlaning',
+          ]),
+        );
+
         toastSuccess({
           title: 'Saiu da sala',
           description: 'Você saiu da sala com sucesso',
@@ -125,6 +136,13 @@ const PageSala = () => {
         router.push('/salas');
       } catch (error) {
         tratarErro(error, 'Erro ao sair da sala');
+        // Invalidar cache mesmo com erro para garantir dados atualizados
+        dispatch(
+          SalasApi.util.invalidateTags([
+            'listarSalas',
+            'salaPlaning',
+          ]),
+        );
         // Redireciona mesmo com erro
         router.push('/salas');
       }
@@ -135,6 +153,7 @@ const PageSala = () => {
       limparTokenSala,
       router,
       tratarErro,
+      dispatch,
     ],
   );
 
@@ -352,17 +371,6 @@ const PageSala = () => {
     try {
       if (!salaResultado?.id) return;
 
-      console.log(
-        '🎯 [handleSelecionarHistoria] Iniciando seleção:',
-        {
-          salaId: salaResultado.id,
-          historiaId,
-          timestamp: new Date().toISOString(),
-          currentRefreshToken:
-            currentRefreshToken?.substring(0, 30) + '...',
-        },
-      );
-
       // Limpar cache da mutation antes de chamar
       resetSelecionarHistoria();
 
@@ -370,10 +378,6 @@ const PageSala = () => {
         salaId: salaResultado.id,
         historiaId,
       }).unwrap();
-
-      console.log(
-        '✅ [handleSelecionarHistoria] Seleção concluída com sucesso',
-      );
 
       toastSuccess({
         title: 'História alterada',
@@ -395,6 +399,13 @@ const PageSala = () => {
   ) => {
     setModoVisualizacao(ativo);
     setHistoriaVisualizadaId(historiaId || null);
+
+    // Ao voltar para a história atual, recarregar dados da sessão
+    if (!ativo) {
+      dispatch(
+        SalasApi.util.invalidateTags(['salaPlaning']),
+      );
+    }
   };
 
   const handleBuscarVotosPorHistoria = async (

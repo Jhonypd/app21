@@ -15,6 +15,7 @@ interface CardVotosProps {
   loadingAcao: boolean;
   sessaoId?: string;
   participaVotacaoInicial?: boolean;
+  modoVisualizacao?: boolean;
   handleSelecionarVoto: (carta: string) => void;
   handleConfirmarVoto: (participaVotacao: boolean) => void;
   handleCancelarVoto: () => void;
@@ -44,6 +45,7 @@ const CardVotos: React.FC<CardVotosProps> = ({
   loadingAcao,
   sessaoId,
   participaVotacaoInicial,
+  modoVisualizacao = false,
   handleSelecionarVoto,
   handleConfirmarVoto,
   handleCancelarVoto,
@@ -109,20 +111,25 @@ const CardVotos: React.FC<CardVotosProps> = ({
   };
 
   const podeVotar =
-    participaVotacao && !votosRevelados && !votoConfirmado;
+    participaVotacao &&
+    !votosRevelados &&
+    !votoConfirmado &&
+    !modoVisualizacao;
 
   return (
     <div className="border-border bg-card w-full max-w-md rounded-lg border p-6 shadow-sm">
       <header className="mb-4 flex items-center justify-between px-6">
         <h2 className="text-lg">
-          {participaVotacao
-            ? 'Selecione sua pontuação'
-            : 'Você não está votando'}
+          {modoVisualizacao
+            ? 'Visualizando história anterior'
+            : participaVotacao
+              ? 'Selecione sua pontuação'
+              : 'Você não está votando'}
         </h2>
 
         <BannerModoSemHistoria mostrar={emModoPratica} />
 
-        {!participaSempre && (
+        {!participaSempre && !modoVisualizacao && (
           <div className="flex flex-col items-center gap-2">
             <Label>Votar?</Label>
             <Switch
@@ -133,7 +140,7 @@ const CardVotos: React.FC<CardVotosProps> = ({
         )}
       </header>
 
-      {participaVotacao && (
+      {participaVotacao && !modoVisualizacao && (
         <section
           className={
             votoSelecionado
@@ -167,31 +174,42 @@ const CardVotos: React.FC<CardVotosProps> = ({
         </section>
       )}
 
-      {votoSelecionado && !votoConfirmado && (
-        <footer className="mt-4 flex justify-between gap-4">
-          <Button
-            variant="destructive"
-            onClick={handleCancelarVoto}
-            className="min-w-40 uppercase"
-          >
-            Cancelar
-          </Button>
+      {votoSelecionado &&
+        !votoConfirmado &&
+        !modoVisualizacao && (
+          <footer className="mt-4 flex justify-between gap-4">
+            <Button
+              variant="destructive"
+              onClick={handleCancelarVoto}
+              className="min-w-40 uppercase"
+            >
+              Cancelar
+            </Button>
 
-          <Button
-            onClick={() =>
-              handleConfirmarVoto(participaVotacao)
-            }
-            disabled={loadingAcao}
-            className="min-w-40 bg-gradient-to-r from-green-600 to-emerald-600 uppercase"
-          >
-            Confirmar
-          </Button>
-        </footer>
-      )}
+            <Button
+              onClick={() =>
+                handleConfirmarVoto(participaVotacao)
+              }
+              disabled={loadingAcao}
+              className="min-w-40 bg-gradient-to-r from-green-600 to-emerald-600 uppercase"
+            >
+              Confirmar
+            </Button>
+          </footer>
+        )}
 
-      {votoConfirmado && !votosRevelados && (
-        <div className="mt-4 rounded-xl border border-green-500/30 bg-green-600/10 px-4 py-3 text-center text-sm text-green-400">
-          Voto confirmado: {votoSelecionado}
+      {votoConfirmado &&
+        !votosRevelados &&
+        !modoVisualizacao && (
+          <div className="mt-4 rounded-xl border border-green-500/30 bg-green-600/10 px-4 py-3 text-center text-sm text-green-400">
+            Voto confirmado: {votoSelecionado}
+          </div>
+        )}
+
+      {modoVisualizacao && (
+        <div className="mt-4 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-3 text-center text-sm text-blue-400">
+          Clique em &quot;Voltar para Atual&quot; para
+          continuar votando
         </div>
       )}
     </div>

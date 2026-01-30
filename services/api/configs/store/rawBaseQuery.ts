@@ -30,7 +30,8 @@ export const rawBaseQuery: BaseQueryFn<
       method,
       headers: headers as HeadersInit,
       body: body ? JSON.stringify(body) : undefined,
-      credentials: 'include',
+      // 🔥 REMOVIDO credentials: 'include' - não usamos cookies para auth
+      // Isso estava enviando cookies antigos junto com as requisições
     });
 
     const data = await response.json();

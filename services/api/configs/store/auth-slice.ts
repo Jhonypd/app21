@@ -4,10 +4,10 @@ import {
 } from '@reduxjs/toolkit';
 import { DadosContaPessoa as Usuario } from '../../pessoas.api';
 
-// 🔥 STORAGE KEY para tokens (independente do Redux Persist)
+// Storage key para tokens (independente do Redux Persist)
 const AUTH_STORAGE_KEY = 'app21_auth_tokens';
 
-// 🔥 Funções para salvar/ler tokens DIRETAMENTE do localStorage
+// Funções para salvar/ler tokens DIRETAMENTE do localStorage
 export const saveTokensToStorage = (
   accessToken: string,
   refreshToken: string,
@@ -33,6 +33,12 @@ export const getTokensFromStorage = (): {
     return { accessToken: null, refreshToken: null };
   }
 
+  // Limpar persist:root se existir (fonte de tokens antigos)
+  const persistRoot = localStorage.getItem('persist:root');
+  if (persistRoot) {
+    localStorage.removeItem('persist:root');
+  }
+
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw)
@@ -52,7 +58,7 @@ export const getTokensFromStorage = (): {
 export const clearTokensFromStorage = () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(AUTH_STORAGE_KEY);
-    // 🔥 Também limpar persist:root legado
+    // Também limpar persist:root legado
     localStorage.removeItem('persist:root');
   }
 };
@@ -77,15 +83,10 @@ interface AuthState {
   usuario: Usuario | null;
 }
 
-// 🔥 Inicializar com tokens do localStorage (se existirem)
-const storedTokens =
-  typeof window !== 'undefined'
-    ? getTokensFromStorage()
-    : { accessToken: null, refreshToken: null };
-
+// 🔥 Estado inicial vazio - será hidratado no client-side
 const initialState: AuthState = {
-  accessToken: storedTokens.accessToken,
-  refreshToken: storedTokens.refreshToken,
+  accessToken: null,
+  refreshToken: null,
   usuario: null,
 };
 
@@ -114,6 +115,15 @@ const authSlice = createSlice({
           '',
       );
     },
+    // Hidratar Redux state com tokens do localStorage (client-side only)
+    hydrateFromStorage: (state) => {
+      if (typeof window === 'undefined') return;
+
+      const { accessToken, refreshToken } =
+        getTokensFromStorage();
+      state.accessToken = accessToken;
+      state.refreshToken = refreshToken;
+    },
     setUser: (
       state,
       action: PayloadAction<Usuario | null>,
@@ -130,6 +140,10 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, setUser, logout } =
-  authSlice.actions;
+export const {
+  setCredentials,
+  setUser,
+  logout,
+  hydrateFromStorage,
+} = authSlice.actions;
 export default authSlice.reducer;

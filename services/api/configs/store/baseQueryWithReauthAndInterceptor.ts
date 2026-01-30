@@ -11,20 +11,11 @@ import {
 } from './rawBaseQuery';
 import {
   logout,
-  setCredentials,
   getTokensFromStorage,
-  saveTokensToStorage,
   clearTokensFromStorage,
 } from '@/services/api/configs/store/auth-slice';
 import { limparSalaToken } from './sala-auth-slice';
 import type { RootState } from './store';
-
-// Flag para ignorar headers X-New-* temporariamente
-let ignoreRefreshHeaders = false;
-
-export function setIgnoreRefreshHeaders(value: boolean) {
-  ignoreRefreshHeaders = value;
-}
 
 export type ApiError = FetchBaseQueryError & {
   status: number;
@@ -45,6 +36,14 @@ interface ResultadoComLimparToken {
   limpar_token?: boolean;
 }
 
+/**
+ * Base query com interceptação de erros de autenticação.
+ *
+ * Fluxo simplificado:
+ * - Access token válido por 7 dias
+ * - Sem refresh automático
+ * - 401/403 com requer_login=true → logout e redirect para login
+ */
 const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   string | FetchArgs,
   unknown,
@@ -52,15 +51,12 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   object,
   RawBaseQueryMeta
 > = async (args, api, extraOptions) => {
-  const {
-    accessToken: tokenStorage,
-    refreshToken: refreshStorage,
-  } = getTokensFromStorage();
+  const { accessToken: tokenStorage } =
+    getTokensFromStorage();
   const state = api.getState() as RootState;
   const tokenSalaAtual = state.salaAuth?.tokenSala;
 
   const tokenAtual = tokenStorage;
-  const refreshTokenAtual = refreshStorage;
 
   // Criar headers com tokens do localStorage
   const headersObj: Record<string, string> = {
@@ -70,10 +66,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
   if (tokenAtual) {
     headersObj['Authorization'] = `Bearer ${tokenAtual}`;
-  }
-
-  if (refreshTokenAtual) {
-    headersObj['X-Refresh-Token'] = refreshTokenAtual;
   }
 
   if (tokenSalaAtual) {
@@ -92,33 +84,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     extraOptions,
   );
 
-  // Tipar o meta corretamente
-  const meta = result.meta as RawBaseQueryMeta | undefined;
-
-  // Verificar se backend enviou novos tokens (refresh automático)
-  const newAccessToken = meta?.response?.headers.get(
-    'x-new-access-token',
-  );
-  const newRefreshToken = meta?.response?.headers.get(
-    'x-new-refresh-token',
-  );
-
-  if (
-    newAccessToken &&
-    newRefreshToken &&
-    !ignoreRefreshHeaders
-  ) {
-    // Backend fez refresh automático - atualizar tokens
-    api.dispatch(
-      setCredentials({
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-      }),
-    );
-    // Também salvar diretamente no localStorage
-    saveTokensToStorage(newAccessToken, newRefreshToken);
-  }
-
   type ErrorData = {
     requer_login?: boolean;
     Resultado?: { limpar_token?: boolean };
@@ -133,7 +98,7 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
   const limparTokenSala =
     errorData?.Resultado?.limpar_token === true;
 
-  // Verificar se é erro de autenticação (401/403) que não teve refresh automático
+  // Verificar se é erro de autenticação (401/403)
   const error = result.error;
   const status =
     isApiError(error) && typeof error.status === 'number'
@@ -141,8 +106,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       : undefined;
   const ehErroAutenticacao =
     status === 401 || status === 403;
-  const teveRefreshAutomatico =
-    newAccessToken && newRefreshToken;
 
   if (limparTokenSala && !requerLogin) {
     // Apenas limpar token da sala, não fazer logout
@@ -152,12 +115,10 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
   // Fazer logout completo APENAS se:
   // 1. Backend explicitamente pedir (requer_login: true)
-  // 2. OU erro 401/403 sem refresh E sem ser erro de sala
+  // 2. OU erro 401/403 sem ser erro de sala
   if (
     requerLogin ||
-    (ehErroAutenticacao &&
-      !teveRefreshAutomatico &&
-      !limparTokenSala)
+    (ehErroAutenticacao && !limparTokenSala)
   ) {
     // Limpar TODOS os tokens (auth + sala)
     api.dispatch(logout());

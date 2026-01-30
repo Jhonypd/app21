@@ -36,7 +36,7 @@ import { useLazyObterDadosContaQuery } from '@/services/api/pessoas.api';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { clearTokensFromStorage } from '@/services/api/configs/store/auth-slice';
-import { setIgnoreRefreshHeaders } from '@/services/api/configs/store/baseQueryWithReauthAndInterceptor';
+import { clearAllAuthCookies } from '@/utils/clear-auth-cookies';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -58,6 +58,7 @@ const Auth = () => {
       if (action === 'login') {
         // 🔥 SIMPLIFICADO: Limpar tokens diretamente do localStorage
         clearTokensFromStorage();
+        clearAllAuthCookies(); // 🔥 Limpar cookies também
         dispatch(logout());
         dispatch(limparSalaToken());
 
@@ -83,13 +84,6 @@ const Auth = () => {
           result.Resultado?.refreshToken?.token;
 
         if (access && refresh) {
-          // CRÍTICO: Ignorar headers X-New-* por 5 segundos após login
-          setIgnoreRefreshHeaders(true);
-          setTimeout(
-            () => setIgnoreRefreshHeaders(false),
-            5000,
-          );
-
           dispatch(
             setCredentials({
               accessToken: access,

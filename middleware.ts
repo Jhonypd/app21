@@ -46,8 +46,10 @@ export async function middleware(request: NextRequest) {
   // ==========================================
   // CONTROLE DE NAVEGAÇÃO BASEADO EM SALA
   // ==========================================
-  // Token de sala ainda pode estar em cookie para SSR
-  const tokenSala = request.cookies.get('token_sala')?.value;
+  // Token de sala usa COOKIE pois precisa persistir entre navegações de página (SSR)
+  // Diferente do auth que usa localStorage + headers
+  const tokenSala =
+    request.cookies.get('token_sala')?.value;
 
   // Se tem token_sala, usuário está "locked" em uma sessão de sala
   if (tokenSala) {
@@ -58,10 +60,10 @@ export async function middleware(request: NextRequest) {
     // Rotas públicas permitidas mesmo com token_sala
     const publicRoutes = [
       '/auth/login',
-      '/auth/cadastro', 
+      '/auth/cadastro',
       '/confirmacao-email',
     ];
-    
+
     const isRotaPublica = publicRoutes.some((route) =>
       pathname.startsWith(route),
     );

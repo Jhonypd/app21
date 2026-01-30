@@ -385,6 +385,7 @@ export function SalaPlanning({
   const handleMudarHistoria = async (
     historiaId: string,
   ) => {
+    // debugger;
     setHistoriaAtualId(historiaId);
 
     // Buscar votos da história selecionada
@@ -554,43 +555,54 @@ export function SalaPlanning({
             participantesOnline={participantesOnline}
             participantesComVotos={participantesComVotos}
             meuRole={meuRole}
-            votosRevelados={votosRevelados}
+            votosRevelados={
+              votosRevelados || modoVisualizacao
+            }
             handleAnularVoto={handleAnularVoto}
           />
         </div>
 
-        {/* Resultados */}
-        {votosRevelados && (
-          <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-4">
-            <h3 className="mb-2 text-sm text-gray-300">
-              Resultado da Votação
-            </h3>
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-xs text-gray-400">
-                  Média
-                </p>
-                <p className="text-3xl">
-                  {calcularMedia() || '—'}
-                </p>
-              </div>
-              <div className="flex flex-1 flex-wrap gap-2">
-                {participantesComVotos
-                  .filter((p) => p.votou)
-                  .map((p) => (
-                    <div
-                      key={p.id}
-                      className="rounded-lg bg-white/10 px-3 py-1"
-                    >
-                      <span className="font-mono text-xs">
-                        {p.voto}
-                      </span>
-                    </div>
-                  ))}
+        {/* Resultados - mostrar quando votos revelados OU em modo visualização (história já votada) */}
+        {(votosRevelados || modoVisualizacao) &&
+          votosCarregados.length > 0 && (
+            <div
+              className={`rounded-2xl border p-4 ${
+                modoVisualizacao
+                  ? 'border-blue-500/30 bg-gradient-to-br from-blue-600/20 to-cyan-600/20'
+                  : 'border-purple-500/30 bg-gradient-to-br from-purple-600/20 to-pink-600/20'
+              }`}
+            >
+              <h3 className="mb-2 text-sm text-gray-300">
+                {modoVisualizacao
+                  ? 'Resultado da História'
+                  : 'Resultado da Votação'}
+              </h3>
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-xs text-gray-400">
+                    Média
+                  </p>
+                  <p className="text-3xl">
+                    {calcularMedia() || '—'}
+                  </p>
+                </div>
+                <div className="flex flex-1 flex-wrap gap-2">
+                  {participantesComVotos
+                    .filter((p) => p.votou)
+                    .map((p) => (
+                      <div
+                        key={p.id}
+                        className="rounded-lg bg-white/10 px-3 py-1"
+                      >
+                        <span className="font-mono text-xs">
+                          {p.voto}
+                        </span>
+                      </div>
+                    ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Cards de votos */}
         <CardVotos
@@ -606,6 +618,7 @@ export function SalaPlanning({
               (p) => p.id === usuarioAtualId,
             )?.participa_votacao
           }
+          modoVisualizacao={modoVisualizacao}
           handleSelecionarVoto={handleSelecionarVoto}
           handleConfirmarVoto={handleConfirmarVoto}
           handleCancelarVoto={handleCancelarVoto}
@@ -626,8 +639,10 @@ export function SalaPlanning({
             </Button>
           )}
 
-          {/* Revelar/Resetar */}
-          {eProprietario && !votosRevelados ? (
+          {/* Revelar/Resetar - desabilitado em modo visualização */}
+          {eProprietario &&
+          !votosRevelados &&
+          !modoVisualizacao ? (
             <Button
               onClick={handleRevelarVotos}
               disabled={!todosVotaram || loadingAcao}
@@ -648,20 +663,22 @@ export function SalaPlanning({
             </Button>
           ) : null}
 
-          {eProprietario && votosRevelados && (
-            <Button
-              onClick={handleResetarVotacao}
-              disabled={loadingAcao}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 transition-all hover:from-purple-700 hover:to-pink-700 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RotateCcw className="h-5 w-5" />
-              <span className="text-sm">
-                {loadingAcao
-                  ? 'Resetando...'
-                  : 'Nova Votação'}
-              </span>
-            </Button>
-          )}
+          {eProprietario &&
+            votosRevelados &&
+            !modoVisualizacao && (
+              <Button
+                onClick={handleResetarVotacao}
+                disabled={loadingAcao}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 transition-all hover:from-purple-700 hover:to-pink-700 active:scale-98 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RotateCcw className="h-5 w-5" />
+                <span className="text-sm">
+                  {loadingAcao
+                    ? 'Resetando...'
+                    : 'Nova Votação'}
+                </span>
+              </Button>
+            )}
         </div>
       </div>
 

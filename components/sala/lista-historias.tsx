@@ -91,7 +91,13 @@ export function ListaHistorias({
   const temProxima =
     indiceAtual >= 0 &&
     indiceAtual < historiasIniciais.length - 1;
-  const temAnterior = indiceAtual > 0;
+
+  // Em modo visualização: pode voltar mais se indiceExibido > 0
+  // Em modo normal: pode voltar se indiceAtual > 0
+  const temAnterior = modoVisualizacao
+    ? indiceExibido > 0
+    : indiceAtual > 0;
+
   const historiaExibida = historiasIniciais[indiceExibido];
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -153,16 +159,20 @@ export function ListaHistorias({
   };
 
   const handleAnterior = () => {
-    if (temAnterior) {
-      const historiaAnterior =
-        historiasIniciais[indiceAtual - 1];
+    if (!temAnterior) return;
 
-      // NÃO chama onMudarHistoria (não atualiza banco)
-      // Apenas ativa modo visualização
-      setModoVisualizacao(true);
-      setHistoriaVisualizadaId(historiaAnterior.id);
-      onModoVisualizacaoChange?.(true, historiaAnterior.id);
-    }
+    // Calcular índice base: se em modo visualização usa indiceExibido, senão indiceAtual
+    const indiceBase = modoVisualizacao
+      ? indiceExibido
+      : indiceAtual;
+    const historiaAnterior =
+      historiasIniciais[indiceBase - 1];
+
+    // NÃO chama onMudarHistoria (não atualiza banco)
+    // Apenas ativa/atualiza modo visualização
+    setModoVisualizacao(true);
+    setHistoriaVisualizadaId(historiaAnterior.id);
+    onModoVisualizacaoChange?.(true, historiaAnterior.id);
   };
 
   const proximaHistoriaTitulo = proximaHistoriaId
@@ -208,19 +218,11 @@ export function ListaHistorias({
           {/* Botão Anterior */}
           <Button
             onClick={handleAnterior}
-            disabled={
-              !temAnterior ||
-              modoVisualizacao ||
-              !podeMudarHistoria
-            }
+            disabled={!temAnterior || !podeMudarHistoria}
             variant="outline"
             className="flex-1"
             title={
-              modoVisualizacao
-                ? 'Já está visualizando'
-                : !temAnterior
-                  ? 'Não há história anterior'
-                  : ''
+              !temAnterior ? 'Não há história anterior' : ''
             }
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
