@@ -11,16 +11,18 @@ interface Historia {
   id: string;
   titulo: string;
   descricao?: string;
+  jaFoiVotada: boolean;
+  voto: number[] | [];
 }
 interface CardHistoriaProps {
   historia: Historia;
   isAtual?: boolean;
-  onClick?: () => void;
+  // onClick?: () => void;
 }
 const CardHistoria: React.FC<CardHistoriaProps> = ({
   historia,
   isAtual,
-  onClick,
+  // onClick,
 }) => {
   const {
     attributes,
@@ -40,7 +42,7 @@ const CardHistoria: React.FC<CardHistoriaProps> = ({
       <div
         ref={setNodeRef}
         style={style}
-        className={`group flex items-center gap-2 rounded-lg border pr-1 transition-all ${
+        className={`group flex w-full items-center rounded-lg border transition-all ${
           isAtual
             ? 'border-primary bg-primary/20'
             : 'border-border bg-card hover:bg-accent'
@@ -50,7 +52,8 @@ const CardHistoria: React.FC<CardHistoriaProps> = ({
         <Button
           {...attributes}
           {...listeners}
-          className="text-muted-foreground hover:text-foreground cursor-grab px-2 py-3 active:cursor-grabbing"
+          disabled={isAtual || historia.jaFoiVotada}
+          className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
         >
           <GripVerticalIcon className="h-5 w-5" />
         </Button>
@@ -58,22 +61,24 @@ const CardHistoria: React.FC<CardHistoriaProps> = ({
         {/* Conteúdo clicável */}
         <Button
           variant="ghost"
-          onClick={onClick}
-          className="flex-1 py-3 pr-3 text-left hover:bg-transparent"
+          // onClick={onClick}
+          className="relative flex w-full justify-between text-left hover:bg-transparent"
         >
           <p
             className={`text-sm font-medium ${isAtual ? 'text-primary-foreground' : ''}`}
           >
             {historia.titulo}
           </p>
-          {historia.descricao && (
-            <p className="text-muted-foreground line-clamp-2 text-xs">
-              - {historia.descricao}
-            </p>
+          {/* o backend precisa entregar o voto campeão */}
+          {historia.jaFoiVotada && (
+            <Badge
+              variant={'success'}
+              className="absolute top-1/2 right-14 -translate-y-1/2 bg-green-500 text-white"
+            >
+              {historia.voto[0]}
+            </Badge>
           )}
         </Button>
-
-        {isAtual && <Badge>Atual</Badge>}
       </div>
     </>
   );

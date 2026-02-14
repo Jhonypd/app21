@@ -12,9 +12,9 @@ import { useCallback } from 'react';
 interface ModalBaseProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  titulo: string;
+  titulo: React.ReactNode | string;
   children: React.ReactNode;
-  botoes?: React.ReactNode;
+  botoesAcoes?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
@@ -31,7 +31,7 @@ export function ModalBase({
   onOpenChange,
   titulo,
   children,
-  botoes,
+  botoesAcoes,
   maxWidth = 'lg',
 }: ModalBaseProps) {
   const handlePreventInteraction = useCallback(
@@ -50,19 +50,21 @@ export function ModalBase({
         onInteractOutside={handlePreventInteraction}
         onEscapeKeyDown={handlePreventInteraction}
         onCloseAutoFocus={handlePreventInteraction}
-        className={`max-w-11/12 rounded-sm border-slate-700 bg-slate-900 text-white ${maxWidthClasses[maxWidth]}`}
+        className={`max-w-11/12 rounded-sm border-slate-700 bg-slate-900 p-0 text-white ${maxWidthClasses[maxWidth]}`}
       >
-        <DialogHeader>
-          <DialogTitle className="text-xl">
+        <DialogHeader className="border-b border-b-slate-400/10 p-4">
+          <DialogTitle className="max-w-11/12 truncate px-4 text-left text-xl font-semibold text-ellipsis">
             {titulo}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">{children}</div>
+        <div className="h-full w-full space-y-4 overflow-hidden p-2">
+          {children}
+        </div>
 
-        {botoes && (
-          <DialogFooter className="gap-4">
-            {botoes}
+        {botoesAcoes && (
+          <DialogFooter className="gap-4 border-t border-t-slate-400/10 p-4">
+            {botoesAcoes}
           </DialogFooter>
         )}
       </DialogContent>

@@ -9,8 +9,7 @@ import {
   useSelecionarHistoriaAtualMutation,
   SalasApi,
 } from '@/services/api/salas-api';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/services/api/configs/store/store';
+import { useDispatch } from 'react-redux';
 import Loading from '@/components/loading';
 import {
   toastError,
@@ -76,11 +75,6 @@ const PageSala = () => {
   const [resetarVotos] = useResetarVotosMutation();
   const [buscarVotosPorHistoria] =
     useLazyObterVotosPorHistoriaQuery();
-
-  // Debug: Verificar tokens do Redux
-  const currentRefreshToken = useSelector(
-    (state: RootState) => state.auth.refreshToken,
-  );
 
   // Cleanup ao desmontar
   useEffect(() => {
@@ -308,7 +302,7 @@ const PageSala = () => {
       await votar({
         sessaoId,
         valor,
-        historia_id: historiaId,
+        historia_sessao_id: historiaId,
         participa_votacao: participaVotacao,
       }).unwrap();
 
@@ -318,7 +312,11 @@ const PageSala = () => {
           : 'Você não está participando da votação',
       });
     } catch (error: unknown) {
-      tratarErro(error, 'Erro ao enviar voto');
+      const msg = getApiErrorMessage(error);
+      tratarErro(
+        error,
+        `Erro ao enviar voto: ${msg.Mensagem}`,
+      );
     }
   };
 

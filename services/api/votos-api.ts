@@ -4,7 +4,7 @@ import { apiSlice } from './configs/api-slice';
 export interface VotarPayload {
   sessaoId: string;
   valor: number;
-  historia_id?: string;
+  historia_sessao_id: string;
   participa_votacao?: boolean;
 }
 
@@ -29,12 +29,16 @@ export const VotosApi = apiSlice.injectEndpoints({
       query: ({
         sessaoId,
         valor,
-        historia_id,
+        historia_sessao_id,
         participa_votacao,
       }) => ({
         url: `/sessoes/${sessaoId}/votos`,
         method: 'POST',
-        body: { valor, historia_id, participa_votacao },
+        body: {
+          valor,
+          historia_sessao_id,
+          participa_votacao,
+        },
       }),
       invalidatesTags: ['votos', 'sessao'],
     }),

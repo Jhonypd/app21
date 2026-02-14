@@ -85,6 +85,8 @@ export interface SalaPorCodigo {
         id: string;
         titulo: string;
         descricao: string;
+        jaFoiVotada: boolean;
+        voto: number[] | [];
       },
     ];
     participantes: [

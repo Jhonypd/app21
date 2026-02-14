@@ -56,7 +56,7 @@ export const SessoesApi = apiSlice.injectEndpoints({
         url: `/sessoes/${sessaoId}/revelar`,
         method: 'POST',
       }),
-      invalidatesTags: ['sessao', 'votos'],
+      invalidatesTags: ['sessao', 'votos', 'salaPlaning'],
     }),
 
     // POST /sessoes/:id/resetar
@@ -65,7 +65,7 @@ export const SessoesApi = apiSlice.injectEndpoints({
         url: `/sessoes/${sessaoId}/resetar`,
         method: 'POST',
       }),
-      invalidatesTags: ['sessao', 'votos'],
+      invalidatesTags: ['sessao', 'votos', 'salaPlaning'],
     }),
 
     // GET /sessoes/:id
@@ -77,7 +77,7 @@ export const SessoesApi = apiSlice.injectEndpoints({
         url: `/sessoes/${sessaoId}`,
         method: 'GET',
       }),
-      providesTags: ['sessao'],
+      providesTags: ['sessao', 'salaPlaning'],
     }),
 
     // POST /salas/:id/sessoes/encerrar - Encerrar sessão

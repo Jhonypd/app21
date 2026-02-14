@@ -1,9 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import DialogConfirmacao from '@/components/dialog-confirmacao';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowLeft,
+  ScrollText,
+  ScrollTextIcon,
+  ListChevronsDownUpIcon,
+} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -21,11 +26,15 @@ import {
 } from '@dnd-kit/sortable';
 import { ModalBase } from './modal-base';
 import CardHistoria from './card-historia';
+import ButtonCustom from '../button-custom';
+import { CustomButton } from '../ui/custom-button';
 
 interface Historia {
   id: string;
   titulo: string;
   descricao?: string;
+  jaFoiVotada: boolean;
+  voto: number[] | [];
 }
 
 interface ListaHistoriasProps {
@@ -196,38 +205,44 @@ export function ListaHistorias({
         {/* História atual/visualizada em destaque */}
         {historiaExibida && (
           <div
-            className={`flex h-full w-full gap-2 rounded-lg border p-4 text-base font-medium ${
+            className={`flex h-full w-full justify-between gap-2 rounded-lg border p-4 text-base font-medium ${
               modoVisualizacao
                 ? 'border-blue-500/30 bg-blue-500/10'
                 : 'border-primary/30 bg-primary/10'
             }`}
           >
-            <p className="text-muted-foreground text-nowrap">
-              {modoVisualizacao
-                ? 'Visualizando:'
-                : 'Votando agora:'}
-            </p>
-            <p className="text-foreground truncate font-semibold text-ellipsis">
+            <p className="text-foreground flex items-center gap-2 truncate font-semibold text-ellipsis">
+              <ScrollTextIcon className="text-muted-foreground" />
               {historiaExibida.titulo}
             </p>
+            <ButtonCustom
+              variant="outline"
+              size="icon"
+              onClick={() => setModalReordenarAberto(true)}
+            >
+              <ListChevronsDownUpIcon className="text-muted-foreground" />
+            </ButtonCustom>
           </div>
         )}
 
         {/* Botões de navegação e reordenação */}
-        <div className="flex gap-2">
+        <div className="flex w-full items-center justify-around gap-2">
           {/* Botão Anterior */}
-          <Button
+          <ButtonCustom
             onClick={handleAnterior}
             disabled={!temAnterior || !podeMudarHistoria}
-            variant="outline"
+            variant="default"
+            size="sm"
             className="flex-1"
             title={
               !temAnterior ? 'Não há história anterior' : ''
             }
+            icon={<ArrowLeft className="mr-2 h-5 w-5" />}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Anterior
-          </Button>
+            <span className="hidden sm:inline">
+              Anterior
+            </span>
+          </ButtonCustom>
 
           {/* Indicador de progresso */}
           {indiceExibido >= 0 && (
@@ -239,7 +254,7 @@ export function ListaHistorias({
             </div>
           )}
           {/* Botão Próxima */}
-          <Button
+          <ButtonCustom
             onClick={handleProxima}
             disabled={
               !modoVisualizacao &&
@@ -248,6 +263,7 @@ export function ListaHistorias({
                 !podeMudarHistoria)
             }
             variant="default"
+            size="sm"
             className="flex-1"
             title={
               modoVisualizacao
@@ -256,14 +272,12 @@ export function ListaHistorias({
                   ? 'Finalize a votação primeiro'
                   : ''
             }
+            icon={<ArrowRight className="mr-2 h-5 w-5" />}
           >
-            {modoVisualizacao
-              ? 'Voltar para Atual'
-              : 'Próxima'}
-            {!modoVisualizacao && (
-              <ArrowRight className="ml-2 h-4 w-4" />
-            )}
-          </Button>
+            <span className="hidden sm:inline">
+              Próxima
+            </span>
+          </ButtonCustom>
         </div>
       </div>
 
@@ -271,23 +285,34 @@ export function ListaHistorias({
       <ModalBase
         open={modalReordenarAberto}
         onOpenChange={setModalReordenarAberto}
-        titulo="Reordenar Histórias"
+        titulo={
+          <div className="flex items-center gap-2">
+            <ScrollText className="text-muted-foreground h-5 w-5" />
+            Histórias
+          </div>
+        }
         maxWidth="lg"
-        botoes={
+        botoesAcoes={
           <>
-            <Button
+            <CustomButton
+              className="uppercase"
               variant="outline"
               onClick={() => setModalReordenarAberto(false)}
             >
-              Cancelar
-            </Button>
-            <Button onClick={handleSalvarOrdem}>
-              Salvar Ordem
-            </Button>
+              {podeMudarHistoria ? 'Cancelar' : 'Fechar'}
+            </CustomButton>
+            {podeMudarHistoria && (
+              <CustomButton
+                onClick={handleSalvarOrdem}
+                className="uppercase"
+              >
+                Salvar Ordem
+              </CustomButton>
+            )}
           </>
         }
       >
-        <div className="space-y-3">
+        <div className="w-full space-y-3 overflow-x-hidden px-3">
           <p className="text-muted-foreground text-sm">
             Arraste as histórias para reorganizar a ordem de
             votação. A história atual será mantida ativa.
@@ -301,8 +326,9 @@ export function ListaHistorias({
             <SortableContext
               items={historiasOrdenadas.map((h) => h.id)}
               strategy={verticalListSortingStrategy}
+              disabled={!podeMudarHistoria}
             >
-              <div className="space-y-2">
+              <div className="w-full space-y-2">
                 {historiasOrdenadas.map((historia) => (
                   <CardHistoria
                     key={historia.id}
@@ -310,9 +336,9 @@ export function ListaHistorias({
                     isAtual={
                       historia.id === historiaAtualId
                     }
-                    onClick={() =>
-                      handleSolicitarMudanca(historia.id)
-                    }
+                    // onClick={() =>
+                    //   handleSolicitarMudanca(historia.id)
+                    // }
                   />
                 ))}
               </div>

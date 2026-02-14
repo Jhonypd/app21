@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import {
-  Users,
-  Eye,
-  RotateCcw,
-  UserPlus,
-} from 'lucide-react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+} from 'react';
+import { Eye, RotateCcw, UserPlus } from 'lucide-react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { useAdicionarParticipanteSessaoMutation } from '@/services/api/sessoes-api';
 import { toast } from 'sonner';
@@ -16,6 +16,9 @@ import CardVotos from './sala/card-votos';
 import ListaParticipantes from './sala/lista-participantes';
 import HeaderSala from './sala/header-sala';
 import { ListaHistorias } from './sala/lista-historias';
+import { Skeleton } from './ui/skeleton';
+import { Badge } from './ui/badge';
+import CardMediaVotacao from './sala/card-media-votacao';
 
 // Interfaces baseadas na estrutura real da API
 interface Proprietario {
@@ -28,6 +31,8 @@ interface Historia {
   id: string;
   titulo: string;
   descricao?: string;
+  jaFoiVotada: boolean;
+  voto: number[] | [];
 }
 
 interface Participante {
@@ -105,6 +110,21 @@ interface SalaPlanningProps {
   ) => void;
 }
 
+const VOTO_MAP: Record<string, number> = {
+  '?': 0,
+  '☕': -1,
+  '1': 1,
+  '2': 2,
+  '3': 3,
+  '5': 5,
+  '8': 8,
+  '13': 13,
+  '21': 21,
+  '34': 34,
+  '55': 55,
+  '89': 89,
+};
+
 export function SalaPlanning({
   sala,
   usuarioAtualId,
@@ -124,13 +144,9 @@ export function SalaPlanning({
   onModoVisualizacaoChange,
 }: SalaPlanningProps) {
   // Estados
-  const [votoSelecionado, setVotoSelecionado] = useState<
+  const [votoRascunho, setVotoRascunho] = useState<
     string | null
   >(null);
-  const [votoConfirmado, setVotoConfirmado] =
-    useState(false);
-  const [votosRevelados, setVotosRevelados] =
-    useState(false);
   const [historiaAtualId, setHistoriaAtualId] = useState<
     string | null
   >(null);
@@ -169,6 +185,13 @@ export function SalaPlanning({
   const historiaVisualizadaAnterior = useRef<
     string | null | undefined
   >(null);
+  const requestVotosIdRef = useRef(0);
+  const buscaPessoasTimerRef = useRef<
+    ReturnType<typeof setTimeout> | null
+  >(null);
+  const votosRevelados = modoVisualizacao
+    ? true
+    : sala.votos_revelados;
 
   // Buscar votos quando entrar em modo visualização (história anterior)
   useEffect(() => {
@@ -188,24 +211,49 @@ export function SalaPlanning({
         historiaVisualizadaId &&
         aoBuscarVotosPorHistoria
       ) {
+        const reqId = ++requestVotosIdRef.current;
         setCarregandoVotos(true);
         try {
           const votos = await aoBuscarVotosPorHistoria(
             historiaVisualizadaId,
           );
+          if (reqId !== requestVotosIdRef.current) return;
+          console.log(
+            '[historia]',
+            historiaVisualizadaId,
+            'antes de setar votos',
+          );
           setVotosCarregados(votos);
+          console.log(
+            '[historia]',
+            historiaVisualizadaId,
+            'depois de setar votos',
+          );
         } catch (error) {
+          if (reqId !== requestVotosIdRef.current) return;
           console.error(
             'Erro ao buscar votos da história visualizada:',
             error,
           );
           setVotosCarregados([]);
         } finally {
+          if (reqId !== requestVotosIdRef.current) return;
           setCarregandoVotos(false);
         }
       } else if (!modoVisualizacao) {
         // Voltou do modo visualização, restaurar votos da sala
+        requestVotosIdRef.current += 1;
+        console.log(
+          '[historia]',
+          sala.historia_atual_id,
+          'antes de setar votos',
+        );
         setVotosCarregados(sala.votos || []);
+        console.log(
+          '[historia]',
+          sala.historia_atual_id,
+          'depois de setar votos',
+        );
       }
     };
 
@@ -216,9 +264,20 @@ export function SalaPlanning({
   // Sincronizar votos da sala quando não estiver em modo visualização
   useEffect(() => {
     if (!modoVisualizacao) {
+      requestVotosIdRef.current += 1;
+      console.log(
+        '[historia]',
+        sala.historia_atual_id,
+        'antes de setar votos',
+      );
       setVotosCarregados(sala.votos || []);
+      console.log(
+        '[historia]',
+        sala.historia_atual_id,
+        'depois de setar votos',
+      );
     }
-  }, [sala.votos, modoVisualizacao]);
+  }, [sala.votos, modoVisualizacao, sala.historia_atual_id]);
 
   // Inicializar com a história atual da sala (ou primeira se não houver)
   useEffect(() => {
@@ -240,62 +299,78 @@ export function SalaPlanning({
   ]);
 
   // Usar votos carregados (pode ser da história visualizada ou atual)
-  const votosAtivos = votosCarregados;
-
-  // Processar participantes com seus votos
-  const participantesComVotos = (sala.participantes || [])
-    .filter((p) => !p.inativo)
-    .map((participante) => {
-      const voto = votosAtivos.find(
-        (v) => v.pessoa_id === participante.id,
-      );
-      // Definir se deve participar da votação:
-      // - Membros e Observadores (role 2, 3) sempre participam
-      // - Donos/Admin (role 0, 1) participam se participa_votacao !== false
-      const deveParticipar =
-        participante.role === 2 ||
-        participante.role === 3 ||
-        (participante.role <= 1 &&
-          participante.participa_votacao !== false);
-
-      return {
-        id: participante.id,
-        nome: participante.nome,
-        voto: voto ? voto.valor.toString() : null,
-        votou: !!voto,
-        votoId: voto?.id,
-        deveParticipar,
-      };
-    });
-
-  // Verificar se o usuário atual já votou (usando votos ativos)
-  const votoUsuario = votosAtivos.find(
-    (v) => v.pessoa_id === usuarioAtualId,
+  const votosAtivos = useMemo(
+    () =>
+      modoVisualizacao
+        ? votosCarregados
+        : votosCarregados ?? sala.votos ?? [],
+    [modoVisualizacao, votosCarregados, sala.votos],
   );
 
-  // Atualizar estado do voto quando mudar o voto do usuário
-  const votoUsuarioId = votoUsuario?.id;
-  const votoUsuarioValor = votoUsuario?.valor;
-  useEffect(() => {
-    if (votoUsuarioId && votoUsuarioValor !== undefined) {
-      setVotoSelecionado(votoUsuarioValor.toString());
-      setVotoConfirmado(true);
-    } else {
-      // Se não há voto do usuário (mudou de história), resetar estado
-      setVotoSelecionado(null);
-      setVotoConfirmado(false);
-    }
-  }, [votoUsuarioId, votoUsuarioValor]);
+  const votosPorPessoaId = useMemo(
+    () =>
+      new Map(votosAtivos.map((voto) => [voto.pessoa_id, voto])),
+    [votosAtivos],
+  );
 
-  const todosVotaram = participantesComVotos
-    .filter((p) => p.deveParticipar)
-    .every((p) => p.votou);
-  const totalVotos = participantesComVotos.filter(
-    (p) => p.votou,
-  ).length;
-  const totalDevemVotar = participantesComVotos.filter(
-    (p) => p.deveParticipar,
-  ).length;
+  // Processar participantes com seus votos
+  const participantesComVotos = useMemo(
+    () =>
+      (sala.participantes || [])
+        .filter((p) => !p.inativo)
+        .map((participante) => {
+          const voto = votosPorPessoaId.get(participante.id);
+          // Definir se deve participar da votação:
+          // - Membros e Observadores (role 2, 3) sempre participam
+          // - Donos/Admin (role 0, 1) participam se participa_votacao !== false
+          const deveParticipar =
+            participante.role === 2 ||
+            participante.role === 3 ||
+            (participante.role <= 1 &&
+              participante.participa_votacao !== false);
+
+          return {
+            id: participante.id,
+            nome: participante.nome,
+            voto: voto ? voto.valor.toString() : null,
+            votou: !!voto,
+            votoId: voto?.id,
+            deveParticipar,
+          };
+        }),
+    [sala.participantes, votosPorPessoaId],
+  );
+
+  // Verificar se o usuário atual já votou (usando votos ativos)
+  const votoUsuario = votosPorPessoaId.get(usuarioAtualId);
+  const votoDoServidor = votoUsuario?.valor;
+  const votoConfirmado = !!votoUsuario;
+  const votoSelecionado = votoConfirmado
+    ? votoDoServidor !== undefined
+      ? votoDoServidor.toString()
+      : null
+    : votoRascunho;
+
+  const todosVotaram = useMemo(
+    () =>
+      participantesComVotos
+        .filter((p) => p.deveParticipar)
+        .every((p) => p.votou),
+    [participantesComVotos],
+  );
+  const totalVotosParticipantes = useMemo(
+    () =>
+      participantesComVotos.filter(
+        (p) => p.deveParticipar && p.votou,
+      ).length,
+    [participantesComVotos],
+  );
+  const totalDevemVotar = useMemo(
+    () =>
+      participantesComVotos.filter((p) => p.deveParticipar)
+        .length,
+    [participantesComVotos],
+  );
   const participantesOnline = sala.participantes?.filter(
     (p) => p.online,
   );
@@ -306,9 +381,9 @@ export function SalaPlanning({
     if (votoConfirmado || modoVisualizacao) return;
 
     if (votoSelecionado === carta) {
-      setVotoSelecionado(null);
+      setVotoRascunho(null);
     } else {
-      setVotoSelecionado(carta);
+      setVotoRascunho(carta);
     }
   };
 
@@ -325,19 +400,15 @@ export function SalaPlanning({
 
     setLoadingAcao(true);
     try {
-      let valorNumerico: number;
-      if (votoSelecionado === '?') {
-        valorNumerico = 0;
-      } else if (votoSelecionado === '☕') {
-        valorNumerico = -1;
-      } else {
-        valorNumerico = parseInt(votoSelecionado);
+      const valorNumerico = VOTO_MAP[votoSelecionado];
+      if (valorNumerico === undefined) {
+        toast.error('Voto inválido');
+        return;
       }
 
       if (aoEnviarVoto) {
         await aoEnviarVoto(valorNumerico, participaVotacao);
       }
-      setVotoConfirmado(true);
     } catch (error) {
       console.error('Erro ao confirmar voto:', error);
     } finally {
@@ -347,7 +418,7 @@ export function SalaPlanning({
 
   const handleCancelarVoto = () => {
     if (votoConfirmado) return;
-    setVotoSelecionado(null);
+    setVotoRascunho(null);
   };
 
   const handleRevelarVotos = async () => {
@@ -358,7 +429,6 @@ export function SalaPlanning({
       if (aoRevelarVotos) {
         await aoRevelarVotos();
       }
-      setVotosRevelados(true);
     } catch (error) {
       console.error('Erro ao revelar votos:', error);
     } finally {
@@ -372,9 +442,7 @@ export function SalaPlanning({
       if (aoResetarVotos) {
         await aoResetarVotos();
       }
-      setVotosRevelados(false);
-      setVotoSelecionado(null);
-      setVotoConfirmado(false);
+      setVotoRascunho(null);
     } catch (error) {
       console.error('Erro ao resetar votação:', error);
     } finally {
@@ -387,21 +455,36 @@ export function SalaPlanning({
   ) => {
     // debugger;
     setHistoriaAtualId(historiaId);
+    setVotoRascunho(null);
 
     // Buscar votos da história selecionada
     if (aoBuscarVotosPorHistoria) {
+      const reqId = ++requestVotosIdRef.current;
       setCarregandoVotos(true);
       try {
         const votos =
           await aoBuscarVotosPorHistoria(historiaId);
+        if (reqId !== requestVotosIdRef.current) return;
+        console.log(
+          '[historia]',
+          historiaId,
+          'antes de setar votos',
+        );
         setVotosCarregados(votos);
+        console.log(
+          '[historia]',
+          historiaId,
+          'depois de setar votos',
+        );
       } catch (error) {
+        if (reqId !== requestVotosIdRef.current) return;
         console.error(
           'Erro ao buscar votos da história:',
           error,
         );
         setVotosCarregados([]);
       } finally {
+        if (reqId !== requestVotosIdRef.current) return;
         setCarregandoVotos(false);
       }
     }
@@ -410,8 +493,6 @@ export function SalaPlanning({
       await aoSelecionarHistoria(historiaId);
     }
 
-    // Resetar estado de votação revelada ao mudar de história
-    setVotosRevelados(false);
   };
 
   const handleReordenarHistorias = async (
@@ -442,12 +523,26 @@ export function SalaPlanning({
     }
   };
 
-  const handleBuscarPessoas = async (termo: string) => {
+  const handleBuscarPessoas = (termo: string) => {
     setTermoBusca(termo);
-    if (termo.length >= 2) {
-      await pesquisarPessoas({ termo });
+    if (buscaPessoasTimerRef.current) {
+      clearTimeout(buscaPessoasTimerRef.current);
     }
+    if (termo.length < 2) {
+      return;
+    }
+    buscaPessoasTimerRef.current = setTimeout(() => {
+      pesquisarPessoas({ termo });
+    }, 300);
   };
+
+  useEffect(() => {
+    return () => {
+      if (buscaPessoasTimerRef.current) {
+        clearTimeout(buscaPessoasTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleAdicionarVisitante = async (
     pessoaId: string,
@@ -486,18 +581,6 @@ export function SalaPlanning({
     }
   };
 
-  const calcularMedia = () => {
-    const votosNumericos = participantesComVotos
-      .map((p) => p.voto)
-      .filter((v) => v && !isNaN(Number(v)))
-      .map(Number);
-
-    if (votosNumericos.length === 0) return null;
-
-    const soma = votosNumericos.reduce((a, b) => a + b, 0);
-    return (soma / votosNumericos.length).toFixed(1);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 pb-6 text-white">
       {/* Header */}
@@ -534,74 +617,35 @@ export function SalaPlanning({
         {/* Participantes */}
         <div className="mx-auto w-11/12 sm:max-w-lg md:max-w-2xl lg:max-w-4xl">
           <div className="mb-3 flex w-full items-center justify-between">
-            <h2 className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Participantes online (
-              {participantesOnline.length} /{' '}
-              {sala.participantes?.length})
-            </h2>
-            <div className="text-sm text-gray-400">
+            <Badge
+              variant={'neutral'}
+              className="text-sm"
+            >
               {carregandoVotos ? (
-                <span className="animate-pulse">
-                  Carregando votos...
-                </span>
-              ) : (
-                `${totalVotos}/${totalDevemVotar} votaram`
+              <Skeleton className="h-4 w-20 border-transparent bg-gray-500 p-1 text-white hover:bg-gray-600" />
+            ) : (
+                `${totalVotosParticipantes} / ${totalDevemVotar} votaram`
               )}
-            </div>
+            </Badge>
+            <ListaParticipantes
+              participantesOnline={participantesOnline}
+              participantesComVotos={participantesComVotos}
+              meuRole={meuRole}
+              votosRevelados={
+                votosRevelados || modoVisualizacao
+              }
+              handleAnularVoto={handleAnularVoto}
+            />
           </div>
-
-          <ListaParticipantes
-            participantesOnline={participantesOnline}
-            participantesComVotos={participantesComVotos}
-            meuRole={meuRole}
-            votosRevelados={
-              votosRevelados || modoVisualizacao
-            }
-            handleAnularVoto={handleAnularVoto}
-          />
         </div>
 
         {/* Resultados - mostrar quando votos revelados OU em modo visualização (história já votada) */}
         {(votosRevelados || modoVisualizacao) &&
           votosCarregados.length > 0 && (
-            <div
-              className={`rounded-2xl border p-4 ${
-                modoVisualizacao
-                  ? 'border-blue-500/30 bg-gradient-to-br from-blue-600/20 to-cyan-600/20'
-                  : 'border-purple-500/30 bg-gradient-to-br from-purple-600/20 to-pink-600/20'
-              }`}
-            >
-              <h3 className="mb-2 text-sm text-gray-300">
-                {modoVisualizacao
-                  ? 'Resultado da História'
-                  : 'Resultado da Votação'}
-              </h3>
-              <div className="flex items-center gap-4">
-                <div>
-                  <p className="text-xs text-gray-400">
-                    Média
-                  </p>
-                  <p className="text-3xl">
-                    {calcularMedia() || '—'}
-                  </p>
-                </div>
-                <div className="flex flex-1 flex-wrap gap-2">
-                  {participantesComVotos
-                    .filter((p) => p.votou)
-                    .map((p) => (
-                      <div
-                        key={p.id}
-                        className="rounded-lg bg-white/10 px-3 py-1"
-                      >
-                        <span className="font-mono text-xs">
-                          {p.voto}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
+            <CardMediaVotacao
+              modoVisualizacao={modoVisualizacao}
+              participantesComVotos={participantesComVotos}
+            />
           )}
 
         {/* Cards de votos */}
@@ -658,7 +702,7 @@ export function SalaPlanning({
                   ? 'Revelando...'
                   : todosVotaram
                     ? 'Revelar Votos'
-                    : `Aguardando ${totalDevemVotar - totalVotos}`}
+                    : `Aguardando ${totalDevemVotar - totalVotosParticipantes}`}
               </span>
             </Button>
           ) : null}
