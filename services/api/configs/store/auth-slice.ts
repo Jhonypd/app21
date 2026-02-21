@@ -2,7 +2,7 @@ import {
   createSlice,
   PayloadAction,
 } from '@reduxjs/toolkit';
-import { DadosContaPessoa as Usuario } from '../../pessoas.api';
+import type { DadosContaPessoa as Usuario } from '../../../types';
 
 // Storage key para tokens (independente do Redux Persist)
 const AUTH_STORAGE_KEY = 'app21_auth_tokens';

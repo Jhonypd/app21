@@ -1,29 +1,20 @@
 import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
+import type { Participante } from '../types';
 
-export interface AdicionarParticipantePayload {
+// Re-export do tipo para compatibilidade
+export type { Participante };
+
+// Payloads locais (diferentes dos de salas-api)
+interface AdicionarParticipantePayload {
   salaId: string;
   pessoaId: string;
   permissao?: number;
 }
 
-export interface RemoverParticipantePayload {
+interface RemoverParticipantePayload {
   salaId: string;
   pessoaId: string;
-}
-
-export interface Participante {
-  id: string;
-  sala_id: string;
-  pessoa_id: string;
-  permissao: number;
-  data_entrada: Date;
-  pessoa: {
-    id: string;
-    nome: string;
-    email: string;
-    inativo: boolean;
-  };
 }
 
 export const ParticipantesApi = apiSlice.injectEndpoints({

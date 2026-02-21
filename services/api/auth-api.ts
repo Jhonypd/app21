@@ -1,55 +1,31 @@
 import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
+import type {
+  LoginPayload,
+  CriarContaPayload,
+  NovoCodigoPayload,
+  ConfirmacaoContaEmailPayload,
+  EsqueciMinhaSenhaPayload,
+  RedefinirSenhaPayload,
+  RefreshTokenPayload,
+  ResponseLogin,
+  ResponseCriarConta,
+  ResponseConfirmacaoCodigo,
+} from '../types';
 
-export interface LoginPayload {
-  email: string;
-  senha: string;
-}
-
-export interface CriarContaPayload {
-  nome: string;
-  email: string;
-  senha: string;
-}
-
-export interface NovoCodigoPayload {
-  email: string;
-}
-
-export interface ConfirmacaoContaEmilPayload {
-  codigo: string;
-  confirmarConta: boolean;
-}
-
-export interface ResponseLogin {
-  tokenAcesso: { token: string; dataExpiracao: Date };
-  refreshToken: {
-    token: string;
-    dataExpiracao: Date;
-  };
-}
-
-export interface ResponseCriarConta {
-  id: string;
-}
-
-export interface ResponseConfirmacaoCodigo {
-  id: string;
-  contaConfirmada: boolean;
-}
-
-export interface EsqueciMinhaSenhaPayload {
-  email: string;
-}
-
-export interface RedefinirSenhaPayload {
-  codigo: string;
-  novaSenha: string;
-}
-
-export interface RefreshTokenPayload {
-  refreshToken: string;
-}
+// Re-export dos tipos para compatibilidade
+export type {
+  LoginPayload,
+  CriarContaPayload,
+  NovoCodigoPayload,
+  ConfirmacaoContaEmailPayload,
+  EsqueciMinhaSenhaPayload,
+  RedefinirSenhaPayload,
+  RefreshTokenPayload,
+  ResponseLogin,
+  ResponseCriarConta,
+  ResponseConfirmacaoCodigo,
+};
 
 export const AuthApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -88,7 +64,7 @@ export const AuthApi = apiSlice.injectEndpoints({
 
     validaCodigoEmail: builder.mutation<
       ApiResponse<ResponseConfirmacaoCodigo>,
-      ConfirmacaoContaEmilPayload
+      ConfirmacaoContaEmailPayload
     >({
       query: (params) => ({
         url: `/auth/validaCodigoEmail?codigo=${params.codigo}&confirmarConta=${params.confirmarConta}`,

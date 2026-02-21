@@ -1,26 +1,9 @@
 import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
+import type { VotarPayload, Voto } from '../types';
 
-export interface VotarPayload {
-  sessaoId: string;
-  valor: number;
-  historia_sessao_id: string;
-  participa_votacao?: boolean;
-}
-
-export interface Voto {
-  id: string;
-  sessao_id: string;
-  pessoa_id: string;
-  valor: number;
-  data_voto: Date;
-  pessoa: {
-    id: string;
-    nome: string;
-    email: string;
-    inativo: boolean;
-  };
-}
+// Re-export dos tipos para compatibilidade
+export type { VotarPayload, Voto };
 
 export const VotosApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({

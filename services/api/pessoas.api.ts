@@ -1,27 +1,17 @@
 import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
+import type {
+  DadosContaPessoa,
+  DadosPessoaResumo,
+  AlterarPessoaPayload,
+} from '../types';
 
-export interface DadosContaPessoa {
-  id: string;
-  nome: string;
-  email: string;
-  inativo: boolean;
-  email_confirmado: boolean;
-}
-
-export interface DadosPessoaResumo {
-  id: string;
-  nome: string;
-  email: string;
-  inativo: boolean;
-}
-
-export interface AlterarPessoaPayload {
-  id: string;
-  nome?: string;
-  email?: string;
-  senha?: string;
-}
+// Re-export dos tipos para compatibilidade
+export type {
+  DadosContaPessoa,
+  DadosPessoaResumo,
+  AlterarPessoaPayload,
+};
 
 export const PessoasApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({

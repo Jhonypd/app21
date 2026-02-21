@@ -1,46 +1,23 @@
 import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
+import type {
+  AdicionarParticipanteSessaoPayload,
+  Sessao,
+  AtualizarParticipaVotacaoPayload,
+  ObterVotosPorHistoriaPayload,
+  VotosPorHistoriaResponse,
+  ListarHistoriasSessaoResponse,
+} from '../types';
 
-export interface AdicionarParticipantePayload {
-  sessaoId: string;
-  pessoaId: string;
-}
-
-export interface Sessao {
-  id: string;
-  sala_id: string;
-  historia_id: string | null;
-  data_criacao: Date;
-  data_encerramento: Date | null;
-  votos_revelados: boolean;
-  participantes: {
-    id: string;
-    pessoa_id: string;
-    pessoa: {
-      id: string;
-      nome: string;
-      email: string;
-      inativo: boolean;
-    };
-  }[];
-  votos: {
-    id: string;
-    pessoa_id: string;
-    valor: number;
-    pessoa: {
-      id: string;
-      nome: string;
-      inativo: boolean;
-    };
-  }[];
-}
+// Re-export dos tipos para compatibilidade
+export type { Sessao };
 
 export const SessoesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // POST /sessoes/:id/participantes
     adicionarParticipanteSessao: builder.mutation<
       ApiResponse,
-      AdicionarParticipantePayload
+      AdicionarParticipanteSessaoPayload
     >({
       query: ({ sessaoId, pessoaId }) => ({
         url: `/sessoes/${sessaoId}/participantes`,
@@ -92,7 +69,7 @@ export const SessoesApi = apiSlice.injectEndpoints({
     // PATCH /sessoes/:id/participa-votacao - Atualizar flag de participação
     atualizarParticipaVotacao: builder.mutation<
       ApiResponse,
-      { sessaoId: string; participaVotacao: boolean }
+      AtualizarParticipaVotacaoPayload
     >({
       query: ({ sessaoId, participaVotacao }) => ({
         url: `/sessoes/${sessaoId}/participa-votacao`,
@@ -104,24 +81,26 @@ export const SessoesApi = apiSlice.injectEndpoints({
 
     // GET /sessoes/:sessaoId/historias/:historiaId/votos - Obter votos de uma história específica
     obterVotosPorHistoria: builder.query<
-      ApiResponse<{
-        votos: {
-          id: string;
-          pessoa_id: string;
-          valor: number;
-          pessoa: {
-            nome: string;
-            inativo: boolean;
-          };
-        }[];
-      }>,
-      { sessaoId: string; historiaId: string }
+      ApiResponse<VotosPorHistoriaResponse>,
+      ObterVotosPorHistoriaPayload
     >({
       query: ({ sessaoId, historiaId }) => ({
         url: `/sessoes/${sessaoId}/historias/${historiaId}/votos`,
         method: 'GET',
       }),
       providesTags: ['votos'],
+    }),
+
+    // GET /sessoes/:sessaoId/historias - Listar histórias da sessão
+    listarHistoriasSessao: builder.query<
+      ApiResponse<ListarHistoriasSessaoResponse>,
+      string
+    >({
+      query: (sessaoId) => ({
+        url: `/sessoes/${sessaoId}/historias`,
+        method: 'GET',
+      }),
+      providesTags: ['historias'],
     }),
   }),
 });
@@ -136,4 +115,6 @@ export const {
   useAtualizarParticipaVotacaoMutation,
   useObterVotosPorHistoriaQuery,
   useLazyObterVotosPorHistoriaQuery,
+  useListarHistoriasSessaoQuery,
+  useLazyListarHistoriasSessaoQuery,
 } = SessoesApi;

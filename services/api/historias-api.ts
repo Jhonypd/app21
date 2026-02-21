@@ -1,40 +1,21 @@
 import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
+import type {
+  HistoriaSala,
+  CriarHistoriaPayload,
+  CriarVariasHistoriasPayload,
+  AtualizarHistoriaPayload,
+  AdicionarHistoriaDuranteSessaoPayload,
+} from '../types';
 
-export interface HistoriaSala {
-  id: string;
-  sala_id: string;
-  titulo: string;
-  descricao: string | null;
-  criado_por: string;
-  data_criacao: Date;
-}
-
-export interface CriarHistoriaPayload {
-  salaId: string;
-  titulo: string;
-  descricao?: string;
-}
-
-export interface CriarVariasHistoriasPayload {
-  salaId: string;
-  historias: Array<{
-    titulo: string;
-    descricao?: string;
-  }>;
-}
-
-export interface AtualizarHistoriaPayload {
-  id: string;
-  titulo?: string;
-  descricao?: string;
-}
-
-export interface AdicionarHistoriaDuranteSessaoPayload {
-  salaId: string;
-  titulo: string;
-  descricao?: string;
-}
+// Re-export dos tipos para compatibilidade
+export type {
+  HistoriaSala,
+  CriarHistoriaPayload,
+  CriarVariasHistoriasPayload,
+  AtualizarHistoriaPayload,
+  AdicionarHistoriaDuranteSessaoPayload,
+};
 
 export const HistoriasApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -64,13 +45,13 @@ export const HistoriasApi = apiSlice.injectEndpoints({
       invalidatesTags: ['historias', 'salaPlaning'],
     }),
 
-    // POST /salas/:salaId/historias/durante-sessao
+    // POST /sessoes/:sessaoId/historias/durante-sessao
     adicionarHistoriaDuranteSessao: builder.mutation<
       ApiResponse<{ historia: HistoriaSala }>,
       AdicionarHistoriaDuranteSessaoPayload
     >({
-      query: ({ salaId, titulo, descricao }) => ({
-        url: `/salas/${salaId}/historias/durante-sessao`,
+      query: ({ sessaoId, titulo, descricao }) => ({
+        url: `/sessoes/${sessaoId}/historias/durante-sessao`,
         method: 'POST',
         body: { titulo, descricao },
       }),
