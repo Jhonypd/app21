@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CreateRoomModal } from '@/components/planning-poker/ModalCriarSala';
-import { JoinRoomModal } from '@/components/planning-poker/JoinRoomModal';
+import { ModalCriarSala } from '@/components/planning-poker/modal-criar-sala';
+import { ModalEntrarSala } from '@/components/planning-poker/modal-entrar-sala';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -109,12 +109,12 @@ const Dashboard = () => {
   }, [searchTerm]);
 
   const handleJoinRoom = (roomData: {
-    roomId: string;
-    userName: string;
-    password?: string;
+    sala_id: string;
+    nome: string;
+    senha?: string;
   }) => {
     toast('Entrou na sala!', {
-      description: `Bem-vindo à sala ${roomData.roomId}`,
+      description: `Bem-vindo à sala ${roomData.sala_id}`,
     });
   };
 
@@ -187,8 +187,8 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <CreateRoomModal />
-            <JoinRoomModal onJoinRoom={handleJoinRoom} />
+            <ModalCriarSala />
+            <ModalEntrarSala EntrarSala={handleJoinRoom} />
           </div>
         </div>
 
@@ -417,7 +417,7 @@ const Dashboard = () => {
                 ? `Não encontramos salas com o termo "${searchTerm}"`
                 : 'Comece criando sua primeira sala de Planning Poker!'}
             </p>
-            {!searchTerm && <CreateRoomModal />}
+            {!searchTerm && <ModalCriarSala />}
           </div>
         )}
       </div>

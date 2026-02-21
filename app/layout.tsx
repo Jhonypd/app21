@@ -31,18 +31,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TooltipProvider>
-          <Providers>
-            <Layout>
-              {children}
-              <Toaster
-                className="z-[999999999] mx-auto flex w-full justify-end md:text-nowrap"
-                visibleToasts={1}
-                expand={false}
-              />
-            </Layout>
-          </Providers>
-        </TooltipProvider>
+        <Providers>
+          <Layout>
+            <TooltipProvider>{children}</TooltipProvider>
+            <Toaster
+              className="z-[999999999] mx-auto flex w-full justify-end md:text-nowrap"
+              visibleToasts={1}
+              expand={false}
+            />
+          </Layout>
+        </Providers>
       </body>
     </html>
   );
