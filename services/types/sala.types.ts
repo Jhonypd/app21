@@ -56,7 +56,6 @@ export interface SalaCompleta {
   votos_revelados: boolean;
   meuRole?: number | null;
   proprietario: Proprietario;
-  votos: VotoSessao[];
   resumoParticipantes?: ResumoParticipantes;
   participantes?: ParticipanteBasico[];
   sessaoAtiva?: SessaoAtiva;

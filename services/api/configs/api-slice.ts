@@ -14,6 +14,9 @@ export const apiSlice = createApi({
     'pessoa',
     'historias',
   ],
-  keepUnusedDataFor: 60,
+  keepUnusedDataFor: 30,
+  refetchOnReconnect: true,
+  refetchOnFocus: true,
+
   endpoints: () => ({}),
 });

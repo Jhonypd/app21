@@ -36,6 +36,7 @@ export const VotosApi = apiSlice.injectEndpoints({
         method: 'GET',
       }),
       providesTags: ['votos'],
+      keepUnusedDataFor: 10,
     }),
   }),
 });
