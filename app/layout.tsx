@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import Layout from './layout/layout';
 import { Providers } from '../providers/providers';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,16 +31,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <Layout>
-            {children}
-            <Toaster
-              className="z-[999999999] mx-auto flex w-full justify-end md:text-nowrap"
-              visibleToasts={1}
-              expand={false}
-            />
-          </Layout>
-        </Providers>
+        <TooltipProvider>
+          <Providers>
+            <Layout>
+              {children}
+              <Toaster
+                className="z-[999999999] mx-auto flex w-full justify-end md:text-nowrap"
+                visibleToasts={1}
+                expand={false}
+              />
+            </Layout>
+          </Providers>
+        </TooltipProvider>
       </body>
     </html>
   );

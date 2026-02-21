@@ -100,7 +100,7 @@ const Loading = ({
   return (
     <div
       className={clsx(
-        'fixed inset-0 z-[9999999999] flex items-center justify-center',
+        'fixed inset-0 z-[9999] flex items-center justify-center',
         isOverlay ? 'pointer-events-auto bg-black/60' : '',
         className,
       )}

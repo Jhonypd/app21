@@ -23,7 +23,7 @@ export function Navegacao({
       id: 'estatisticas',
       label: 'Estatísticas',
       icone: BarChart,
-      link: '/estatisticas',
+      link: '/dashboard',
     },
     {
       id: 'perfil',
