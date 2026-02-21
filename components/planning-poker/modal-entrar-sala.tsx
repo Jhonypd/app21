@@ -7,41 +7,40 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LogIn, Users } from 'lucide-react';
-import { CustomButton } from '../ui/custom-button';
+import { ButtonCustom } from '../button-custom';
 
-interface JoinRoomModalProps {
-  onJoinRoom: (roomData: {
-    roomId: string;
-    userName: string;
-    password?: string;
+interface ModalEntrarSalaProps {
+  EntrarSala: (DadosSala: {
+    sala_id: string;
+    nome: string;
+    senha?: string;
   }) => void;
 }
 
-export const JoinRoomModal = ({
-  onJoinRoom,
-}: JoinRoomModalProps) => {
+export const ModalEntrarSala = ({
+  EntrarSala,
+}: ModalEntrarSalaProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [roomId, setRoomId] = useState('');
+  const [salaId, setSalaId] = useState('');
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [needsPassword, setNeedsPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roomId.trim() || !userName.trim()) return;
+    if (!salaId.trim() || !userName.trim()) return;
 
-    onJoinRoom({
-      roomId: roomId.trim().toUpperCase(),
-      userName: userName.trim(),
-      password: password || undefined,
+    EntrarSala({
+      sala_id: salaId.trim().toUpperCase(),
+      nome: userName.trim(),
+      senha: password || undefined,
     });
 
     // Reset form
-    setRoomId('');
+    setSalaId('');
     setUserName('');
     setPassword('');
     setNeedsPassword(false);
@@ -54,10 +53,10 @@ export const JoinRoomModal = ({
       onOpenChange={setIsOpen}
     >
       <DialogTrigger asChild>
-        <CustomButton
+        <ButtonCustom
           icon={<LogIn className="h-5 w-5" />}
           text="Entrar na sala"
-          variant="primary"
+          variant="default"
         />
       </DialogTrigger>
 
@@ -85,11 +84,11 @@ export const JoinRoomModal = ({
               ID da Sala
             </Label>
             <Input
-              id="roomId"
+              id="salaId"
               placeholder="Ex: ABC123"
-              value={roomId}
+              value={salaId}
               onChange={(e) =>
-                setRoomId(e.target.value.toUpperCase())
+                setSalaId(e.target.value.toUpperCase())
               }
               className="bg-background border-border font-mono"
               required
@@ -136,18 +135,18 @@ export const JoinRoomModal = ({
           )}
 
           <div className="flex w-full justify-end gap-3 pt-4">
-            <CustomButton
+            <ButtonCustom
               type="button"
               variant="outline"
               text="Cancelar"
               onClick={() => setIsOpen(false)}
             />
 
-            <CustomButton
+            <ButtonCustom
               text="Entrar na Sala"
-              variant="primary"
+              variant="default"
               type="submit"
-              disabled={!roomId.trim() || !userName.trim()}
+              disabled={!salaId.trim() || !userName.trim()}
             />
           </div>
         </form>

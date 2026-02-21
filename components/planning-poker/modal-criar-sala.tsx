@@ -11,21 +11,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Users } from 'lucide-react';
-import { CustomButton } from '../ui/custom-button';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { ButtonCustom } from '../button-custom';
 
-interface Rooms {
-  privateRoom: boolean;
-  password?: string;
+interface Salas {
+  salaPrivada: boolean;
+  senha?: string;
 }
-interface CreateRoomModalProps {
-  onRoomCreated?: (room: Rooms) => void;
+interface ModalCriarSalaProps {
+  criarSala?: (room: Salas) => void;
 }
 
-export const CreateRoomModal = ({
-  onRoomCreated,
-}: CreateRoomModalProps) => {
+export const ModalCriarSala = ({
+  criarSala,
+}: ModalCriarSalaProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [hasPassword, setHasPassword] = useState(false);
@@ -73,8 +73,8 @@ export const CreateRoomModal = ({
         );
       }
 
-      if (onRoomCreated) {
-        onRoomCreated(roomData);
+      if (criarSala) {
+        criarSala(roomData);
       }
 
       setRoomName('');
@@ -102,9 +102,9 @@ export const CreateRoomModal = ({
       onOpenChange={setIsOpen}
     >
       <DialogTrigger asChild>
-        <CustomButton
+        <ButtonCustom
           text="Nova sala"
-          variant="primary"
+          variant="default"
           icon={<Plus />}
         />
       </DialogTrigger>
@@ -193,16 +193,16 @@ export const CreateRoomModal = ({
           )}
 
           <div className="flex w-full justify-end gap-3 pt-4">
-            <CustomButton
+            <ButtonCustom
               text="Cancelar"
               variant="outline"
               type="button"
               onClick={() => setIsOpen(false)}
               disabled={isLoading}
             />
-            <CustomButton
+            <ButtonCustom
               text={isLoading ? 'Criando...' : 'Criar Sala'}
-              variant="primary"
+              variant="default"
               type="submit"
               disabled={!roomName.trim() || isLoading}
             />
