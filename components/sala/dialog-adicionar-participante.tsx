@@ -17,10 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import {
-  useLazyPesquisarPorNomeOuEmailQuery,
-  DadosPessoaResumo,
-} from '@/services/api/pessoas.api';
+import type { DadosPessoaResumo } from '@/services/types';
+import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 
 interface DialogAdicionarParticipanteProps {
   aberto: boolean;

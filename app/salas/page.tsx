@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Search } from 'lucide-react';
 import Loading from '@/components/loading';
 import { useAuth } from '@/hooks/useAuth';
-import {
+import type {
   LoginSalaPayload,
   Salas,
+} from '@/services/types';
+import {
   useListarSalasQuery,
   useSalaEntrarMutation,
   useAlterarSalaMutation,

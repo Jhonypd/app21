@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { CardSala } from './card-sala';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
-import { Salas } from '@/services/api/salas-api';
+import type { Salas } from '@/services/types';
 
 interface ListaSalasProps {
   salas: Salas[];

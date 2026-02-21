@@ -29,8 +29,8 @@ import { TabsCustom } from './tabs';
 import { TextInput } from './inputs/input-text';
 import { PasswordInput } from './inputs/input-password';
 import { Switch } from './ui/switch';
+import type { SalaParaEdicao } from '@/services/types';
 import {
-  SalaParaEdicao,
   useAdicionarParticipanteMutation,
   useRemoverParticipanteMutation,
   useAlterarRoleParticipanteMutation,

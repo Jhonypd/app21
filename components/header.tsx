@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bell, Sparkles } from 'lucide-react';
 import { MenuPerfil } from './menu-perfil';
-import { DadosContaPessoa } from '@/services/api/pessoas.api';
+import type { DadosContaPessoa } from '@/services/types';
 
 interface HeaderProps {
   usuario: DadosContaPessoa | null;

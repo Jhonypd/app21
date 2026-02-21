@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 import { DialogEditarSala } from './dialog-editar-sala';
-import {
+import type {
   Salas,
   SalaParaEdicao,
-  useLazyObterSalaParaEdicaoQuery,
-} from '@/services/api/salas-api';
+} from '@/services/types';
+import { useLazyObterSalaParaEdicaoQuery } from '@/services/api/salas-api';
 import { Button } from './ui/button';
 import { toastError } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';

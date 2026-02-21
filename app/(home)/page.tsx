@@ -1,16 +1,13 @@
 'use client';
 
 import { AcoesPrincipais } from '@/components/acoes-principais';
-import {} from '@/components/card-sala';
 import { CriarSala } from '@/components/criar-sala';
 import { EntrarSala } from '@/components/entrar-sala';
 import { EstatisticasRapidas } from '@/components/estatisticas-rapidas';
 import { ListaSalas } from '@/components/lista-salas';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  Salas,
-  useListarSalasQuery,
-} from '@/services/api/salas-api';
+import type { Salas } from '@/services/types';
+import { useListarSalasQuery } from '@/services/api/salas-api';
 import { useEffect, useState } from 'react';
 
 const LandingPage = () => {
