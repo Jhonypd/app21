@@ -72,11 +72,21 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
     headersObj['x-token-sala'] = tokenSalaAtual;
   }
 
-  // Montar args com headers atualizados
+  // Montar args com headers atualizados (merge com headers do endpoint)
+  const endpointHeaders =
+    typeof args === 'string'
+      ? {}
+      : ((args.headers as Record<string, string>) ?? {});
+
+  const mergedHeaders: Record<string, string> = {
+    ...headersObj,
+    ...endpointHeaders,
+  };
+
   const argsWithHeaders: FetchArgs =
     typeof args === 'string'
-      ? { url: args, headers: headersObj }
-      : { ...args, headers: headersObj };
+      ? { url: args, headers: mergedHeaders }
+      : { ...args, headers: mergedHeaders };
 
   const result = await rawBaseQuery(
     argsWithHeaders,

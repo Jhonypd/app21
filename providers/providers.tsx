@@ -36,10 +36,6 @@ function AuthHydration() {
 
     // Hidratar Redux state com tokens do localStorage
     store.dispatch(hydrateFromStorage());
-
-    console.log(
-      '[AUTH] Redux hidratado com tokens do localStorage',
-    );
   }, []);
 
   return null;
