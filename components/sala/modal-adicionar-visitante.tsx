@@ -52,7 +52,7 @@ export function ModalAdicionarVisitante({
       onOpenChange={handleClose}
       titulo="Adicionar Visitante"
       maxWidth="lg"
-      botoes={
+      botoesAcoes={
         <>
           <button
             onClick={handleClose}

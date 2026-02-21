@@ -5,6 +5,7 @@ import { toastSuccess, toastError } from '../custom-toast';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { useAtualizarParticipaVotacaoMutation } from '@/services/api/sessoes-api';
+import { ButtonCustom } from '../button-custom';
 
 interface CardVotosProps {
   role: number;
@@ -141,10 +142,10 @@ const CardVotos: React.FC<CardVotosProps> = ({
       </header>
 
       {participaVotacao && !modoVisualizacao && (
-        <section
+        <div
           className={
             votoSelecionado
-              ? 'flex w-full p-2'
+              ? 'flex w-full items-center justify-center p-2'
               : 'grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6'
           }
         >
@@ -166,27 +167,28 @@ const CardVotos: React.FC<CardVotosProps> = ({
                 handleSelecionarVoto(votoSelecionado)
               }
               disabled={!podeVotar}
-              className="mx-auto aspect-[3/4] h-96 rounded-2xl border-2 text-9xl transition-all"
+              className="!mx-auto aspect-[3/4] h-56 rounded-2xl border-2 text-9xl transition-all md:h-96"
             >
               {votoSelecionado}
             </Button>
           )}
-        </section>
+        </div>
       )}
 
       {votoSelecionado &&
         !votoConfirmado &&
         !modoVisualizacao && (
           <footer className="mt-4 flex justify-between gap-4">
-            <Button
+            <ButtonCustom
               variant="destructive"
               onClick={handleCancelarVoto}
               className="min-w-40 uppercase"
+              disabled={loadingAcao}
             >
               Cancelar
-            </Button>
+            </ButtonCustom>
 
-            <Button
+            <ButtonCustom
               onClick={() =>
                 handleConfirmarVoto(participaVotacao)
               }
@@ -194,7 +196,7 @@ const CardVotos: React.FC<CardVotosProps> = ({
               className="min-w-40 bg-gradient-to-r from-green-600 to-emerald-600 uppercase"
             >
               Confirmar
-            </Button>
+            </ButtonCustom>
           </footer>
         )}
 

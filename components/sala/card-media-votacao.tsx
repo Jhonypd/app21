@@ -5,10 +5,12 @@ interface CardMediaVotacaoProps {
     votou: boolean;
   }[];
   modoVisualizacao: boolean;
+  carregandoVotos: boolean;
 }
 const CardMediaVotacao = ({
   participantesComVotos,
   modoVisualizacao,
+  carregandoVotos,
 }: CardMediaVotacaoProps) => {
   const calcularMedia = () => {
     const votosNumericos = participantesComVotos
@@ -37,23 +39,38 @@ const CardMediaVotacao = ({
       <div className="flex items-center gap-4">
         <div>
           <p className="text-xs text-gray-400">Média</p>
-          <p className="text-3xl">
-            {calcularMedia() || '—'}
+          <p
+            className={`text-3xl transition-opacity ${carregandoVotos ? 'opacity-50' : 'opacity-100'}`}
+          >
+            {carregandoVotos
+              ? '...'
+              : calcularMedia() || '—'}
           </p>
         </div>
         <div className="flex flex-1 flex-wrap gap-2">
-          {participantesComVotos
-            .filter((p) => p.votou)
-            .map((p) => (
-              <div
-                key={p.id}
-                className="rounded-lg bg-white/10 px-3 py-1"
-              >
-                <span className="font-mono text-xs">
-                  {p.voto}
-                </span>
-              </div>
-            ))}
+          {carregandoVotos &&
+          participantesComVotos.length === 0 ? (
+            <div className="w-full rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-gray-400">
+              Carregando votos...
+            </div>
+          ) : participantesComVotos.length === 0 ? (
+            <div className="w-full rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-gray-400">
+              Nenhum voto registrado
+            </div>
+          ) : (
+            participantesComVotos
+              .filter((p) => p.votou)
+              .map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-lg bg-white/10 px-3 py-1"
+                >
+                  <span className="font-mono text-xs">
+                    {p.voto}
+                  </span>
+                </div>
+              ))
+          )}
         </div>
       </div>
     </div>
