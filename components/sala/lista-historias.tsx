@@ -201,12 +201,6 @@ export function ListaHistorias({
     onModoVisualizacaoChange?.(false);
   };
 
-  const proximaHistoriaTitulo = proximaHistoriaId
-    ? historiasIniciais.find(
-        (h) => h.id === proximaHistoriaId,
-      )?.titulo
-    : '';
-
   if (
     !historiasIniciais ||
     historiasIniciais.length === 0
@@ -233,13 +227,11 @@ export function ListaHistorias({
                 <TooltipTrigger>
                   {historiaExibida.titulo}
                 </TooltipTrigger>
-                {historiaExibida.descricao && (
-                  <TooltipContent className="bg-primary flex max-h-16 min-h-0 max-w-60 flex-col items-center justify-center truncate overflow-y-hidden text-ellipsis text-white/80">
-                    <p className="h-full w-full truncate text-ellipsis">
-                      {historiaExibida.descricao}
-                    </p>
-                  </TooltipContent>
-                )}
+                <TooltipContent className="bg-primary flex max-h-16 min-h-0 max-w-60 flex-col items-center justify-center truncate overflow-y-hidden text-ellipsis text-white/80">
+                  <p className="h-full w-full truncate text-ellipsis">
+                    {historiaExibida.descricao}
+                  </p>
+                </TooltipContent>
               </Tooltip>
             </p>
             <ButtonCustom
@@ -394,7 +386,7 @@ export function ListaHistorias({
       {/* Dialog de Confirmação */}
       <DialogConfirmacao
         titulo="Mudar para próxima história?"
-        textoPadrao={`Tem certeza que deseja mudar para "${proximaHistoriaTitulo}"? Os votos atuais serão finalizados.`}
+        textoPadrao={`Tem certeza que deseja mudar para proxima historia? Os votos atuais serão finalizados e não poderão ser alterados.`}
         btnCancelar="Cancelar"
         btnConfirmar="Confirmar"
         dialogAberto={dialogConfirmacao}

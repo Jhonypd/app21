@@ -1,20 +1,27 @@
+import { Loader2 } from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
+
 interface CardMediaVotacaoProps {
-  participantesComVotos: {
+  votos: {
     id: string;
-    voto: string | null;
-    votou: boolean;
+    valor: number;
+    pessoa_id: string;
+    pessoa: {
+      nome: string;
+      inativo: boolean;
+    };
   }[];
   modoVisualizacao: boolean;
   carregandoVotos: boolean;
 }
 const CardMediaVotacao = ({
-  participantesComVotos,
+  votos,
   modoVisualizacao,
   carregandoVotos,
 }: CardMediaVotacaoProps) => {
   const calcularMedia = () => {
-    const votosNumericos = participantesComVotos
-      .map((p) => p.voto)
+    const votosNumericos = votos
+      .map((p) => p.valor)
       .filter((v) => v && !isNaN(Number(v)))
       .map(Number);
 
@@ -31,11 +38,19 @@ const CardMediaVotacao = ({
           : 'border-purple-500/30 bg-gradient-to-br from-purple-600/20 to-pink-600/20'
       }`}
     >
-      <h3 className="mb-2 text-sm text-gray-300">
-        {modoVisualizacao
-          ? 'Resultado da História'
-          : 'Resultado da Votação'}
-      </h3>
+      <div className="mb-2 flex items-center justify-between text-sm text-gray-300">
+        <h3>
+          {modoVisualizacao
+            ? 'Resultado da História'
+            : 'Resultado da Votação'}
+        </h3>
+        {carregandoVotos && (
+          <span className="flex items-center gap-2 text-xs text-gray-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Atualizando votos
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-4">
         <div>
           <p className="text-xs text-gray-400">Média</p>
@@ -48,25 +63,27 @@ const CardMediaVotacao = ({
           </p>
         </div>
         <div className="flex flex-1 flex-wrap gap-2">
-          {carregandoVotos &&
-          participantesComVotos.length === 0 ? (
-            <div className="w-full rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-gray-400">
-              Carregando votos...
-            </div>
-          ) : participantesComVotos.length === 0 ? (
+          {carregandoVotos && votos.length === 0 ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="h-8 w-8 rounded-lg bg-white/5"
+              />
+            ))
+          ) : votos.length === 0 ? (
             <div className="w-full rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-gray-400">
               Nenhum voto registrado
             </div>
           ) : (
-            participantesComVotos
-              .filter((p) => p.votou)
+            votos
+              .filter((p) => !p.pessoa.inativo)
               .map((p) => (
                 <div
                   key={p.id}
                   className="rounded-lg bg-white/10 px-3 py-1"
                 >
-                  <span className="font-mono text-xs">
-                    {p.voto}
+                  <span className="font-mono text-sm">
+                    {p.valor}
                   </span>
                 </div>
               ))

@@ -95,6 +95,12 @@ const CardVotos: React.FC<CardVotosProps> = ({
             : 'Agora você não está participando da votação',
         });
       } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error(
+            'Erro ao atualizar participação na votação:',
+            error,
+          );
+        }
         toastError({
           title: 'Erro ao atualizar participação',
           description: 'Tente novamente',
@@ -136,6 +142,7 @@ const CardVotos: React.FC<CardVotosProps> = ({
             <Switch
               checked={participaVotacao}
               onCheckedChange={toggleParticipacao}
+              disabled={votosRevelados}
             />
           </div>
         )}
@@ -210,8 +217,8 @@ const CardVotos: React.FC<CardVotosProps> = ({
 
       {modoVisualizacao && (
         <div className="mt-4 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-3 text-center text-sm text-blue-400">
-          Clique em &quot;Voltar para Atual&quot; para
-          continuar votando
+          Clique em &quot;VOLTAR PARA HISTORIA ATUAL&quot;
+          para continuar votando
         </div>
       )}
     </div>
