@@ -16,13 +16,20 @@ import {
   toastSuccess,
 } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
-import { useEffect, useState, useCallback } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
+import { useSafeTimer } from '@/hooks/useSafeAsync';
 import { SalaPlanning } from '@/components/sala-planning';
 import {
   useEncerrarSessaoMutation,
   useRevelarVotosMutation,
   useResetarVotosMutation,
   useLazyObterVotosPorHistoriaQuery,
+  useListarHistoriasSessaoQuery,
 } from '@/services/api/sessoes-api';
 import { useVotarMutation } from '@/services/api/votos-api';
 
@@ -41,6 +48,7 @@ const PageSala = () => {
     obterSessaoAtiva,
     limparTokenSala,
   } = useSalaAuth();
+  const { schedule: scheduleAutoSelect } = useSafeTimer();
 
   // Estados de loading
   const [loading, setLoading] = useState(false);
@@ -158,15 +166,21 @@ const PageSala = () => {
     ? obterSessaoAtiva(salaResultado.id)
     : null;
 
-  // Determinar role do usuário
-  const participanteAtual =
-    salaResultado?.participantes?.find(
-      (p) => p.id === usuario?.id,
-    );
+  // Determinar role do usuário (vem calculado do backend)
   const meuRole =
-    usuario?.id === salaResultado?.criado_por
-      ? 0
-      : (participanteAtual?.role ?? 2);
+    salaResultado?.meuRole ??
+    (usuario?.id === salaResultado?.criado_por ? 0 : 2);
+
+  // Buscar histórias da sessão ativa separadamente
+  const sessaoAtivaId = salaResultado?.sessaoAtiva?.id;
+  const { data: historiasData } =
+    useListarHistoriasSessaoQuery(sessaoAtivaId ?? '', {
+      skip: !sessaoAtivaId,
+    });
+  const historiasSessao = useMemo(
+    () => historiasData?.Resultado?.historias ?? [],
+    [historiasData?.Resultado?.historias],
+  );
 
   // Auto-selecionar primeira história ao entrar na sala
   useEffect(() => {
@@ -175,18 +189,20 @@ const PageSala = () => {
         !salaResultado?.id ||
         !salaResultado.sessaoAtiva?.id ||
         salaResultado.historia_atual_id || // Já tem história selecionada
-        !salaResultado.historias?.length ||
+        !historiasSessao?.length ||
         (meuRole !== 0 && meuRole !== 1) // Apenas Dono/Admin
       ) {
         return;
       }
 
-      const primeiraHistoria = salaResultado.historias[0];
+      const primeiraHistoria = historiasSessao[0];
 
-      console.log(
-        '[AUTO-SELECT] Selecionando primeira história automaticamente:',
-        primeiraHistoria.titulo,
-      );
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          '[AUTO-SELECT] Selecionando primeira história automaticamente:',
+          primeiraHistoria.titulo,
+        );
+      }
 
       try {
         await selecionarHistoriaAtual({
@@ -194,23 +210,26 @@ const PageSala = () => {
           historiaId: primeiraHistoria.id,
         }).unwrap();
       } catch (error) {
-        console.error(
-          '[AUTO-SELECT] Erro ao selecionar primeira história:',
-          error,
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.error(
+            '[AUTO-SELECT] Erro ao selecionar primeira história:',
+            error,
+          );
+        }
       }
     };
 
-    setTimeout(() => {
+    scheduleAutoSelect(() => {
       autoSelecionarPrimeiraHistoria();
     }, 3000);
   }, [
     salaResultado?.id,
     salaResultado?.historia_atual_id,
-    salaResultado?.historias,
+    historiasSessao,
     salaResultado?.sessaoAtiva?.id,
     meuRole,
     selecionarHistoriaAtual,
+    scheduleAutoSelect,
   ]);
 
   // Estados computados
@@ -247,6 +266,8 @@ const PageSala = () => {
   };
 
   const handleEncerrarSessao = async () => {
+    console.log(salaResultado, sessaoAtiva);
+
     if (!salaResultado || !sessaoAtiva) {
       toastError({
         title: 'Erro',
@@ -409,8 +430,8 @@ const PageSala = () => {
   const handleBuscarVotosPorHistoria = async (
     historiaId: string,
   ) => {
+    // setLoading(true);
     const sessaoId = salaResultado?.sessaoAtiva?.id;
-
     if (!sessaoId) {
       console.warn(
         'Nenhuma sessão ativa para buscar votos',
@@ -426,6 +447,7 @@ const PageSala = () => {
 
       // O resultado vem com formato { votos: [...] }
       const votos = resultado.Resultado?.votos || [];
+      // setLoading(false);
       return votos.map((v) => ({
         id: v.id,
         pessoa_id: v.pessoa_id,
@@ -433,6 +455,7 @@ const PageSala = () => {
         pessoa: v.pessoa,
       }));
     } catch (error) {
+      // setLoading(false);
       console.error(
         'Erro ao buscar votos da história:',
         error,
@@ -440,16 +463,6 @@ const PageSala = () => {
       return [];
     }
   };
-
-  // Loading state
-  // if (estaCarregando) {
-  //   return (
-  //     <Loading
-  //       active
-  //       type="transaction"
-  //     />
-  //   );
-  // }
 
   // Sala não encontrada (só mostra após loading terminar)
   if (salaNaoEncontrada) {
@@ -501,6 +514,7 @@ const PageSala = () => {
           usuarioAtualId={usuarioId}
           aoVoltar={handleVoltar}
           sala={salaResultado!}
+          historias={historiasSessao}
           sessaoId={sessaoAtiva ?? undefined}
           meuRole={meuRole}
           aoEnviarVoto={handleEnviarVoto}
@@ -522,7 +536,7 @@ const PageSala = () => {
       {/* Dialog de confirmação para encerrar sessão */}
 
       <DialogConfirmacao
-        textoPadrao="Isso vai encerrar a sessão de Planning Poker
+        textoPadrao="Isso vai encerrar a sessão atual de votação 
               para todos os participantes. Deseja continuar?"
         dialogAberto={dialogEncerrarAberto}
         setDialogAberto={setDialogEncerrarAberto}
