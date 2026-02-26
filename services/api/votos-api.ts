@@ -6,43 +6,37 @@ import type { VotarPayload, Voto } from '../types';
 export type { VotarPayload, Voto };
 
 export const VotosApi = apiSlice.injectEndpoints({
-  endpoints: (builder) => ({
-    // POST /sessoes/:id/votos
-    votar: builder.mutation<ApiResponse, VotarPayload>({
-      query: ({
-        sessaoId,
-        valor,
-        historia_sessao_id,
-        participa_votacao,
-      }) => ({
-        url: `/sessoes/${sessaoId}/votos`,
-        method: 'POST',
-        body: {
-          valor,
-          historia_sessao_id,
-          participa_votacao,
-        },
+   endpoints: (builder) => ({
+      // POST /sessoes/:id/votos
+      votar: builder.mutation<ApiResponse, VotarPayload>({
+         query: ({
+            sessaoId,
+            valor,
+            historia_sessao_id,
+            participa_votacao,
+         }) => ({
+            url: `/sessoes/${sessaoId}/votos`,
+            method: 'POST',
+            body: {
+               valor,
+               historia_sessao_id,
+               participa_votacao,
+            },
+         }),
+         invalidatesTags: ['votos', 'sessao'],
       }),
-      invalidatesTags: ['votos', 'sessao'],
-    }),
 
-    // GET /sessoes/:id/votos
-    obterVotos: builder.query<
-      ApiResponse<{ votos: Voto[] }>,
-      string
-    >({
-      query: (sessaoId) => ({
-        url: `/sessoes/${sessaoId}/votos`,
-        method: 'GET',
+      // GET /sessoes/:id/votos
+      obterVotos: builder.query<ApiResponse<{ votos: Voto[] }>, string>({
+         query: (sessaoId) => ({
+            url: `/sessoes/${sessaoId}/votos`,
+            method: 'GET',
+         }),
+         providesTags: ['votos'],
+         keepUnusedDataFor: 10,
       }),
-      providesTags: ['votos'],
-      keepUnusedDataFor: 10,
-    }),
-  }),
+   }),
 });
 
-export const {
-  useVotarMutation,
-  useObterVotosQuery,
-  useLazyObterVotosQuery,
-} = VotosApi;
+export const { useVotarMutation, useObterVotosQuery, useLazyObterVotosQuery } =
+   VotosApi;

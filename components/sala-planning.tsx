@@ -1,21 +1,14 @@
 'use client';
 
-import React, {
-   useEffect,
-   useMemo,
-   useState,
-   useRef,
-   // useCallback,
-} from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Eye, RotateCcw, UserPlus } from 'lucide-react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
-import { useAdicionarParticipanteSessaoMutation } from '@/services/api/sessoes-api';
-import { useLazyListarParticipantesSalaQuery } from '@/services/api/salas-api';
+import { useLazyListarParticipantesSalaQuery, useAdicionarVisitanteMutation } from '@/services/api/salas-api';
 import { toast } from 'sonner';
-import { toastError } from './custom-toast';
+import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useVotosPolling } from '@/hooks/useVotosPolling';
-import { ModalAdicionarVisitante } from './sala/modal-adicionar-visitante';
+import { ModalAdicionarParticipanteOuVisitante } from './sala/modal-adicionar-visitante';
 import CardVotos from './sala/card-votos';
 import ListaParticipantes from './sala/lista-participantes';
 import HeaderSala from './sala/header-sala';
@@ -24,13 +17,7 @@ import { Badge } from './ui/badge';
 import CardMediaVotacao from './sala/card-media-votacao';
 import { ButtonCustom } from './button-custom';
 import Loading from './loading';
-
-// Interfaces baseadas na estrutura real da API
-interface Proprietario {
-   id: string;
-   inativo: boolean;
-   nome: string;
-}
+import { SalaCompleta, VotosPorHistoriaResponse } from '@/services/types';
 
 interface Historia {
    id: string;
@@ -41,55 +28,12 @@ interface Historia {
    voto: number[] | [];
 }
 
-interface Voto {
-   pessoa: {
-      nome: string;
-      inativo: boolean;
-   };
-   id: string;
-   pessoa_id: string;
-   valor: number;
-}
-
-interface SessaoAtiva {
-   id: string;
-   criada_em: Date;
-   ativa: boolean;
-   iniciada_por: string;
-}
-
-interface SalaData {
-   id: string;
-   codigo: string;
-   titulo: string;
-   senha: string | null;
-   inativo: boolean;
-   data_criacao: Date;
-   data_alteracao: Date | null;
-   criado_por: string;
-   historia_atual_id: string | null;
-   votos_revelados: boolean;
-   proprietario: Proprietario;
-   resumoParticipantes?: {
-      totalParticipantes: number;
-      totalOnline: number;
-      totalDevemVotar: number;
-   };
-   participantes?: Array<{
-      id: string;
-      nome: string;
-      inativo: boolean;
-      role: number;
-   }>;
-   sessaoAtiva?: SessaoAtiva;
-}
-
 interface SalaPlanningProps {
-   sala: SalaData;
+   sala: SalaCompleta;
    historias: Historia[];
    usuarioAtualId: string;
-   sessaoId?: string;
-   meuRole?: number;
+   sessaoId: string;
+   meuRole: number;
    aoVoltar: () => void | Promise<void>;
    aoEnviarVoto?: (valor: number, participaVotacao: boolean) => Promise<void>;
    aoRevelarVotos?: () => Promise<void>;
@@ -98,7 +42,9 @@ interface SalaPlanningProps {
    aoEncerrarSessao?: () => Promise<void>;
    aoAnularVoto?: (votoId: string) => Promise<void>;
    aoReordenarHistorias?: (historias: Historia[]) => Promise<void>;
-   aoBuscarVotosPorHistoria?: (historiaId: string) => Promise<Voto[]>;
+   aoBuscarVotosPorHistoria?: (
+      historiaId: string,
+   ) => Promise<VotosPorHistoriaResponse | null>;
    modoVisualizacao?: boolean;
    historiaVisualizadaId?: string | null;
    onModoVisualizacaoChange?: (ativo: boolean, historiaId?: string) => void;
@@ -146,17 +92,23 @@ export function SalaPlanning({
       useState(false);
    const [loadingAcao, setLoadingAcao] = useState(false);
    const [termoBusca, setTermoBusca] = useState('');
-   const [votosCarregados, setVotosCarregados] = useState<Voto[]>([]);
+   const [listaVotosCarregados, setListaVotosCarregados] =
+      useState<VotosPorHistoriaResponse>({
+         media: 0,
+         voto_vencedor: 0,
+         votos: [],
+      });
    const [carregandoVotos, setCarregandoVotos] = useState(false);
    const [pausarPolling, setPausarPolling] = useState(false);
 
-   const eProprietario = sala.criado_por === usuarioAtualId;
-   const iniciouSessao = sala.sessaoAtiva?.iniciada_por === usuarioAtualId;
+   const eProprietario = sala && sala.criado_por === usuarioAtualId;
+   const iniciouSessao =
+      sala && sala.sessaoAtiva?.iniciada_por === usuarioAtualId;
    const podeEncerrarSessao = eProprietario || iniciouSessao;
 
    // Mutations
    const [adicionarVisitante, { isLoading: adicionandoVisitante }] =
-      useAdicionarParticipanteSessaoMutation();
+      useAdicionarVisitanteMutation();
 
    // Lazy query para listar participantes
    const [
@@ -198,7 +150,11 @@ export function SalaPlanning({
             try {
                const votos = await aoBuscarVotosPorHistoria(idHistoria);
                // Atualizar estado com votos carregados via polling
-               setVotosCarregados([...votos]);
+               setListaVotosCarregados({
+                  media: votos?.media ?? 0,
+                  voto_vencedor: votos?.voto_vencedor ?? 0,
+                  votos: votos?.votos ?? [],
+               });
             } catch (erro) {
                if (process.env.NODE_ENV === 'development') {
                   console.error('[Polling] Erro ao buscar votos:', erro);
@@ -216,15 +172,27 @@ export function SalaPlanning({
          aoBuscarVotosPorHistoria
       ) {
          // Limpar votos antes de buscar
-         setVotosCarregados([]);
+         setListaVotosCarregados({
+            media: 0,
+            voto_vencedor: 0,
+            votos: [],
+         });
          setCarregandoVotos(true);
 
          aoBuscarVotosPorHistoria(historiaVisualizadaId)
             .then((votos) => {
-               setVotosCarregados([...votos]);
+               setListaVotosCarregados({
+                  media: votos?.media ?? 0,
+                  voto_vencedor: votos?.voto_vencedor ?? 0,
+                  votos: votos?.votos ?? [],
+               });
             })
             .catch((erro: unknown) => {
-               setVotosCarregados([]);
+               setListaVotosCarregados({
+                  media: 0,
+                  voto_vencedor: 0,
+                  votos: [],
+               });
                toastError({
                   title: 'Erro ao carregar votos',
                   description:
@@ -246,16 +214,28 @@ export function SalaPlanning({
          aoBuscarVotosPorHistoria
       ) {
          // Limpar votos antes de buscar
-         setVotosCarregados([]);
+         setListaVotosCarregados({
+            media: 0,
+            voto_vencedor: 0,
+            votos: [],
+         });
          setCarregandoVotos(true);
          setPausarPolling(true);
 
          aoBuscarVotosPorHistoria(sala.historia_atual_id)
             .then((votos) => {
-               setVotosCarregados([...votos]);
+               setListaVotosCarregados({
+                  media: votos?.media ?? 0,
+                  voto_vencedor: votos?.voto_vencedor ?? 0,
+                  votos: votos?.votos ?? [],
+               });
             })
             .catch((erro: unknown) => {
-               setVotosCarregados([]);
+               setListaVotosCarregados({
+                  media: 0,
+                  voto_vencedor: 0,
+                  votos: [],
+               });
                if (process.env.NODE_ENV === 'development') {
                   console.error('Erro ao buscar votos:', erro);
                }
@@ -282,9 +262,9 @@ export function SalaPlanning({
    // Usar votos do estado carregado
    // Sempre usar votosCarregados (atualizado via polling e visualização)
    const votosAtivos = useMemo(() => {
-      return votosCarregados || [];
-   }, [votosCarregados]);
-
+      const votos = listaVotosCarregados?.votos;
+      return Array.isArray(votos) ? votos : [];
+   }, [listaVotosCarregados]);
    const votosPorPessoaId = useMemo(
       () => new Map(votosAtivos.map((voto) => [voto.pessoa_id, voto])),
       [votosAtivos],
@@ -439,7 +419,7 @@ export function SalaPlanning({
       }
       buscaPessoasTimerRef.current = setTimeout(() => {
          pesquisarPessoas({ termo });
-      }, 300);
+      }, 800);
    };
 
    useEffect(() => {
@@ -452,19 +432,34 @@ export function SalaPlanning({
 
    const handleAdicionarVisitante = async (pessoaId: string) => {
       setLoadingAcao(true);
-      if (!sessaoId) {
-         toast.error('Sessão não encontrada');
+      if (!sala?.id) {
+         toastError({
+            description:
+               'ID da sala não encontrado. Não é possível adicionar visitante.',
+         });
+         setLoadingAcao(false);
          return;
       }
 
-      await adicionarVisitante({
-         sessaoId: sessaoId,
-         pessoaId: pessoaId,
-      }).unwrap();
-      setLoadingAcao(false);
-      toast.success('Visitante adicionado com sucesso!');
-      setModalVisitantesAberto(false);
-      setTermoBusca('');
+      try {
+         const resultado = await adicionarVisitante({
+            sala_id: sala.id,
+            pessoa_id: pessoaId,
+         }).unwrap();
+         setLoadingAcao(false);
+         toastSuccess({
+            description: `${resultado.Mensagem}`,
+         });
+         setModalVisitantesAberto(false);
+         setTermoBusca('');
+      } catch (error) {
+         setLoadingAcao(false);
+         const erro = getApiErrorMessage(error);
+         toastError({
+            title: erro.Mensagem,
+            description: erro.Detalhe,
+         });
+      }
    };
 
    const handleBuscarParticipantes = async () => {
@@ -505,6 +500,7 @@ export function SalaPlanning({
          setLoadingAcao(false);
       }
    };
+
    return (
       <>
          {loadingAcao ||
@@ -574,6 +570,8 @@ export function SalaPlanning({
                         meuRole={meuRole}
                         votosRevelados={votosRevelados || modoVisualizacao}
                         handleAnularVoto={handleAnularVoto}
+                        salaId={sala.id}
+                        sessaoId={sessaoId}
                      />
                   </div>
                </div>
@@ -582,7 +580,7 @@ export function SalaPlanning({
                {(votosRevelados || modoVisualizacao) && (
                   <CardMediaVotacao
                      modoVisualizacao={modoVisualizacao}
-                     votos={votosCarregados}
+                     listaVotos={listaVotosCarregados}
                      carregandoVotos={carregandoVotos}
                   />
                )}
@@ -641,7 +639,8 @@ export function SalaPlanning({
             </div>
 
             {/* Modal Adicionar Visitante */}
-            <ModalAdicionarVisitante
+            <ModalAdicionarParticipanteOuVisitante
+               titulo="Adicionar visitantes"
                open={modalVisitantesAberto}
                onOpenChange={setModalVisitantesAberto}
                termoBusca={termoBusca}

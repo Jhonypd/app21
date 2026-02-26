@@ -36,13 +36,13 @@
 
 // export interface ClaimsAuthSala {
 //   Role: 0 | 1 | 2 | 3; // 0 = Dono, 1 = Admin, 2 = Membro, 3 = Visitante
-//   Usu_Id: string;
-//   Usu_Na: string;
+//   Usuario_Id: string;
+//   Nome: string;
 //   Sala_Id: string;
-//   Sala_Co: string; // Código da sala
+//   Sala_Codigo: string; // Código da sala
 //   Sala_titulo: string;
 //   Dt_Ex: string;
-//   Ss_Sl_Id: string; // ID da sessão
+//   Sessao_Sala_Id: string; // ID da sessão
 //   iat?: number;
 //   exp?: number;
 // }

@@ -1,140 +1,201 @@
-import {
-  createSlice,
-  PayloadAction,
-} from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface SessaoAtiva {
-  salaId: string;
-  sessaoId: string;
-  timestamp: number;
+   salaId: string;
+   sessaoId: string;
+   timestamp: number;
 }
 
 interface SalaAuthState {
-  tokenSala: string | null;
-  expiracao?: string | null;
-  sala: {
-    id: string;
-    codigo: string;
-    titulo: string;
-    sessaoAtiva: boolean;
-    sessaoId: string;
-  } | null;
-  sessoesAtivas: SessaoAtiva[];
+   tokenSala: string | null;
+   expiracao?: string | null;
+   sala: {
+      id: string;
+      codigo: string;
+      titulo: string;
+      sessaoAtiva: boolean;
+      sessaoId: string;
+   } | null;
+   sessoesAtivas: SessaoAtiva[];
 }
 
-const SESSION_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas
+const SESSION_EXPIRY = 24 * 60 * 60 * 1000;
+export const SALA_AUTH_STORAGE_KEY = 'app21_sala_auth_state';
+export const SALA_AUTH_UPDATE_EVENT = 'app21:sala-auth-updated';
 
-const initialState: SalaAuthState = {
-  tokenSala: null,
-  expiracao: null,
-  sala: null,
-  sessoesAtivas: [],
+const createEmptySalaState = (): SalaAuthState => ({
+   tokenSala: null,
+   expiracao: null,
+   sala: null,
+   sessoesAtivas: [],
+});
+
+const initialState: SalaAuthState = createEmptySalaState();
+
+const serializeSalaState = (state: SalaAuthState) => ({
+   tokenSala: state.tokenSala,
+   expiracao: state.expiracao ?? null,
+   sala: state.sala ?? null,
+   sessoesAtivas: state.sessoesAtivas ?? [],
+});
+
+const emitSalaAuthUpdate = () => {
+   if (typeof window === 'undefined') return;
+   window.dispatchEvent(new Event(SALA_AUTH_UPDATE_EVENT));
+};
+
+const persistSalaState = (state: SalaAuthState) => {
+   if (typeof window === 'undefined') return;
+   try {
+      localStorage.setItem(
+         SALA_AUTH_STORAGE_KEY,
+         JSON.stringify(serializeSalaState(state)),
+      );
+      emitSalaAuthUpdate();
+   } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+         console.warn('[salaAuth] Falha ao persistir estado:', error);
+      }
+   }
+};
+
+export const getPersistedSalaState = (): SalaAuthState => {
+   if (typeof window === 'undefined') {
+      return createEmptySalaState();
+   }
+
+   try {
+      const raw = localStorage.getItem(SALA_AUTH_STORAGE_KEY);
+      if (!raw) {
+         return createEmptySalaState();
+      }
+
+      const data = JSON.parse(raw);
+      return {
+         tokenSala: data.tokenSala ?? null,
+         expiracao: data.expiracao ?? null,
+         sala: data.sala ?? null,
+         sessoesAtivas: Array.isArray(data.sessoesAtivas)
+            ? data.sessoesAtivas
+            : [],
+      };
+   } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+         console.warn('[salaAuth] Falha ao ler estado persistido:', error);
+      }
+      return createEmptySalaState();
+   }
 };
 
 const salaAuthSlice = createSlice({
-  name: 'salaAuth',
-  initialState,
-  reducers: {
-    setSalaToken: (
-      state,
-      action: PayloadAction<{
-        tokenSala: string;
-        expiracao?: string;
-      }>,
-    ) => {
-      state.tokenSala = action.payload.tokenSala;
-      state.expiracao = action.payload.expiracao ?? null;
+   name: 'salaAuth',
+   initialState,
+   reducers: {
+      setSalaToken: (
+         state,
+         action: PayloadAction<{
+            tokenSala: string;
+            expiracao?: string;
+         }>,
+      ) => {
+         state.tokenSala = action.payload.tokenSala;
+         state.expiracao = action.payload.expiracao ?? null;
 
-      // Salvar token nos cookies para o middleware poder acessar
-      if (typeof document !== 'undefined') {
-        const expiracao = action.payload.expiracao
-          ? new Date(action.payload.expiracao).toUTCString()
-          : new Date(
-              Date.now() + 6 * 60 * 60 * 1000,
-            ).toUTCString(); // 6h padrão
+         // Salvar token nos cookies para o middleware poder acessar
+         if (typeof document !== 'undefined') {
+            const expiracao = action.payload.expiracao
+               ? new Date(action.payload.expiracao).toUTCString()
+               : new Date(Date.now() + 6 * 60 * 60 * 1000).toUTCString(); // 6h padrão
 
-        document.cookie = `token_sala=${action.payload.tokenSala}; expires=${expiracao}; path=/; SameSite=Strict`;
-      }
-    },
-    limparSalaToken: (state) => {
-      state.tokenSala = null;
-      state.expiracao = null;
+            document.cookie = `token_sala=${action.payload.tokenSala}; expires=${expiracao}; path=/; SameSite=Strict`;
+         }
 
-      // Remover token dos cookies
-      if (typeof document !== 'undefined') {
-        document.cookie =
-          'token_sala=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      }
-    },
+         persistSalaState(state);
+      },
+      limparSalaToken: (state) => {
+         state.tokenSala = null;
+         state.expiracao = null;
 
-    // Gerenciamento de sessões ativas
-    iniciarSessao: (
-      state,
-      action: PayloadAction<{
-        salaId: string;
-        sessaoId: string;
-      }>,
-    ) => {
-      // Garantir que sessoesAtivas existe (para compatibilidade com estados antigos)
-      if (!state.sessoesAtivas) {
-        state.sessoesAtivas = [];
-      }
+         // Remover token dos cookies
+         if (typeof document !== 'undefined') {
+            document.cookie =
+               'token_sala=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+         }
 
-      // Remove sessão anterior da mesma sala
-      state.sessoesAtivas = state.sessoesAtivas.filter(
-        (s) => s.salaId !== action.payload.salaId,
-      );
+         persistSalaState(state);
+      },
 
-      // Adiciona nova sessão
-      state.sessoesAtivas.push({
-        salaId: action.payload.salaId,
-        sessaoId: action.payload.sessaoId,
-        timestamp: Date.now(),
-      });
-    },
+      // Gerenciamento de sessões ativas
+      iniciarSessao: (
+         state,
+         action: PayloadAction<{
+            salaId: string;
+            sessaoId: string;
+         }>,
+      ) => {
+         // Garantir que sessoesAtivas existe (para compatibilidade com estados antigos)
+         if (!state.sessoesAtivas) {
+            state.sessoesAtivas = [];
+         }
 
-    encerrarSessao: (
-      state,
-      action: PayloadAction<string>,
-    ) => {
-      state.sessoesAtivas = state.sessoesAtivas.filter(
-        (s) => s.salaId !== action.payload,
-      );
-    },
+         // Remove sessão anterior da mesma sala
+         state.sessoesAtivas = state.sessoesAtivas.filter(
+            (s) => s.salaId !== action.payload.salaId,
+         );
 
-    refreshSession: (
-      state,
-      action: PayloadAction<string>,
-    ) => {
-      const session = state.sessoesAtivas.find(
-        (s) => s.salaId === action.payload,
-      );
-      if (session) {
-        session.timestamp = Date.now();
-      }
-    },
+         // Adiciona nova sessão
+         state.sessoesAtivas.push({
+            salaId: action.payload.salaId,
+            sessaoId: action.payload.sessaoId,
+            timestamp: Date.now(),
+         });
 
-    limparSessoesExpiradas: (state) => {
-      const now = Date.now();
-      state.sessoesAtivas = state.sessoesAtivas.filter(
-        (s) => now - s.timestamp < SESSION_EXPIRY,
-      );
-    },
+         persistSalaState(state);
+      },
 
-    limparTodasSessoes: (state) => {
-      state.sessoesAtivas = [];
-    },
-  },
+      encerrarSessao: (state, action: PayloadAction<string>) => {
+         state.sessoesAtivas = state.sessoesAtivas.filter(
+            (s) => s.salaId !== action.payload,
+         );
+
+         persistSalaState(state);
+      },
+
+      limparSessoesExpiradas: (state) => {
+         const now = Date.now();
+         state.sessoesAtivas = state.sessoesAtivas.filter(
+            (s) => now - s.timestamp < SESSION_EXPIRY,
+         );
+
+         persistSalaState(state);
+      },
+
+      limparTodasSessoes: (state) => {
+         state.sessoesAtivas = [];
+
+         persistSalaState(state);
+      },
+
+      hydrateSalaStateFromStorage: (state) => {
+         if (typeof window === 'undefined') return;
+
+         const persisted = getPersistedSalaState();
+         state.tokenSala = persisted.tokenSala;
+         state.expiracao = persisted.expiracao ?? null;
+         state.sala = persisted.sala ?? null;
+         state.sessoesAtivas = persisted.sessoesAtivas ?? [];
+      },
+   },
 });
 
 export const {
-  setSalaToken,
-  limparSalaToken,
-  iniciarSessao,
-  encerrarSessao,
-  refreshSession,
-  limparSessoesExpiradas,
-  limparTodasSessoes,
+   setSalaToken,
+   limparSalaToken,
+   iniciarSessao,
+   encerrarSessao,
+   limparSessoesExpiradas,
+   limparTodasSessoes,
+   hydrateSalaStateFromStorage,
 } = salaAuthSlice.actions;
 
 export default salaAuthSlice.reducer;
