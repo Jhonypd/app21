@@ -8,8 +8,7 @@ import {
 import { rawBaseQuery, RawBaseQueryMeta } from './rawBaseQuery';
 import {
    logout,
-   getTokensFromStorage,
-   clearTokensFromStorage,
+   getCsrfTokenFromStorage,
 } from '@/services/api/configs/store/auth-slice';
 import { limparSalaToken } from './sala-auth-slice';
 import type { RootState } from './store';
@@ -28,7 +27,6 @@ function isApiError(err: unknown): err is ApiError {
    );
 }
 
-// Interface para tipar o Resultado com limpar_token
 interface ResultadoComLimparToken {
    limpar_token?: boolean;
 }
@@ -47,24 +45,23 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
    object,
    RawBaseQueryMeta
 > = async (args, api, extraOptions) => {
-   const { accessToken: tokenStorage } = getTokensFromStorage();
    const state = api.getState() as RootState;
    const tokenSalaAtual = state.salaAuth?.tokenSala;
+   const csrfToken = getCsrfTokenFromStorage();
 
-   const tokenAtual = tokenStorage;
-
-   // Criar headers com tokens do localStorage
+   // Autenticação via cookie httpOnly (access_token / refresh_token)
+   // Sem Authorization header — cookies são enviados automaticamente pelo browser
    const headersObj: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
    };
 
-   if (tokenAtual) {
-      headersObj['Authorization'] = `Bearer ${tokenAtual}`;
-   }
-
    if (tokenSalaAtual) {
       headersObj['x-token-sala'] = tokenSalaAtual;
+   }
+
+   if (csrfToken) {
+      headersObj['X-CSRF-Token'] = csrfToken;
    }
 
    // Montar args com headers atualizados (merge com headers do endpoint)
@@ -117,12 +114,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       // Limpar TODOS os tokens (auth + sala)
       api.dispatch(logout());
       api.dispatch(limparSalaToken());
-
-      // Limpar localStorage diretamente
-      clearTokensFromStorage();
-      if (typeof window !== 'undefined') {
-         localStorage.removeItem('persist:root');
-      }
 
       if (typeof window !== 'undefined') {
          const mensagem = requerLogin ? 'Sessão expirada' : 'Sessão inválida';

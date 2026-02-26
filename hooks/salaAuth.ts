@@ -23,12 +23,6 @@ export function useSalaAuth() {
    const dispatch = useDispatch();
    const router = useRouter();
    const [salaStorage, setSalaStorage] = useState(getPersistedSalaState);
-   const accessToken = useSelector(
-      (state: RootState) => state.auth.accessToken,
-   );
-   const refreshToken = useSelector(
-      (state: RootState) => state.auth.refreshToken,
-   );
 
    const [revogarRefreshToken] = useRevogarRefreshTokenMutation();
 
@@ -65,27 +59,22 @@ export function useSalaAuth() {
    const sessoesAtivas = salaStorage.sessoesAtivas ?? [];
    const sala = salaStorage.tokenSala;
 
-   const isAuthenticated = !!accessToken;
+   const isAuthenticated = !!useSelector(
+      (state: RootState) => state.auth.usuario,
+   );
 
    const logout = async () => {
-      // Tenta revogar o token no backend (não bloqueia se falhar)
-      if (refreshToken) {
-         try {
-            await revogarRefreshToken({
-               refreshToken,
-            }).unwrap();
-         } catch (error) {
-            console.error('Erro ao revogar token no backend:', error);
-            // Continua com o logout mesmo se falhar
-         }
+      // Tenta revogar a sessão no backend (refresh token vem do cookie)
+      try {
+         await revogarRefreshToken().unwrap();
+      } catch {
+         // Continua com o logout mesmo se falhar
       }
 
-      // Limpa o estado local e cookies
       dispatch(logoutAction());
       dispatch(limparSalaToken());
       syncSalaState();
 
-      // Redireciona para login
       router.push('/auth/login');
    };
 
@@ -137,8 +126,6 @@ export function useSalaAuth() {
    return {
       // Dados da sala
       sala,
-      accessToken,
-      refreshToken,
       isAuthenticated,
       logout,
 

@@ -6,14 +6,11 @@ import {
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-// Tipo do meta retornado pelo rawBaseQuery
 export interface RawBaseQueryMeta {
    response?: Response;
    request?: { headers: HeadersInit };
 }
 
-// fetch NATIVO para controle total dos headers
-// O fetchBaseQuery do RTK Query estava ignorando/mesclando headers de forma incorreta
 export const rawBaseQuery: BaseQueryFn<
    FetchArgs,
    unknown,
@@ -30,6 +27,7 @@ export const rawBaseQuery: BaseQueryFn<
          method,
          headers: headers as HeadersInit,
          body: body ? JSON.stringify(body) : undefined,
+         credentials: 'include',
       });
 
       const data = await response.json();
