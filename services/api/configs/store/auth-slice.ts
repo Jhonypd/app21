@@ -11,6 +11,16 @@ export const saveCsrfTokenToStorage = (csrfToken: string) => {
 
 export const getCsrfTokenFromStorage = (): string | null => {
    if (typeof window === 'undefined') return null;
+
+   const csrfFromCookie = document.cookie
+      .split('; ')
+      .find((cookie) => cookie.startsWith('csrf_token='))
+      ?.split('=')[1];
+
+   if (csrfFromCookie) {
+      return decodeURIComponent(csrfFromCookie);
+   }
+
    return localStorage.getItem(CSRF_STORAGE_KEY);
 };
 

@@ -58,8 +58,6 @@ const Auth = () => {
                return;
             }
 
-            // CSRF token é capturado automaticamente pelo interceptor via header X-CSRF-Token
-
             try {
                const resp = await loadDadosConta().unwrap();
 
@@ -93,7 +91,6 @@ const Auth = () => {
          setLoading(false);
       } catch (error) {
          setLoading(false);
-
          const mensagem = getApiErrorMessage(error);
          toastError({ description: mensagem.Mensagem });
       }
