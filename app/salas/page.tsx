@@ -21,10 +21,7 @@ import { TipoFiltroStatus } from '@/components/opcao-filtro';
 import { CardSala } from '@/components/card-sala';
 import { WizardCriarSessao } from '@/components/wizard-criar-sessao';
 import { useDispatch } from 'react-redux';
-import {
-   setSalaToken,
-   iniciarSessao,
-} from '@/services/api/configs/store/sala-auth-slice';
+import { iniciarSessao } from '@/services/api/configs/store/sala-auth-slice';
 
 const PageSalas = () => {
    const router = useRouter();
@@ -157,15 +154,8 @@ const PageSalas = () => {
          const result = await salaEntrar(loginPayload).unwrap();
 
          if (result.Sucesso) {
-            // Salvar token da sala no Redux
-            if (result.Resultado?.tokenSala) {
-               dispatch(
-                  setSalaToken({
-                     tokenSala: result.Resultado.tokenSala,
-                     expiracao: String(result.Resultado.dataExpiracao),
-                  }),
-               );
-            }
+            // NOTA: token_sala é setado automaticamente via cookie httpOnly pelo backend
+            // Não é necessário gerenciar no Redux
 
             // Salvar sessão ativa no Redux (CRÍTICO!)
             if (result.Resultado?.sessaoId) {

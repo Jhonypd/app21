@@ -33,10 +33,7 @@ const createEmptySalaState = (): SalaAuthState => ({
 const initialState: SalaAuthState = createEmptySalaState();
 
 const serializeSalaState = (state: SalaAuthState) => ({
-   tokenSala: state.tokenSala,
-   expiracao: state.expiracao ?? null,
-   sala: state.sala ?? null,
-   sessoesAtivas: state.sessoesAtivas ?? [],
+   tokenSala: state.tokenSala ?? null,
 });
 
 const emitSalaAuthUpdate = () => {
@@ -73,11 +70,9 @@ export const getPersistedSalaState = (): SalaAuthState => {
       const data = JSON.parse(raw);
       return {
          tokenSala: data.tokenSala ?? null,
-         expiracao: data.expiracao ?? null,
-         sala: data.sala ?? null,
-         sessoesAtivas: Array.isArray(data.sessoesAtivas)
-            ? data.sessoesAtivas
-            : [],
+         expiracao: null,
+         sala: null,
+         sessoesAtivas: [],
       };
    } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -101,14 +96,9 @@ const salaAuthSlice = createSlice({
          state.tokenSala = action.payload.tokenSala;
          state.expiracao = action.payload.expiracao ?? null;
 
-         // Salvar token nos cookies para o middleware poder acessar
-         if (typeof document !== 'undefined') {
-            const expiracao = action.payload.expiracao
-               ? new Date(action.payload.expiracao).toUTCString()
-               : new Date(Date.now() + 6 * 60 * 60 * 1000).toUTCString(); // 6h padrão
-
-            document.cookie = `token_sala=${action.payload.tokenSala}; expires=${expiracao}; path=/; SameSite=Strict`;
-         }
+         // NOTA: Token é setado automaticamente via cookie httpOnly pelo backend
+         // Não é necessário gerenciar manualmente via document.cookie
+         // Redux mantém referência apenas para saber se usuário está em sala
 
          persistSalaState(state);
       },
@@ -116,11 +106,8 @@ const salaAuthSlice = createSlice({
          state.tokenSala = null;
          state.expiracao = null;
 
-         // Remover token dos cookies
-         if (typeof document !== 'undefined') {
-            document.cookie =
-               'token_sala=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-         }
+         // NOTA: Cookie é limpo automaticamente pelo backend ao sair da sala
+         // Não é necessário gerenciar manualmente via document.cookie
 
          persistSalaState(state);
       },
@@ -181,9 +168,7 @@ const salaAuthSlice = createSlice({
 
          const persisted = getPersistedSalaState();
          state.tokenSala = persisted.tokenSala;
-         state.expiracao = persisted.expiracao ?? null;
-         state.sala = persisted.sala ?? null;
-         state.sessoesAtivas = persisted.sessoesAtivas ?? [];
+         // Resto permanece vazio (não persiste)
       },
    },
 });

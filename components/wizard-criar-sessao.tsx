@@ -13,10 +13,7 @@ import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import {
-  setSalaToken,
-  iniciarSessao,
-} from '@/services/api/configs/store/sala-auth-slice';
+import { iniciarSessao } from '@/services/api/configs/store/sala-auth-slice';
 import { WizardBase, WizardStep } from './wizard-base';
 
 interface WizardCriarSessaoProps {
@@ -149,20 +146,8 @@ export function WizardCriarSessao({
         );
       }
 
-      // Salvar token da sala no Redux
-      if (
-        resultadoEntrar.Resultado?.tokenSala &&
-        resultadoEntrar.Resultado?.dataExpiracao
-      ) {
-        dispatch(
-          setSalaToken({
-            tokenSala: resultadoEntrar.Resultado.tokenSala,
-            expiracao: String(
-              resultadoEntrar.Resultado.dataExpiracao,
-            ),
-          }),
-        );
-      }
+      // NOTA: token_sala é setado automaticamente via cookie httpOnly pelo backend
+      // Não é necessário gerenciar no Redux
 
       // Salvar sessão ativa no Redux
       if (resultadoEntrar.Resultado?.sessaoId) {

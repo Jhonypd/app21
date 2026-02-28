@@ -23,7 +23,6 @@ import { limparSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 import { useLazyObterDadosContaQuery } from '@/services/api/pessoas.api';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
-import { clearAllAuthCookies } from '@/utils/clear-auth-cookies';
 
 const Auth = () => {
    const [loading, setLoading] = useState(false);
@@ -43,8 +42,7 @@ const Auth = () => {
 
       try {
          if (action === 'login') {
-            // 🔥 SIMPLIFICADO: Limpar tokens diretamente do localStorage
-            clearAllAuthCookies();
+            // Limpar estado local antes de novo login
             dispatch(logout());
             dispatch(limparSalaToken());
 

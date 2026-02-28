@@ -39,7 +39,7 @@ export function useSalaAuth() {
          }
          syncSalaState();
       };
-
+      // eslint-disable-next-line
       const handleCustomUpdate = (_event: Event) => {
          syncSalaState();
       };
@@ -57,14 +57,12 @@ export function useSalaAuth() {
    }, [syncSalaState]);
 
    const sessoesAtivas = salaStorage.sessoesAtivas ?? [];
-   const sala = salaStorage.tokenSala;
 
    const isAuthenticated = !!useSelector(
       (state: RootState) => state.auth.usuario,
    );
 
    const logout = async () => {
-      // Tenta revogar a sessão no backend (refresh token vem do cookie)
       try {
          await revogarRefreshToken().unwrap();
       } catch {
@@ -124,12 +122,7 @@ export function useSalaAuth() {
    };
 
    return {
-      // Dados da sala
-      sala,
-      isAuthenticated,
-      logout,
-
-      // Gerenciamento de sessões ativas
+      // Gerenciamento de sessões ativas (runtime apenas)
       sessoesAtivas,
       iniciarSessaoAtiva,
       encerrarSessaoAtiva,
@@ -137,5 +130,7 @@ export function useSalaAuth() {
       limparSessoesAntigas,
       limparSessoes,
       limparTokenSala,
+      isAuthenticated,
+      logout,
    };
 }
