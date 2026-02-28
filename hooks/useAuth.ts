@@ -27,6 +27,7 @@ export function useAuth() {
          // Continua com o logout mesmo se falhar
       }
 
+      // Limpar Redux
       dispatch(logoutAction());
       dispatch(limparSalaToken());
       dispatch(limparTodasSessoes());

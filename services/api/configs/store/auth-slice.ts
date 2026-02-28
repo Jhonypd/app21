@@ -49,6 +49,15 @@ const authSlice = createSlice({
          state.csrfToken = null;
          state.usuario = null;
          clearCsrfTokenFromStorage();
+
+         // Limpar todo localStorage relacionado a autenticação
+         if (typeof window !== 'undefined') {
+            try {
+               localStorage.removeItem('app21_sala_auth_state');
+            } catch (e) {
+               console.warn('Erro ao limpar localStorage:', e);
+            }
+         }
       },
    },
 });

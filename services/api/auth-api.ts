@@ -7,7 +7,6 @@ import type {
    ConfirmacaoContaEmailPayload,
    EsqueciMinhaSenhaPayload,
    RedefinirSenhaPayload,
-   RefreshTokenPayload,
    ResponseLogin,
    ResponseCriarConta,
    ResponseConfirmacaoCodigo,
@@ -21,7 +20,6 @@ export type {
    ConfirmacaoContaEmailPayload,
    EsqueciMinhaSenhaPayload,
    RedefinirSenhaPayload,
-   RefreshTokenPayload,
    ResponseLogin,
    ResponseCriarConta,
    ResponseConfirmacaoCodigo,
@@ -85,28 +83,10 @@ export const AuthApi = apiSlice.injectEndpoints({
          }),
       }),
 
-      refreshToken: builder.mutation<
-         ApiResponse<ResponseLogin>,
-         RefreshTokenPayload
-      >({
-         query: (payload) => ({
-            url: '/auth/refresh',
-            method: 'POST',
-            body: payload,
-         }),
-      }),
-
       revogarRefreshToken: builder.mutation<ApiResponse, void>({
          query: () => ({
             url: '/auth/refresh/revogar',
             method: 'POST',
-         }),
-      }),
-
-      obterCsrf: builder.query<ApiResponse<{ csrfToken: string }>, void>({
-         query: () => ({
-            url: '/auth/csrf',
-            method: 'GET',
          }),
       }),
    }),
@@ -119,7 +99,5 @@ export const {
    useValidaCodigoEmailMutation,
    useEsqueciMinhaSenhaMutation,
    useRedefinirSenhaMutation,
-   useRefreshTokenMutation,
    useRevogarRefreshTokenMutation,
-   useLazyObterCsrfQuery,
 } = AuthApi;

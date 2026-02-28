@@ -14,16 +14,11 @@ import { Separator } from '@/components/ui/separator';
 import {
    useCriarContaMutation,
    useLoginMutation,
-   useLazyObterCsrfQuery,
 } from '@/services/api/auth-api';
 import Link from 'next/link';
 import ConfirmacaoEmailConta from '@/components/pages/confirmacao-email-conta';
 import { useDispatch } from 'react-redux';
-import {
-   logout,
-   setUser,
-   setCsrfToken,
-} from '@/services/api/configs/store/auth-slice';
+import { logout, setUser } from '@/services/api/configs/store/auth-slice';
 import { limparSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 import { useLazyObterDadosContaQuery } from '@/services/api/pessoas.api';
 import { toastError } from '@/components/custom-toast';
@@ -39,7 +34,6 @@ const Auth = () => {
    const [login] = useLoginMutation();
    const [criarConta] = useCriarContaMutation();
    const [loadDadosConta] = useLazyObterDadosContaQuery();
-   const [obterCsrf] = useLazyObterCsrfQuery();
 
    const handleAction = async (
       data: LoginFormValues | CadastroFormValues,
@@ -66,15 +60,7 @@ const Auth = () => {
                return;
             }
 
-            // Buscar CSRF token após login
-            try {
-               const csrfResult = await obterCsrf().unwrap();
-               if (csrfResult?.Sucesso && csrfResult?.Resultado?.csrfToken) {
-                  dispatch(setCsrfToken(csrfResult.Resultado.csrfToken));
-               }
-            } catch {
-               // não bloquear o login se CSRF falhar
-            }
+            // CSRF token é capturado automaticamente pelo interceptor via header X-CSRF-Token
 
             try {
                const resp = await loadDadosConta().unwrap();
@@ -92,7 +78,9 @@ const Auth = () => {
                return;
             }
 
+            setLoading(false);
             router.push('/');
+            return; // ← IMPORTANTE: Impedir execução de signup
          }
 
          // --- SIGNUP ---

@@ -9,6 +9,7 @@ import { rawBaseQuery, RawBaseQueryMeta } from './rawBaseQuery';
 import {
    logout,
    getCsrfTokenFromStorage,
+   setCsrfToken,
 } from '@/services/api/configs/store/auth-slice';
 import { limparSalaToken } from './sala-auth-slice';
 import type { RootState } from './store';
@@ -45,20 +46,15 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
    object,
    RawBaseQueryMeta
 > = async (args, api, extraOptions) => {
-   const state = api.getState() as RootState;
-   const tokenSalaAtual = state.salaAuth?.tokenSala;
    const csrfToken = getCsrfTokenFromStorage();
 
-   // Autenticação via cookie httpOnly (access_token / refresh_token)
-   // Sem Authorization header — cookies são enviados automaticamente pelo browser
+   // Autenticação via cookie httpOnly (access_token / refresh_token / token_sala)
+   // Cookies são enviados automaticamente pelo browser
+   // Sem Authorization header e sem x-token-sala header
    const headersObj: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
    };
-
-   if (tokenSalaAtual) {
-      headersObj['x-token-sala'] = tokenSalaAtual;
-   }
 
    if (csrfToken) {
       headersObj['X-CSRF-Token'] = csrfToken;
@@ -81,6 +77,14 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
          : { ...args, headers: mergedHeaders };
 
    const result = await rawBaseQuery(argsWithHeaders, api, extraOptions);
+
+   // Intercepta header X-CSRF-Token para renovação automática
+   if (result.meta?.response?.headers) {
+      const csrfHeader = result.meta.response.headers.get('X-CSRF-Token');
+      if (csrfHeader) {
+         api.dispatch(setCsrfToken(csrfHeader));
+      }
+   }
 
    type ErrorData = {
       requer_login?: boolean;
