@@ -23,7 +23,10 @@ import {
    useLazyObterVotosPorHistoriaQuery,
    useListarHistoriasSessaoQuery,
 } from '@/services/api/sessoes-api';
-import { useVotarMutation } from '@/services/api/votos-api';
+import {
+   useVotarMutation,
+   useAnularVotoMutation,
+} from '@/services/api/votos-api';
 
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
@@ -65,6 +68,7 @@ const PageSala = () => {
    const [selecionarHistoriaAtual, { reset: resetSelecionarHistoria }] =
       useSelecionarHistoriaAtualMutation();
    const [votar] = useVotarMutation();
+   const [anularVoto] = useAnularVotoMutation();
    const [revelarVotos] = useRevelarVotosMutation();
    const [resetarVotos] = useResetarVotosMutation();
    const [buscarVotosPorHistoria] = useLazyObterVotosPorHistoriaQuery();
@@ -304,6 +308,18 @@ const PageSala = () => {
       }
    };
 
+   const handleAnularVoto = async (votoId: string) => {
+      try {
+         await anularVoto(votoId).unwrap();
+         toastSuccess({
+            description: 'Voto cancelado com sucesso!',
+         });
+      } catch (error: unknown) {
+         const msg = getApiErrorMessage(error);
+         tratarErro(error, `Erro ao cancelar voto: ${msg.Mensagem}`);
+      }
+   };
+
    const handleRevelarVotos = async () => {
       if (!salaResultado?.sessaoAtiva?.id) {
          toastError({
@@ -459,6 +475,7 @@ const PageSala = () => {
                sessaoId={sessaoAtivaId ?? ''}
                meuRole={meuRole}
                aoEnviarVoto={handleEnviarVoto}
+               aoAnularVoto={handleAnularVoto}
                aoRevelarVotos={handleRevelarVotos}
                aoResetarVotos={handleResetarVotos}
                aoSelecionarHistoria={handleSelecionarHistoria}

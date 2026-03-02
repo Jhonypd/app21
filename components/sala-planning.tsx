@@ -90,7 +90,6 @@ export function SalaPlanning({
    carregandoHistorias = false,
 }: SalaPlanningProps) {
    // Estados
-   const [votoRascunho, setVotoRascunho] = useState<string | null>(null);
    const [historiaAtualId, setHistoriaAtualId] = useState<string | null>(null);
    const [modalVisitantesAberto, setModalVisitantesAberto] = useState(false);
    const [modalParticipantesAberto, setModalParticipantesAberto] =
@@ -280,12 +279,12 @@ export function SalaPlanning({
    // Verificar se o usuário atual já votou (usando votos ativos)
    const votoUsuario = votosPorPessoaId.get(usuarioAtualId);
    const votoDoServidor = votoUsuario?.valor;
-   const votoConfirmado = !!votoUsuario;
-   const votoSelecionado = votoConfirmado
+   const votoEstaConfirmado = !!votoUsuario;
+   const votoSelecionado = votoEstaConfirmado
       ? votoDoServidor !== undefined
          ? votoDoServidor.toString()
          : null
-      : votoRascunho;
+      : null;
 
    // Usar resumoParticipantes do backend para contadores
    const totalDevemVotar = sala.resumoParticipantes?.totalDevemVotar ?? 0;
@@ -296,46 +295,46 @@ export function SalaPlanning({
    const totalParticipantes = sala.resumoParticipantes?.totalParticipantes ?? 0;
 
    // Handlers
-   const handleSelecionarVoto = (carta: string) => {
-      // Desabilitar seleção se estiver em modo visualização
-      if (votoConfirmado || modoVisualizacao) return;
-
-      if (votoSelecionado === carta) {
-         setVotoRascunho(null);
-      } else {
-         setVotoRascunho(carta);
-      }
-   };
-
-   const handleConfirmarVoto = async (participaVotacao: boolean) => {
-      // Desabilitar confirmação se estiver em modo visualização
-      if (!votoSelecionado || votoConfirmado || modoVisualizacao) {
-         return;
-      }
+   const handleSelecionarVoto = async (
+      carta: string,
+      participaVotacao: boolean,
+   ) => {
+      // Impossível votar em modo visualização ou após revelar votos
+      if (modoVisualizacao || votosRevelados) return;
 
       try {
          setLoadingAcao(true);
-         const valorNumerico = VOTO_MAP[votoSelecionado];
+         const valorNumerico = VOTO_MAP[carta];
          if (valorNumerico === undefined) {
             toast.error('Voto inválido');
             return;
          }
 
-         if (aoEnviarVoto) {
-            await aoEnviarVoto(valorNumerico, participaVotacao);
+         // Se já tem um voto e clica no mesmo → CANCELA
+         if (
+            votoSelecionado === carta &&
+            votoEstaConfirmado &&
+            votoUsuario?.id &&
+            aoAnularVoto
+         ) {
+            console.log('Cancelando voto:', votoUsuario.id);
+            await aoAnularVoto(votoUsuario.id);
+            toastSuccess({ description: 'Voto cancelado' });
+         } else {
+            // Novo voto → ENVIA
+            console.log('Enviando novo voto:', valorNumerico);
+            if (aoEnviarVoto) {
+               await aoEnviarVoto(valorNumerico, participaVotacao);
+            }
          }
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {
-            console.error('Erro ao confirmar voto:', error);
+            console.error('Erro ao selecionar voto:', error);
          }
+         toastError({ description: 'Erro ao processar voto' });
       } finally {
          setLoadingAcao(false);
       }
-   };
-
-   const handleCancelarVoto = () => {
-      if (votoConfirmado) return;
-      setVotoRascunho(null);
    };
 
    const handleRevelarVotos = async () => {
@@ -361,7 +360,6 @@ export function SalaPlanning({
          if (aoResetarVotos) {
             await aoResetarVotos();
          }
-         setVotoRascunho(null);
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {
             console.error('Erro ao resetar votação:', error);
@@ -375,7 +373,6 @@ export function SalaPlanning({
       try {
          setLoadingAcao(true);
          setHistoriaAtualId(historiaId);
-         setVotoRascunho(null);
 
          if (aoSelecionarHistoria) {
             await aoSelecionarHistoria(historiaId);
@@ -603,14 +600,11 @@ export function SalaPlanning({
                   emModoPratica={emModoPratica}
                   votosRevelados={votosRevelados}
                   votoSelecionado={votoSelecionado}
-                  votoConfirmado={votoConfirmado}
                   loadingAcao={loadingAcao}
                   sessaoId={sessaoId}
                   participaVotacaoInicial={undefined}
                   modoVisualizacao={modoVisualizacao}
                   handleSelecionarVoto={handleSelecionarVoto}
-                  handleConfirmarVoto={handleConfirmarVoto}
-                  handleCancelarVoto={handleCancelarVoto}
                />
 
                {/* Action Buttons */}
