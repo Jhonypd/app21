@@ -1,9 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { UserPlus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { LoaderIcon, UserPlus } from 'lucide-react';
 import { SearchInput } from '@/components/inputs/input-search';
 import { ModalBase } from './modal-base';
+import { ButtonCustom } from '../button-custom';
+import { useAuth } from '@/hooks/useAuth';
+import { Checkbox } from '../ui/checkbox';
+import Loading from '../loading';
 
 interface Pessoa {
    id: string;
@@ -35,9 +39,16 @@ export function ModalAdicionarParticipanteOuVisitante({
    titulo,
 }: ModalAdicionarVisitanteProps) {
    const [pessoaSelecionadaId, setPessoaSelecionadaId] = useState('');
+   const [termoBuscaLocal, setTermoBuscaLocal] = useState(termoBusca);
+   const { usuario } = useAuth();
+
+   useEffect(() => {
+      setTermoBuscaLocal(termoBusca);
+   }, [termoBusca]);
 
    const handleClose = () => {
       setPessoaSelecionadaId('');
+      setTermoBuscaLocal('');
       onOpenChange(false);
    };
 
@@ -47,69 +58,102 @@ export function ModalAdicionarParticipanteOuVisitante({
       setPessoaSelecionadaId('');
    };
 
+   const handleBuscarSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      onBuscar(termoBuscaLocal);
+   };
+
    return (
-      <ModalBase
-         open={open}
-         onOpenChange={handleClose}
-         titulo={titulo}
-         maxWidth="lg"
-         botoesAcoes={
-            <>
-               <button
-                  onClick={handleClose}
-                  className="rounded-lg bg-slate-700 px-4 py-2 transition-all hover:bg-slate-600"
-               >
-                  Cancelar
-               </button>
-               <button
-                  onClick={handleAdicionar}
-                  disabled={!pessoaSelecionadaId || adicionando}
-                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-               >
-                  <UserPlus className="h-4 w-4" />
-                  {adicionando ? 'Adicionando...' : 'Adicionar'}
-               </button>
-            </>
-         }
-      >
-         {/* Campo de busca */}
-         <SearchInput
-            placeholder="Buscar por nome ou email..."
-            value={termoBusca}
-            onChange={(e) => onBuscar(e.target.value)}
-            disabled={carregando}
-            className="border-slate-700 bg-slate-800 text-white"
-         />
-
-         {/* Lista de resultados */}
-         {carregando && (
-            <p className="text-center text-sm text-gray-400">Buscando...</p>
+      <>
+         {adicionando && (
+            <Loading
+               active
+               type="transaction"
+            />
          )}
-
-         {pessoas && pessoas.length > 0 && (
-            <div className="max-h-64 space-y-2 overflow-y-auto">
-               {pessoas.map((pessoa) => (
-                  <button
-                     key={pessoa.id}
-                     onClick={() => setPessoaSelecionadaId(pessoa.id)}
-                     className={`w-full rounded-lg border p-3 text-left transition-all ${
-                        pessoaSelecionadaId === pessoa.id
-                           ? 'border-purple-500 bg-purple-500/20'
-                           : 'border-slate-700 bg-slate-800 hover:bg-slate-700'
-                     }`}
+         <ModalBase
+            open={open}
+            onOpenChange={handleClose}
+            titulo={titulo}
+            maxWidth="lg"
+            botoesAcoes={
+               <>
+                  <ButtonCustom
+                     onClick={handleClose}
+                     className="rounded-lg bg-slate-700 px-4 py-2 uppercase transition-all hover:bg-slate-600"
                   >
-                     <p className="font-medium">{pessoa.nome}</p>
-                     <p className="text-sm text-gray-400">{pessoa.email}</p>
-                  </button>
-               ))}
-            </div>
-         )}
+                     Cancelar
+                  </ButtonCustom>
+                  <ButtonCustom
+                     onClick={handleAdicionar}
+                     disabled={!pessoaSelecionadaId || adicionando}
+                     className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                     <p className="flex items-center justify-center gap-2 uppercase">
+                        <UserPlus className="h-5 w-5" />
+                        Adicionar
+                     </p>
+                  </ButtonCustom>
+               </>
+            }
+         >
+            {/* Campo de busca */}
+            <form onSubmit={handleBuscarSubmit}>
+               <SearchInput
+                  placeholder="Buscar por nome ou email..."
+                  value={termoBuscaLocal}
+                  onChange={(e) => setTermoBuscaLocal(e.target.value)}
+                  disabled={carregando}
+                  className="border-slate-700 bg-slate-800 text-white"
+               />
+            </form>
 
-         {!carregando && pessoas.length === 0 && termoBusca.length >= 2 && (
-            <p className="text-center text-sm text-gray-400">
-               Nenhuma pessoa encontrada
-            </p>
-         )}
-      </ModalBase>
+            {/* Lista de resultados */}
+            {carregando && (
+               <p className="text-center text-sm text-gray-400">
+                  <LoaderIcon className="mx-auto h-5 w-5 animate-spin" />
+               </p>
+            )}
+
+            {pessoas && pessoas.length > 0 && (
+               <div className="max-h-64 space-y-2 overflow-y-auto">
+                  {pessoas
+                     .filter((pessoa) => pessoa.id !== usuario?.id)
+                     .map((pessoa) => (
+                        <div
+                           key={pessoa.id}
+                           className={`relative h-16 w-full rounded-lg border p-3 text-left transition-all ${
+                              pessoaSelecionadaId === pessoa.id
+                                 ? 'border-purple-500 bg-purple-500/20'
+                                 : 'border-slate-700 bg-slate-800 hover:bg-slate-700'
+                           }`}
+                        >
+                           <Checkbox
+                              checked={pessoaSelecionadaId === pessoa.id}
+                              onCheckedChange={() =>
+                                 setPessoaSelecionadaId(
+                                    pessoa.id === pessoaSelecionadaId
+                                       ? ''
+                                       : pessoa.id,
+                                 )
+                              }
+                              className="absolute right-4 h-5 w-5 translate-y-1/2 border-2 border-slate-400"
+                           />
+                           <p className="font-medium">{pessoa.nome}</p>
+                           <p className="text-sm text-gray-400">
+                              {pessoa.email}
+                           </p>
+                        </div>
+                     ))}
+               </div>
+            )}
+
+            {!carregando && pessoas.length === 0 && termoBusca.length >= 2 && (
+               <p className="text-center text-sm text-gray-400">
+                  Nenhuma pessoa encontrada
+               </p>
+            )}
+         </ModalBase>
+      </>
    );
 }

@@ -22,6 +22,7 @@ import { CardSala } from '@/components/card-sala';
 import { WizardCriarSessao } from '@/components/wizard-criar-sessao';
 import { useDispatch } from 'react-redux';
 import { iniciarSessao } from '@/services/api/configs/store/sala-auth-slice';
+import { ButtonCustom } from '@/components/button-custom';
 
 const PageSalas = () => {
    const router = useRouter();
@@ -154,9 +155,6 @@ const PageSalas = () => {
          const result = await salaEntrar(loginPayload).unwrap();
 
          if (result.Sucesso) {
-            // NOTA: token_sala é setado automaticamente via cookie httpOnly pelo backend
-            // Não é necessário gerenciar no Redux
-
             // Salvar sessão ativa no Redux (CRÍTICO!)
             if (result.Resultado?.sessaoId) {
                // Buscar salaId pela lista de salas usando o código
@@ -188,8 +186,7 @@ const PageSalas = () => {
       } catch (error) {
          const msg = getApiErrorMessage(error);
          toastError({
-            title: msg.Mensagem,
-            description: msg.Detalhe,
+            description: msg.Mensagem,
          });
          return false;
       } finally {
@@ -212,12 +209,12 @@ const PageSalas = () => {
             <div className="px-4 py-4">
                {/* Cabeçalho com voltar e contador */}
                <div className="mb-4 flex items-center gap-3">
-                  <button
-                     onClick={() => router.back()}
-                     className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
-                  >
-                     <ArrowLeft className="h-5 w-5" />
-                  </button>
+                  <ButtonCustom
+                     size={'sm'}
+                     onClick={() => router.replace('/')}
+                     className="flex items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
+                     icon={<ArrowLeft className="h-5 w-5" />}
+                  />
 
                   <div className="flex-1">
                      <h1 className="text-xl">Todas as Salas</h1>

@@ -25,6 +25,7 @@ export interface AlterarRoleParticipantePayload {
 export interface ListarParticipantesSalaPayload {
    sala_id: string;
    sessao_id?: string;
+   apenasOnline?: boolean;
 }
 
 export interface ListarParticipantesSalaResponse {
@@ -66,6 +67,14 @@ export interface AdicionarParticipanteSessaoPayload {
 export interface AdicionarVisitantePayload {
    sala_id: string;
    pessoa_id: string;
+}
+
+// ---- Payload unificado para Participante ou Visitante (NOVO - usa rota consolidada) ----
+export interface AdicionarParticipanteOuVisitantePayload {
+   sala_id: string;
+   pessoa_id: string;
+   role: 0 | 1 | 2 | 3; // 0=Dono, 1=Admin, 2=Membro, 3=Visitante
+   sessao_id?: string; // Necessário para role=3 (visitante)
 }
 
 export interface RemoverVisitantePayload {

@@ -19,6 +19,7 @@ import type {
    ListarParticipantesSalaPayload,
    AdicionarVisitantePayload,
    RemoverVisitantePayload,
+   AdicionarParticipanteOuVisitantePayload,
 } from '../types';
 
 // Re-export dos tipos para manter compatibilidade com imports existentes
@@ -38,6 +39,7 @@ export type {
    ListarParticipantesSalaPayload,
    AdicionarVisitantePayload,
    RemoverVisitantePayload,
+   AdicionarParticipanteOuVisitantePayload,
 };
 
 export const SalasApi = apiSlice.injectEndpoints({
@@ -164,25 +166,51 @@ export const SalasApi = apiSlice.injectEndpoints({
          ApiResponse<ListarParticipantesSalaResponse>,
          ListarParticipantesSalaPayload
       >({
-         query: (payload) => ({
-            url: `/salas/${payload.sala_id}/ListarParticipantesSala`,
-            method: 'GET',
-            headers: {
-               sessao_id: payload.sessao_id,
-            },
-         }),
+         query: (payload) => {
+            const params = new URLSearchParams();
+            if (payload.apenasOnline) {
+               params.append('apenasOnline', 'true');
+            }
+            return {
+               url: `/salas/${payload.sala_id}/ListarParticipantesSala?${params.toString()}`,
+               method: 'GET',
+               headers: {
+                  sessao_id: payload.sessao_id,
+               },
+            };
+         },
          providesTags: ['participantes'],
       }),
 
-      // POST /salas/:id/visitantes - Adicionar visitante à sessão ativa
+      // POST /salas/:id/participantes - Adicionar visitante à sessão ativa (rota unificada)
       adicionarVisitante: builder.mutation<
          ApiResponse,
          AdicionarVisitantePayload
       >({
          query: ({ sala_id, pessoa_id }) => ({
-            url: `/salas/${sala_id}/visitantes`,
+            url: `/salas/${sala_id}/participantes`,
             method: 'POST',
-            body: { pessoa_id },
+            body: { 
+               pessoa_id,
+               role: 3, // 3 = Visitante
+            },
+         }),
+         invalidatesTags: ['participantes', 'salaPlaning'],
+      }),
+
+      // POST /salas/:id/participantes - Adicionar participante ou visitante (rota unificada genérica)
+      adicionarParticipanteOuVisitante: builder.mutation<
+         ApiResponse,
+         AdicionarParticipanteOuVisitantePayload
+      >({
+         query: ({ sala_id, pessoa_id, role, sessao_id }) => ({
+            url: `/salas/${sala_id}/participantes`,
+            method: 'POST',
+            body: { 
+               pessoa_id,
+               role,
+               ...(sessao_id && { sessao_id }),
+            },
          }),
          invalidatesTags: ['participantes', 'salaPlaning'],
       }),
@@ -269,5 +297,6 @@ export const {
    useListarParticipantesSalaQuery,
    useLazyListarParticipantesSalaQuery,
    useAdicionarVisitanteMutation,
+   useAdicionarParticipanteOuVisitanteMutation,
    useRemoverVisitanteMutation,
 } = SalasApi;

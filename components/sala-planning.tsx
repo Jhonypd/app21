@@ -3,7 +3,10 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Eye, RotateCcw, UserPlus } from 'lucide-react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
-import { useLazyListarParticipantesSalaQuery, useAdicionarVisitanteMutation } from '@/services/api/salas-api';
+import {
+   useLazyListarParticipantesSalaQuery,
+   useAdicionarVisitanteMutation,
+} from '@/services/api/salas-api';
 import { toast } from 'sonner';
 import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -48,6 +51,7 @@ interface SalaPlanningProps {
    modoVisualizacao?: boolean;
    historiaVisualizadaId?: string | null;
    onModoVisualizacaoChange?: (ativo: boolean, historiaId?: string) => void;
+   carregandoHistorias?: boolean;
 }
 
 const VOTO_MAP: Record<string, number> = {
@@ -83,6 +87,7 @@ export function SalaPlanning({
    modoVisualizacao = false,
    historiaVisualizadaId,
    onModoVisualizacaoChange,
+   carregandoHistorias = false,
 }: SalaPlanningProps) {
    // Estados
    const [votoRascunho, setVotoRascunho] = useState<string | null>(null);
@@ -115,8 +120,10 @@ export function SalaPlanning({
       buscarParticipantes,
       { data: participantesData, isFetching: carregandoParticipantes },
    ] = useLazyListarParticipantesSalaQuery();
-   const [pesquisarPessoas, { data: pessoasEncontradas, isFetching }] =
-      useLazyPesquisarPorNomeOuEmailQuery();
+   const [
+      pesquisarPessoas,
+      { data: pessoasEncontradas, isFetching, reset: resetBuscaPessoas },
+   ] = useLazyPesquisarPorNomeOuEmailQuery();
 
    // Verifica se está em modo prática (sem histórias)
    const emModoPratica = !historias || historias.length === 0;
@@ -410,6 +417,7 @@ export function SalaPlanning({
    };
 
    const handleBuscarPessoas = (termo: string) => {
+      resetBuscaPessoas();
       setTermoBusca(termo);
       if (buscaPessoasTimerRef.current) {
          clearTimeout(buscaPessoasTimerRef.current);
@@ -431,13 +439,11 @@ export function SalaPlanning({
    }, []);
 
    const handleAdicionarVisitante = async (pessoaId: string) => {
-      setLoadingAcao(true);
       if (!sala?.id) {
          toastError({
             description:
                'ID da sala não encontrado. Não é possível adicionar visitante.',
          });
-         setLoadingAcao(false);
          return;
       }
 
@@ -446,37 +452,41 @@ export function SalaPlanning({
             sala_id: sala.id,
             pessoa_id: pessoaId,
          }).unwrap();
-         setLoadingAcao(false);
+
+         if (!resultado.Sucesso) {
+            toastError({
+               description: `${resultado.Mensagem}`,
+            });
+            return;
+         }
+
          toastSuccess({
             description: `${resultado.Mensagem}`,
          });
          setModalVisitantesAberto(false);
          setTermoBusca('');
+         resetBuscaPessoas();
       } catch (error) {
          setLoadingAcao(false);
          const erro = getApiErrorMessage(error);
          toastError({
-            title: erro.Mensagem,
-            description: erro.Detalhe,
+            description: erro.Mensagem,
          });
       }
    };
 
    const handleBuscarParticipantes = async () => {
-      setLoadingAcao(true);
       try {
          await buscarParticipantes({
             sala_id: sala.id,
             ...(sessaoId ? { sessao_id: sessaoId } : {}),
+            apenasOnline: true,
          }).unwrap();
          setModalParticipantesAberto(true);
-         setLoadingAcao(false);
       } catch (error) {
-         setLoadingAcao(false);
          const erro = getApiErrorMessage(error);
          toastError({
-            title: erro.Mensagem,
-            description: erro.Detalhe,
+            description: erro.Mensagem,
          });
       }
    };
@@ -503,13 +513,12 @@ export function SalaPlanning({
 
    return (
       <>
-         {loadingAcao ||
-            (carregandoVotos && (
-               <Loading
-                  active
-                  type="transaction"
-               />
-            ))}
+         {(loadingAcao || carregandoVotos || carregandoParticipantes) && (
+            <Loading
+               active
+               type="transaction"
+            />
+         )}
          <div className="min-h-screen bg-slate-950 pb-6 text-white">
             {/* Header */}
             <div className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
@@ -527,7 +536,7 @@ export function SalaPlanning({
 
                   <div className="mt-4">
                      <ListaHistorias
-                        loading={loadingAcao || carregandoVotos}
+                        loading={carregandoVotos || carregandoHistorias}
                         role={meuRole}
                         historias={historias}
                         historiaAtualId={historiaAtualId || undefined}
@@ -556,6 +565,9 @@ export function SalaPlanning({
                         <span>{totalDevemVotar}</span>
                         <span className="text-white/70">votaram</span>
                      </Badge>
+
+                     {/* Modal de lista de participantes */}
+
                      <ListaParticipantes
                         participantes={
                            participantesData?.Resultado?.participantes ?? []
@@ -607,7 +619,10 @@ export function SalaPlanning({
                   {sessaoId && meuRole <= 1 && (
                      <ButtonCustom
                         icon={<UserPlus className="h-4 w-4" />}
-                        onClick={() => setModalVisitantesAberto(true)}
+                        onClick={() => {
+                           setModalVisitantesAberto(true);
+                           resetBuscaPessoas();
+                        }}
                      >
                         <span className="text-sm">Adicionar Visitante</span>
                      </ButtonCustom>

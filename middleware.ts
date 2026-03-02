@@ -80,12 +80,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(salasUrl);
    }
 
-   // ==========================================
-   // SEM VALIDAÇÃO DE AUTH NO MIDDLEWARE
-   // ==========================================
-   // Auth é gerenciada via Redux + localStorage no cliente
-   // Backend valida tokens via headers em cada requisição
-
    return NextResponse.next();
 }
 

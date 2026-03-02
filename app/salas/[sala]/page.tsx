@@ -82,8 +82,7 @@ const PageSala = () => {
       if (error) {
          const msg = getApiErrorMessage(error);
          toastError({
-            title: msg.Mensagem,
-            description: msg.Detalhe,
+            description: msg.Mensagem,
          });
       }
    }, [error]);
@@ -93,7 +92,7 @@ const PageSala = () => {
       const msg = getApiErrorMessage(error);
       toastError({
          title: titulo,
-         description: msg.Detalhe,
+         description: msg.Mensagem,
       });
    }, []);
 
@@ -151,12 +150,13 @@ const PageSala = () => {
 
    // Buscar histórias da sessão ativa separadamente
    const sessaoAtivaQueryId = salaResultado?.sessaoAtiva?.id;
-   const { data: historiasData } = useListarHistoriasSessaoQuery(
-      sessaoAtivaQueryId ?? '',
-      {
-         skip: !sessaoAtivaQueryId,
-      },
-   );
+   const {
+      data: historiasData,
+      isLoading: carregandoHistorias,
+      isFetching: buscandoHistorias,
+   } = useListarHistoriasSessaoQuery(sessaoAtivaQueryId ?? '', {
+      skip: !sessaoAtivaQueryId,
+   });
    const historiasSessao = useMemo(
       () => historiasData?.Resultado?.historias ?? [],
       [historiasData?.Resultado?.historias],
@@ -467,6 +467,7 @@ const PageSala = () => {
                modoVisualizacao={modoVisualizacao}
                historiaVisualizadaId={historiaVisualizadaId}
                onModoVisualizacaoChange={handleModoVisualizacaoChange}
+               carregandoHistorias={carregandoHistorias || buscandoHistorias}
             />
          )}
 

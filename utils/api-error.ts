@@ -20,7 +20,7 @@ export interface ApiError {
 
 export interface ApiErroFormatado {
    Mensagem: string;
-   Detalhe: string;
+   Detalhe: string | null;
 }
 
 /**
@@ -58,7 +58,7 @@ export function getApiErrorMessage(error: unknown): ApiErroFormatado {
    if (isApiErrorTyped(error)) {
       return {
          Mensagem: error.data?.Mensagem || 'Erro inesperado',
-         Detalhe: error.data?.Detalhe || 'Erro inesperado',
+         Detalhe: error.data?.Detalhe || null,
       };
    }
 
@@ -66,7 +66,7 @@ export function getApiErrorMessage(error: unknown): ApiErroFormatado {
    if (isApiError(error)) {
       return {
          Mensagem: error.data?.Mensagem || 'Erro inesperado',
-         Detalhe: error.data?.Detalhe || 'Erro inesperado',
+         Detalhe: error.data?.Detalhe || null,
       };
    }
 

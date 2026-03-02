@@ -107,8 +107,7 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
       } catch (error) {
          const erro = getApiErrorMessage(error);
          toastError({
-            title: erro.Mensagem,
-            description: erro.Detalhe,
+            description: erro.Mensagem,
          });
       }
    };
