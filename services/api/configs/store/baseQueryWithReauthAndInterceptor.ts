@@ -12,7 +12,28 @@ import {
    setCsrfToken,
 } from '@/services/api/configs/store/auth-slice';
 import { limparSalaToken } from './sala-auth-slice';
-import type { RootState } from './store';
+
+let logoutEmAndamento: Promise<void> | null = null;
+
+async function chamarLogoutBackend(csrfToken: string | null) {
+   const headers: Record<string, string> = {
+      Accept: 'application/json',
+   };
+
+   if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+   }
+
+   await rawBaseQuery(
+      {
+         url: '/auth/refresh/revogar',
+         method: 'POST',
+         headers,
+      },
+      {} as Parameters<typeof rawBaseQuery>[1],
+      {} as Parameters<typeof rawBaseQuery>[2],
+   );
+}
 
 export type ApiError = FetchBaseQueryError & {
    status: number;
@@ -48,9 +69,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 > = async (args, api, extraOptions) => {
    const csrfToken = getCsrfTokenFromStorage();
 
-   // Autenticação via cookie httpOnly (access_token / refresh_token / token_sala)
-   // Cookies são enviados automaticamente pelo browser
-   // Sem Authorization header e sem x-token-sala header
    const headersObj: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -115,21 +133,32 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
    // 1. Backend explicitamente pedir (requer_login: true)
    // 2. OU erro 401/403
    if (requerLogin || (ehErroAutenticacao && !limparTokenSala)) {
-      // Limpar TODOS os tokens (auth + sala)
+      if (!logoutEmAndamento) {
+         logoutEmAndamento = (async () => {
+            // Backend deve limpar cookies (access/refresh/csrf/token_sala)
+            await chamarLogoutBackend(csrfToken);
+         })().finally(() => {
+            logoutEmAndamento = null;
+         });
+      }
+
+      await logoutEmAndamento;
+
+      // Limpar estado local após tentativa de logout no backend
       api.dispatch(logout());
       api.dispatch(limparSalaToken());
 
       if (typeof window !== 'undefined') {
          const mensagem = requerLogin ? 'Sessão expirada' : 'Sessão inválida';
 
-         toastError({
-            title: mensagem,
-            description: 'Você será redirecionado para o login em 2 segundos.',
-         });
+         if (!window.location.pathname.startsWith('/auth/login')) {
+            toastError({
+               title: mensagem,
+               description: 'Faça login novamente para continuar.',
+            });
 
-         setTimeout(() => {
-            window.location.href = '/auth/login';
-         }, 2000);
+            window.location.replace('/auth/login');
+         }
       }
 
       return result;

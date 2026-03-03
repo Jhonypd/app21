@@ -15,11 +15,16 @@ export function useAuth() {
    const router = useRouter();
    const usuario = useSelector((state: RootState) => state.auth.usuario);
 
-   const [revogarRefreshToken] = useRevogarRefreshTokenMutation();
+   const [revogarRefreshToken, { isLoading: isLogoutLoading }] =
+      useRevogarRefreshTokenMutation();
 
    const isAuthenticated = !!usuario;
 
    const logout = async () => {
+      if (isLogoutLoading) {
+         return;
+      }
+
       // Tenta revogar a sessão no backend (refresh token vem do cookie)
       try {
          await revogarRefreshToken().unwrap();
@@ -38,6 +43,7 @@ export function useAuth() {
    return {
       usuario,
       isAuthenticated,
+      isLogoutLoading,
       logout,
    };
 }
