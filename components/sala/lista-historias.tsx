@@ -436,7 +436,10 @@ export function ListaHistorias({
 
                               {podeMudarHistoria && (
                                  <ButtonCustom
-                                    disabled={historia.id === historiaAtualId}
+                                    disabled={
+                                       historia.id === historiaAtualId ||
+                                       historia.jaFoiVotada
+                                    }
                                     variant="ghost"
                                     size="sm"
                                     className="hover:bg-destructive/20 h-9 w-9 p-0 text-red-400"
