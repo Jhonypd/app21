@@ -32,6 +32,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
    }
 
+   const publicRoutes = ['/auth', '/confirmacao-email'];
+   const isRotaPublica = publicRoutes.some((route) =>
+      pathname.startsWith(route),
+   );
+
+   // Rotas privadas exigem access_token em cookie
+   const accessToken = request.cookies.get('access_token')?.value;
+   if (!accessToken && !isRotaPublica) {
+      const loginUrl = new URL('/auth/login', request.url);
+      return NextResponse.redirect(loginUrl);
+   }
+
    // ==========================================
    // CONTROLE DE NAVEGAÇÃO BASEADO EM SALA
    // ==========================================
@@ -44,17 +56,6 @@ export async function middleware(request: NextRequest) {
       // Decodifica token para extrair código da sala
       const decoded = decodeJwtPayload(tokenSala);
       const codigoSala = decoded?.Sala_Codigo;
-
-      // Rotas públicas permitidas mesmo com token_sala
-      const publicRoutes = [
-         '/auth/login',
-         '/auth/cadastro',
-         '/confirmacao-email',
-      ];
-
-      const isRotaPublica = publicRoutes.some((route) =>
-         pathname.startsWith(route),
-      );
 
       // Permitir apenas rotas da sala específica ou rotas públicas
       const isRotaSalaCorreta =
