@@ -27,6 +27,7 @@ import {
    useVotarMutation,
    useAnularVotoMutation,
 } from '@/services/api/votos-api';
+import { useAdicionarHistoriaDuranteSessaoMutation } from '@/services/api/historias-api';
 
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
@@ -72,6 +73,8 @@ const PageSala = () => {
    const [revelarVotos] = useRevelarVotosMutation();
    const [resetarVotos] = useResetarVotosMutation();
    const [buscarVotosPorHistoria] = useLazyObterVotosPorHistoriaQuery();
+   const [adicionarHistoriaDuranteSessao] =
+      useAdicionarHistoriaDuranteSessaoMutation();
 
    // Cleanup ao desmontar
    useEffect(() => {
@@ -393,6 +396,73 @@ const PageSala = () => {
       }
    };
 
+   const handleAdicionarHistorias = async (
+      historias: Array<{ titulo: string; descricao?: string }>,
+   ) => {
+      const sessaoId = salaResultado?.sessaoAtiva?.id;
+
+      if (!sessaoId) {
+         toastError({
+            title: 'Erro',
+            description: 'Nenhuma sessão ativa encontrada',
+         });
+         return;
+      }
+
+      for (const historia of historias) {
+         await adicionarHistoriaDuranteSessao({
+            sessaoId,
+            titulo: historia.titulo,
+            descricao: historia.descricao,
+         }).unwrap();
+      }
+   };
+
+   const handleReordenarHistorias = async (
+      novasHistorias: Array<{ id: string; titulo: string; descricao?: string }>,
+   ) => {
+      const sessaoId = salaResultado?.sessaoAtiva?.id;
+
+      if (!sessaoId) {
+         toastError({
+            title: 'Erro',
+            description: 'Nenhuma sessão ativa encontrada',
+         });
+         return false;
+      }
+
+      const idsAtuais = new Set(historiasSessao.map((h) => h.id));
+      const idsNovos = new Set(novasHistorias.map((h) => h.id));
+
+      const remover = historiasSessao
+         .filter((h) => idsAtuais.has(h.id) && !idsNovos.has(h.id))
+         .map((h) => h.id);
+
+      // Se não houve remoção para persistir, não chama API
+      if (remover.length === 0) {
+         return true;
+      }
+
+      try {
+         await adicionarHistoriaDuranteSessao({
+            sessaoId,
+            remover,
+         }).unwrap();
+
+         toastSuccess({
+            description:
+               remover.length === 1
+                  ? 'História removida com sucesso!'
+                  : 'Histórias removidas com sucesso!',
+         });
+
+         return true;
+      } catch (error) {
+         tratarErro(error, 'Erro ao remover histórias');
+         return false;
+      }
+   };
+
    const handleBuscarVotosPorHistoria = async (historiaId: string) => {
       const sessaoId = salaResultado?.sessaoAtiva?.id;
       if (!sessaoId) {
@@ -479,6 +549,8 @@ const PageSala = () => {
                aoRevelarVotos={handleRevelarVotos}
                aoResetarVotos={handleResetarVotos}
                aoSelecionarHistoria={handleSelecionarHistoria}
+               aoAdicionarHistorias={handleAdicionarHistorias}
+               aoReordenarHistorias={handleReordenarHistorias}
                aoEncerrarSessao={handleAbrirDialogEncerrar}
                aoBuscarVotosPorHistoria={handleBuscarVotosPorHistoria}
                modoVisualizacao={modoVisualizacao}

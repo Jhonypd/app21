@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DialogConfirmacao from '@/components/dialog-confirmacao';
 import {
    ArrowRight,
@@ -8,7 +8,11 @@ import {
    ScrollText,
    ScrollTextIcon,
    ListChevronsDownUpIcon,
+   InfoIcon,
+   Plus,
+   Trash2,
 } from 'lucide-react';
+import { ModalAdicionarHistorias } from './modal-adicionar-historias';
 import {
    DndContext,
    closestCenter,
@@ -46,8 +50,13 @@ interface ListaHistoriasProps {
    historiaAtualId?: string;
    votacaoFinalizada: boolean;
    onMudarHistoria: (historiaId: string) => Promise<void>;
-   onReordenar?: (historias: Historia[]) => void;
+   onReordenar?: (
+      historias: Historia[],
+   ) => Promise<void | boolean | { Sucesso?: boolean }>;
    onModoVisualizacaoChange?: (ativo: boolean, historiaId?: string) => void;
+   onAdicionarHistorias?: (
+      historias: Array<{ titulo: string; descricao?: string }>,
+   ) => Promise<void>;
 }
 
 export function ListaHistorias({
@@ -57,10 +66,13 @@ export function ListaHistorias({
    onMudarHistoria,
    onReordenar,
    onModoVisualizacaoChange,
+   onAdicionarHistorias,
    role,
    loading,
 }: ListaHistoriasProps) {
    const [modalReordenarAberto, setModalReordenarAberto] = useState(false);
+   const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
+   const [salvandoReordenacao, setSalvandoReordenacao] = useState(false);
    const [historiasOrdenadas, setHistoriasOrdenadas] =
       useState(historiasIniciais);
    const [dialogConfirmacao, setDialogConfirmacao] = useState(false);
@@ -71,6 +83,11 @@ export function ListaHistorias({
    const [historiaVisualizadaId, setHistoriaVisualizadaId] = useState<
       string | null
    >(null);
+
+   // Sincronizar historiasOrdenadas com historiasIniciais quando houver mudanças
+   useEffect(() => {
+      setHistoriasOrdenadas(historiasIniciais);
+   }, [historiasIniciais]);
 
    const sensors = useSensors(
       useSensor(PointerSensor),
@@ -113,11 +130,43 @@ export function ListaHistorias({
       }
    };
 
-   const handleSalvarOrdem = () => {
-      if (onReordenar) {
-         onReordenar(historiasOrdenadas);
+   const handleSalvarOrdem = async () => {
+      if (!onReordenar) {
+         return;
       }
+
+      setSalvandoReordenacao(true);
+      try {
+         const resultado = await onReordenar(historiasOrdenadas);
+
+         const sucessoExplicito =
+            typeof resultado === 'boolean'
+               ? resultado
+               : typeof resultado === 'object' && resultado !== null
+                 ? resultado.Sucesso !== false
+                 : true;
+
+         if (!sucessoExplicito) {
+            return;
+         }
+
+         setModalReordenarAberto(false);
+      } catch {
+         // erro tratado no componente pai; modal permanece aberto
+      } finally {
+         setSalvandoReordenacao(false);
+      }
+   };
+
+   const handleCancelarReordenacao = () => {
+      setHistoriasOrdenadas(historiasIniciais);
       setModalReordenarAberto(false);
+   };
+
+   const handleRemoverDaLista = (historiaId: string) => {
+      setHistoriasOrdenadas((items) =>
+         items.filter((h) => h.id !== historiaId),
+      );
    };
 
    const handleSolicitarMudanca = (historiaId: string) => {
@@ -211,14 +260,27 @@ export function ListaHistorias({
                         </TooltipContent>
                      </Tooltip>
                   </p>
-                  <ButtonCustom
-                     variant="outline"
-                     onClick={() => setModalReordenarAberto(true)}
-                     icon={
-                        <ListChevronsDownUpIcon className="text-muted-foreground" />
-                     }
-                     disabled={loading}
-                  ></ButtonCustom>
+                  <div className="flex gap-2">
+                     {podeMudarHistoria && onAdicionarHistorias && (
+                        <ButtonCustom
+                           variant="outline"
+                           onClick={() => setModalAdicionarAberto(true)}
+                           icon={
+                              <Plus className="text-muted-foreground h-4 w-4" />
+                           }
+                           disabled={loading}
+                           title="Adicionar histórias"
+                        />
+                     )}
+                     <ButtonCustom
+                        variant="outline"
+                        onClick={() => setModalReordenarAberto(true)}
+                        icon={
+                           <ListChevronsDownUpIcon className="text-muted-foreground" />
+                        }
+                        disabled={loading}
+                     />
+                  </div>
                </div>
             ) : (
                <div className="flex h-20 w-full flex-col justify-between gap-2 rounded-lg border border-purple-500/20 bg-purple-500/10 p-4">
@@ -291,11 +353,32 @@ export function ListaHistorias({
          {/* Modal de reordenação */}
          <ModalBase
             open={modalReordenarAberto}
-            onOpenChange={setModalReordenarAberto}
+            onOpenChange={(open) => {
+               if (salvandoReordenacao) {
+                  return;
+               }
+               if (!open) {
+                  setHistoriasOrdenadas(historiasIniciais);
+               }
+               setModalReordenarAberto(open);
+            }}
             titulo={
-               <div className="flex items-center gap-2">
-                  <ScrollText className="text-muted-foreground h-5 w-5" />
-                  Histórias
+               <div className="flex items-center justify-between gap-2">
+                  <p className="flex items-center gap-3">
+                     <ScrollText className="text-muted-foreground h-5 w-5" />
+                     Histórias
+                  </p>
+                  <Tooltip delayDuration={800}>
+                     <TooltipTrigger>
+                        <InfoIcon className="text-muted-foreground" />
+                     </TooltipTrigger>
+                     <TooltipContent className="flex max-h-16 min-h-0 max-w-60 flex-col overflow-y-hidden text-slate-800">
+                        <p className="flex items-center gap-2 text-start md:text-sm">
+                           Arraste as histórias para reorganizar a ordem de
+                           votação. A história atual será mantida ativa.
+                        </p>
+                     </TooltipContent>
+                  </Tooltip>
                </div>
             }
             maxWidth="lg"
@@ -304,7 +387,8 @@ export function ListaHistorias({
                   <ButtonCustom
                      className="uppercase"
                      variant="outline"
-                     onClick={() => setModalReordenarAberto(false)}
+                     onClick={handleCancelarReordenacao}
+                     disabled={salvandoReordenacao}
                   >
                      {podeMudarHistoria ? 'Cancelar' : 'Fechar'}
                   </ButtonCustom>
@@ -312,19 +396,15 @@ export function ListaHistorias({
                      <ButtonCustom
                         onClick={handleSalvarOrdem}
                         className="uppercase"
+                        disabled={salvandoReordenacao}
                      >
-                        Salvar Ordem
+                        {salvandoReordenacao ? 'Salvando...' : 'Salvar'}
                      </ButtonCustom>
                   )}
                </>
             }
          >
-            <div className="w-full space-y-3 overflow-x-hidden px-3">
-               <p className="text-muted-foreground text-sm">
-                  Arraste as histórias para reorganizar a ordem de votação. A
-                  história atual será mantida ativa.
-               </p>
-
+            <div className="w-full space-y-3 overflow-hidden px-3">
                <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -335,25 +415,62 @@ export function ListaHistorias({
                      strategy={verticalListSortingStrategy}
                      disabled={!podeMudarHistoria}
                   >
-                     <div className="w-full space-y-2">
+                     <div className="max-h-96 w-full space-y-2 overflow-y-auto p-2">
                         {historiasOrdenadas.map((historia) => (
-                           <CardHistoria
+                           <div
                               key={historia.id}
-                              historia={historia}
-                              isAtual={historia.id === historiaAtualId}
-                              draggable={
-                                 historia.voto.length > 0 ? false : true
-                              }
-                              onClick={() =>
-                                 handleSolicitarMudanca(historia.id)
-                              }
-                           />
+                              className="flex items-center gap-2"
+                           >
+                              <div className="min-w-0 flex-1">
+                                 <CardHistoria
+                                    historia={historia}
+                                    isAtual={historia.id === historiaAtualId}
+                                    draggable={
+                                       historia.voto.length > 0 ? false : true
+                                    }
+                                    onClick={() =>
+                                       handleSolicitarMudanca(historia.id)
+                                    }
+                                 />
+                              </div>
+
+                              {podeMudarHistoria && (
+                                 <ButtonCustom
+                                    disabled={historia.id === historiaAtualId}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="hover:bg-destructive/20 h-9 w-9 p-0 text-red-400"
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    title="Remover história"
+                                    onClick={() =>
+                                       handleRemoverDaLista(historia.id)
+                                    }
+                                 />
+                              )}
+                           </div>
                         ))}
                      </div>
                   </SortableContext>
                </DndContext>
             </div>
          </ModalBase>
+
+         {/* Modal de Adicionar Histórias */}
+         {onAdicionarHistorias && (
+            <ModalAdicionarHistorias
+               aberto={modalAdicionarAberto}
+               aoFechar={() => setModalAdicionarAberto(false)}
+               aoSalvar={(historias) =>
+                  onAdicionarHistorias(
+                     historias.map((historia) => ({
+                        titulo: historia.titulo,
+                        descricao: historia.descricao,
+                     })),
+                  )
+               }
+               loading={loading}
+            />
+         )}
 
          {/* Dialog de Confirmação */}
          <DialogConfirmacao

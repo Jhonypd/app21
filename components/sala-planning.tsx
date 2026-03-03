@@ -44,7 +44,12 @@ interface SalaPlanningProps {
    aoSelecionarHistoria?: (historiaId: string) => Promise<void>;
    aoEncerrarSessao?: () => Promise<void>;
    aoAnularVoto?: (votoId: string) => Promise<void>;
-   aoReordenarHistorias?: (historias: Historia[]) => Promise<void>;
+   aoReordenarHistorias?: (
+      historias: Historia[],
+   ) => Promise<void | boolean | { Sucesso?: boolean }>;
+   aoAdicionarHistorias?: (
+      historias: Array<{ titulo: string; descricao?: string }>,
+   ) => Promise<void>;
    aoBuscarVotosPorHistoria?: (
       historiaId: string,
    ) => Promise<VotosPorHistoriaResponse | null>;
@@ -83,6 +88,7 @@ export function SalaPlanning({
    aoEncerrarSessao,
    aoAnularVoto,
    aoReordenarHistorias,
+   aoAdicionarHistorias,
    aoBuscarVotosPorHistoria,
    modoVisualizacao = false,
    historiaVisualizadaId,
@@ -387,9 +393,11 @@ export function SalaPlanning({
    };
 
    const handleReordenarHistorias = async (novasHistorias: Historia[]) => {
-      if (aoReordenarHistorias) {
-         await aoReordenarHistorias(novasHistorias);
+      if (!aoReordenarHistorias) {
+         return false;
       }
+
+      return await aoReordenarHistorias(novasHistorias);
    };
 
    const handleEncerrarSessao = async () => {
@@ -541,6 +549,7 @@ export function SalaPlanning({
                         onMudarHistoria={handleMudarHistoria}
                         onReordenar={handleReordenarHistorias}
                         onModoVisualizacaoChange={onModoVisualizacaoChange}
+                        onAdicionarHistorias={aoAdicionarHistorias}
                      />
                   </div>
                </div>

@@ -47,13 +47,13 @@ export const HistoriasApi = apiSlice.injectEndpoints({
 
     // POST /sessoes/:sessaoId/historias/durante-sessao
     adicionarHistoriaDuranteSessao: builder.mutation<
-      ApiResponse<{ historia: HistoriaSala }>,
+      ApiResponse<{ historia?: HistoriaSala; adicionadas?: number; removidas?: number }>,
       AdicionarHistoriaDuranteSessaoPayload
     >({
-      query: ({ sessaoId, titulo, descricao }) => ({
+      query: ({ sessaoId, ...body }) => ({
         url: `/sessoes/${sessaoId}/historias/durante-sessao`,
         method: 'POST',
-        body: { titulo, descricao },
+        body,
       }),
       invalidatesTags: ['historias', 'salaPlaning'],
     }),
