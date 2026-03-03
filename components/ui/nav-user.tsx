@@ -33,7 +33,7 @@ interface Perfil {
    Idioma_Padrao: string;
 }
 interface NavUserProps {
-   user?: Perfil | null;
+   user?: Perfil | null | undefined;
    onLogout?: () => void;
 }
 

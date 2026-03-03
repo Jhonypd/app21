@@ -4,7 +4,10 @@ import {
    FetchBaseQueryError,
 } from '@reduxjs/toolkit/query';
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+const baseUrl =
+   process.env.NODE_ENV === 'production'
+      ? process.env.NEXT_PUBLIC_API_URL
+      : process.env.NEXT_PUBLIC_DEV_API_URL;
 
 export interface RawBaseQueryMeta {
    response?: Response;
