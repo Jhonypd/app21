@@ -21,16 +21,18 @@ export function LoadingGlobalRedux({ children }: { children: ReactNode }) {
    const [loading, setLoading] = useState(true);
 
    useEffect(() => {
+      let ativo = true;
+
       async function init() {
          // Nenhuma sessão ativa → libera a UI
          if (!hasSessao) {
-            setLoading(false);
+            if (ativo) setLoading(false);
             return;
          }
 
          // Já temos o usuário no Redux → libera
          if (usuario) {
-            setLoading(false);
+            if (ativo) setLoading(false);
             return;
          }
 
@@ -43,15 +45,19 @@ export function LoadingGlobalRedux({ children }: { children: ReactNode }) {
             } else {
                dispatch(logout());
             }
-         } catch (err) {
+         } catch {
             dispatch(logout());
          }
 
-         setLoading(false);
+         if (ativo) setLoading(false);
       }
 
-      init();
-   }, [hasSessao]);
+      void init();
+
+      return () => {
+         ativo = false;
+      };
+   }, [dispatch, hasSessao, loadUser, usuario]);
 
    if (loading) {
       return (

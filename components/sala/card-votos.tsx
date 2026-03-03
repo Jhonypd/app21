@@ -5,7 +5,6 @@ import { toastSuccess, toastError } from '../custom-toast';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { useAtualizarParticipaVotacaoMutation } from '@/services/api/sessoes-api';
-import { ButtonCustom } from '../button-custom';
 import Loading from '../loading';
 
 interface CardVotosProps {
@@ -43,7 +42,6 @@ const CardVotos: React.FC<CardVotosProps> = ({
    emModoPratica,
    votosRevelados,
    votoSelecionado,
-   loadingAcao,
    sessaoId,
    participaVotacaoInicial,
    modoVisualizacao = false,
