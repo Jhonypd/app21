@@ -36,13 +36,10 @@ export interface AtualizarHistoriaPayload {
 
 export interface AdicionarHistoriaDuranteSessaoPayload {
   sessaoId: string;
-  // Formato legado (retrocompatível)
-  titulo?: string;
-  descricao?: string;
-  // Formato em lote
   adicionar?: Array<{
     titulo: string;
     descricao?: string;
+    ordem: number;
   }>;
   remover?: string[];
 }

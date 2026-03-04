@@ -83,6 +83,7 @@ export interface HistoriaSessao {
    descricao?: string;
    jaFoiVotada: boolean;
    historiaAtual: boolean;
+   ordem: number;
    voto: number[] | [];
 }
 

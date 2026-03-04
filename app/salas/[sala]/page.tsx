@@ -165,7 +165,10 @@ const PageSala = () => {
       skip: !sessaoAtivaQueryId,
    });
    const historiasSessao = useMemo(
-      () => historiasData?.Resultado?.historias ?? [],
+      () =>
+         [...(historiasData?.Resultado?.historias ?? [])].sort(
+            (a, b) => a.ordem - b.ordem,
+         ),
       [historiasData?.Resultado?.historias],
    );
 
@@ -397,7 +400,7 @@ const PageSala = () => {
    };
 
    const handleAdicionarHistorias = async (
-      historias: Array<{ titulo: string; descricao?: string }>,
+      historias: Array<{ titulo: string; descricao?: string; ordem: number }>,
    ) => {
       const sessaoId = salaResultado?.sessaoAtiva?.id;
 
@@ -409,13 +412,14 @@ const PageSala = () => {
          return;
       }
 
-      for (const historia of historias) {
-         await adicionarHistoriaDuranteSessao({
-            sessaoId,
+      await adicionarHistoriaDuranteSessao({
+         sessaoId,
+         adicionar: historias.map((historia) => ({
             titulo: historia.titulo,
             descricao: historia.descricao,
-         }).unwrap();
-      }
+            ordem: historia.ordem,
+         })),
+      }).unwrap();
    };
 
    const handleReordenarHistorias = async (

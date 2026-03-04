@@ -28,6 +28,7 @@ interface Historia {
    descricao?: string;
    jaFoiVotada: boolean;
    historiaAtual: boolean;
+   ordem: number;
    voto: number[] | [];
 }
 
@@ -48,7 +49,7 @@ interface SalaPlanningProps {
       historias: Historia[],
    ) => Promise<void | boolean | { Sucesso?: boolean }>;
    aoAdicionarHistorias?: (
-      historias: Array<{ titulo: string; descricao?: string }>,
+      historias: Array<{ titulo: string; descricao?: string; ordem: number }>,
    ) => Promise<void>;
    aoBuscarVotosPorHistoria?: (
       historiaId: string,

@@ -33,6 +33,7 @@ import CardHistoria from './card-historia';
 import { ButtonCustom } from '../button-custom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Skeleton } from '../ui/skeleton';
+import Loading from '../loading';
 
 interface Historia {
    id: string;
@@ -40,6 +41,7 @@ interface Historia {
    descricao?: string;
    jaFoiVotada: boolean;
    historiaAtual: boolean;
+   ordem: number;
    voto: number[] | [];
 }
 
@@ -55,7 +57,7 @@ interface ListaHistoriasProps {
    ) => Promise<void | boolean | { Sucesso?: boolean }>;
    onModoVisualizacaoChange?: (ativo: boolean, historiaId?: string) => void;
    onAdicionarHistorias?: (
-      historias: Array<{ titulo: string; descricao?: string }>,
+      historias: Array<{ titulo: string; descricao?: string; ordem: number }>,
    ) => Promise<void>;
 }
 
@@ -117,6 +119,8 @@ export function ListaHistorias({
       !modoVisualizacao || historiaExibidaId === historiaAtualId;
 
    const historiaExibida = historiasIniciais[indiceExibido];
+   const proximaOrdemInicial =
+      Math.max(0, ...historiasIniciais.map((h) => h.ordem ?? 0)) + 1;
 
    const handleDragEnd = (event: DragEndEvent) => {
       const { active, over } = event;
@@ -237,6 +241,13 @@ export function ListaHistorias({
    const podeMudarHistoria = role < 2;
    return (
       <>
+         {salvandoReordenacao ||
+            (loading && (
+               <Loading
+                  active
+                  type="transaction"
+               />
+            ))}
          <div className="space-y-3">
             {/* História atual/visualizada em destaque */}
             {historiaExibida && !loading ? (
@@ -363,7 +374,7 @@ export function ListaHistorias({
                setModalReordenarAberto(open);
             }}
             titulo={
-               <div className="flex items-center justify-between gap-2">
+               <div className="flex items-center justify-between">
                   <p className="flex items-center gap-3">
                      <ScrollText className="text-muted-foreground h-5 w-5" />
                      Histórias
@@ -398,13 +409,17 @@ export function ListaHistorias({
                         className="uppercase"
                         disabled={salvandoReordenacao}
                      >
-                        {salvandoReordenacao ? 'Salvando...' : 'Salvar'}
+                        salvar
                      </ButtonCustom>
                   )}
                </>
             }
          >
             <div className="w-full space-y-3 overflow-hidden px-3">
+               <div className="text-muted-foreground flex w-full items-center gap-2 border-b border-b-slate-400/10 pb-2 text-lg font-semibold">
+                  Histórias
+                  <h2 className="text-base">({historiasOrdenadas.length})</h2>
+               </div>
                <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -415,7 +430,7 @@ export function ListaHistorias({
                      strategy={verticalListSortingStrategy}
                      disabled={!podeMudarHistoria}
                   >
-                     <div className="max-h-96 w-full space-y-2 overflow-y-auto p-2">
+                     <div className="no-scrollbar max-h-60 w-full space-y-2 overflow-y-auto p-2">
                         {historiasOrdenadas.map((historia) => (
                            <div
                               key={historia.id}
@@ -462,15 +477,9 @@ export function ListaHistorias({
          {onAdicionarHistorias && (
             <ModalAdicionarHistorias
                aberto={modalAdicionarAberto}
+               proximaOrdemInicial={proximaOrdemInicial}
                aoFechar={() => setModalAdicionarAberto(false)}
-               aoSalvar={(historias) =>
-                  onAdicionarHistorias(
-                     historias.map((historia) => ({
-                        titulo: historia.titulo,
-                        descricao: historia.descricao,
-                     })),
-                  )
-               }
+               aoSalvar={onAdicionarHistorias}
                loading={loading}
             />
          )}
