@@ -274,7 +274,9 @@ export function CardSala({
                onOpenChange={setModalEntrarSalaAberto}
                onEntrar={entrarViaModal}
                codigoInicial={sala.codigo}
-               bloquearCodigo={sala.salaPrivada && sala.meuRole !== 0 && sala.meuRole !== 1}
+               bloquearCodigo={
+                  sala.salaPrivada && sala.meuRole !== 0 && sala.meuRole !== 1
+               }
             />
 
             {/* Dialog Editar - Renderizado fora do dropdown */}

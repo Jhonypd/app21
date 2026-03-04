@@ -120,11 +120,7 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
             disabled={carregando}
             className="relative"
          >
-            {carregando ? (
-               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-               <UsersIcon />
-            )}
+            <UsersIcon />
             <p>Participantes</p>
             <span className="bg-accent absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full text-[10px]">
                {totalOnline}
@@ -166,7 +162,7 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
                      </ButtonCustom>
                   )}
                </div>
-               <div className="mx-auto grid max-h-96 min-h-72 w-full grid-cols-2 gap-4 overflow-y-auto py-3 md:grid-cols-3 lg:grid-cols-4">
+               <div className="mx-auto grid max-h-96 min-h-56 w-full grid-cols-2 place-items-center gap-4 overflow-y-auto py-3 md:grid-cols-3 lg:grid-cols-4">
                   {participantesOnline.map((participante) => {
                      const voto = votosPorPessoaId.get(participante.id);
 

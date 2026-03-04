@@ -114,7 +114,7 @@ const CardVotos: React.FC<CardVotosProps> = ({
                type="transaction"
             />
          )}
-         <div className="border-border bg-card w-full max-w-md rounded-lg border p-6 shadow-sm">
+         <div className="border-border bg-card mx-auto w-full max-w-md rounded-lg border p-6 shadow-sm">
             <header className="mb-4 flex items-center justify-between px-6">
                <h2 className="text-lg">
                   {modoVisualizacao
@@ -143,7 +143,7 @@ const CardVotos: React.FC<CardVotosProps> = ({
                   className={
                      votoSelecionado
                         ? 'flex w-full items-center justify-center p-2'
-                        : 'grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6'
+                        : 'grid grid-cols-3 place-items-center gap-3 sm:grid-cols-4 md:grid-cols-6'
                   }
                >
                   {!votoSelecionado &&
