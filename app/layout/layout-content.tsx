@@ -1,11 +1,5 @@
 'use client';
-import {
-  ReactNode,
-  memo,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { ReactNode, memo, useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navegacao } from '@/components/navegacao';
 import { Header } from '@/components/header';
@@ -13,38 +7,37 @@ import { Greeting } from '@/components/greeting';
 import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutContentProps {
-  children: ReactNode;
+   children: ReactNode;
 }
 
 const HIDDEN_HEADER_PREFIXES = [
-  '/auth',
-  '/error',
-  '/confirmacao-email',
-  '/salas',
+   '/auth',
+   '/error',
+   '/confirmacao-email',
+   '/salas',
 ] as const;
 
 const HIDDEN_SIDEBAR_PREFIXES = [
-  '/auth',
-  '/error',
-  '/confirmacao-email',
+   '/auth',
+   '/error',
+   '/confirmacao-email',
 ] as const;
 
 // Componente para o layout sem sidebar
-const NoSidebarLayout = memo(
-  ({ children }: { children: ReactNode }) => (
-    <div className="container min-h-screen bg-slate-950 pb-24 text-white">
+const NoSidebarLayout = memo(({ children }: { children: ReactNode }) => (
+   <div className="container min-h-screen bg-slate-950 pb-24 text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full bg-purple-500/20 blur-3xl"></div>
-        <div
-          className="absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full bg-pink-500/20 blur-3xl"
-          style={{ animationDelay: '1s' }}
-        ></div>
+         <div className="absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full bg-purple-500/20 blur-3xl"></div>
+         <div
+            className="absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full bg-pink-500/20 blur-3xl"
+            style={{ animationDelay: '1s' }}
+         ></div>
       </div>
 
       <div
-        className={`container flex max-w-screen flex-1 flex-col gap-4 px-4 pt-2 sm:px-6`}
+         className={`container flex max-w-screen flex-1 flex-col gap-4 px-4 pt-2 sm:px-6`}
       >
-        {children}
+         {children}
       </div>
       <style>{`
         @keyframes pulse {
@@ -62,73 +55,73 @@ const NoSidebarLayout = memo(
           transform: scale(0.98);
         }
       `}</style>
-    </div>
-  ),
-);
+   </div>
+));
 
 NoSidebarLayout.displayName = 'NoSidebarLayout';
 
-const LayoutContent = memo(
-  ({ children }: LayoutContentProps) => {
-    const [abaAtiva, setAbaAtiva] = useState('/');
-    const pathname = usePathname();
-    const { usuario, logout } = useAuth();
+const LayoutContent = memo(({ children }: LayoutContentProps) => {
+   const [abaAtiva, setAbaAtiva] = useState('/');
+   const pathname = usePathname();
+   const { usuario, logout } = useAuth();
 
-    // Memorizar a verificação do path para evitar recálculos
-    const shouldHideSidebar = useMemo(() => {
-      return HIDDEN_SIDEBAR_PREFIXES.some((prefix) =>
-        pathname.startsWith(prefix),
+   // Memorizar a verificação do path para evitar recálculos
+   const shouldHideSidebar = useMemo(() => {
+      // Verifica se está em uma sala específica (ex: /salas/DDRBHA)
+      const isInSpecificRoom = /^\/salas\/.+/.test(pathname);
+
+      return (
+         HIDDEN_SIDEBAR_PREFIXES.some((prefix) =>
+            pathname.startsWith(prefix),
+         ) || isInSpecificRoom
       );
-    }, [pathname]);
+   }, [pathname]);
 
-    const shouldHideHeader = useMemo(() => {
+   const shouldHideHeader = useMemo(() => {
       return HIDDEN_HEADER_PREFIXES.some((prefix) =>
-        pathname.startsWith(prefix),
+         pathname.startsWith(prefix),
       );
-    }, [pathname]);
+   }, [pathname]);
 
-    useEffect(() => {
+   useEffect(() => {
       const path = pathname.split('/')[1];
       // Atualiza a aba ativa com base no pathname
       setAbaAtiva(path.length > 0 ? `${path}` : '/');
-    }, [pathname]);
+   }, [pathname]);
 
-    // Memorizar o conteúdo baseado na condição
-    const content = useMemo(() => {
+   // Memorizar o conteúdo baseado na condição
+   const content = useMemo(() => {
       return (
-        <NoSidebarLayout>
-          {!shouldHideHeader && (
-            <Header
-              usuario={usuario}
-              logout={logout}
-            />
-          )}
-          {pathname === '/' && !shouldHideHeader && (
-            <Greeting
-              nome={usuario?.nome.split(' ')[0] as string}
-            />
-          )}
-          {children}
-          {!shouldHideSidebar && (
-            <Navegacao
-              abaAtiva={abaAtiva}
-              aoMudarAba={setAbaAtiva}
-            />
-          )}
-        </NoSidebarLayout>
+         <NoSidebarLayout>
+            {!shouldHideHeader && (
+               <Header
+                  usuario={usuario}
+                  logout={logout}
+               />
+            )}
+            {pathname === '/' && !shouldHideHeader && (
+               <Greeting nome={usuario?.nome.split(' ')[0] as string} />
+            )}
+            {children}
+            {!shouldHideSidebar && (
+               <Navegacao
+                  abaAtiva={abaAtiva}
+                  aoMudarAba={setAbaAtiva}
+               />
+            )}
+         </NoSidebarLayout>
       );
-    }, [
+   }, [
       shouldHideHeader,
       shouldHideSidebar,
       children,
       abaAtiva,
       usuario,
       pathname,
-    ]);
+   ]);
 
-    return content;
-  },
-);
+   return content;
+});
 
 LayoutContent.displayName = 'LayoutContent';
 
