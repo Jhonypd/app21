@@ -124,11 +124,11 @@ function CardHistoriaFixo({ historia, isAtual, onClick }: CardHistoriaProps) {
             <div className="flex w-full items-center justify-between">
                <p
                   className={cn(
-                     'flex flex-col items-start truncate text-sm font-medium',
+                     'flex w-full flex-col flex-wrap items-start truncate text-start text-sm font-medium',
                      isAtual && 'text-primary-foreground',
                   )}
                >
-                  <span>{historia.titulo}</span>
+                  <span className="w-full">{historia.titulo}</span>
                   <span className="text-muted-foreground max-w-3/4 truncate text-[10px] text-ellipsis">
                      {historia.descricao}
                   </span>

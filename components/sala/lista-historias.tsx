@@ -126,6 +126,18 @@ export function ListaHistorias({
       const { active, over } = event;
 
       if (over && active.id !== over.id) {
+         // Não permite soltar sobre uma história votada ou a história atual
+         const overItem = historiasOrdenadas.find(
+            (item) => item.id === over.id,
+         );
+         const isOverLocked =
+            overItem &&
+            (overItem.voto.length > 0 ||
+               overItem.jaFoiVotada ||
+               over.id === historiaAtualId);
+
+         if (isOverLocked) return;
+
          setHistoriasOrdenadas((items) => {
             const oldIndex = items.findIndex((item) => item.id === active.id);
             const newIndex = items.findIndex((item) => item.id === over.id);
@@ -444,7 +456,9 @@ export function ListaHistorias({
                                        historia.voto.length > 0 ? false : true
                                     }
                                     onClick={() =>
-                                       handleSolicitarMudanca(historia.id)
+                                       historiaAtualId !== historia.id
+                                          ? handleSolicitarMudanca(historia.id)
+                                          : undefined
                                     }
                                  />
                               </div>
