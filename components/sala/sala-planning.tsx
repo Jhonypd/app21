@@ -3,18 +3,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, RotateCcw, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { toastError, toastSuccess } from './custom-toast';
+import { toastError, toastSuccess } from '../custom-toast';
 import { useVotosPolling } from '@/hooks/useVotosPolling';
 import { useSalaPlanningData } from '@/hooks/useSalaPlanning';
-import { ModalAdicionarParticipanteOuVisitante } from './sala/modal-adicionar-visitante';
-import CardVotos from './sala/card-votos';
-import ListaParticipantes from './sala/lista-participantes';
-import HeaderSala from './sala/header-sala';
-import { ListaHistorias } from './sala/lista-historias';
-import { Badge } from './ui/badge';
-import CardMediaVotacao from './sala/card-media-votacao';
-import { ButtonCustom } from './button-custom';
-import Loading from './loading';
+import { ModalAdicionarParticipanteOuVisitante } from '../sala/modal-adicionar-visitante';
+import CardVotos from '../sala/card-votos';
+import ListaParticipantes from '../sala/lista-participantes';
+import HeaderSala from '../sala/header-sala';
+import { ListaHistorias } from '../sala/lista-historias';
+import { Badge } from '../ui/badge';
+import CardMediaVotacao from '../sala/card-media-votacao';
+import { ButtonCustom } from '../button-custom';
+import Loading from '../loading';
 import { SalaCompleta, VotosPorHistoriaResponse } from '@/services/types';
 
 interface Historia {
@@ -34,7 +34,7 @@ interface SalaPlanningProps {
    sessaoId: string;
    meuRole: number;
    aoVoltar: () => void | Promise<void>;
-   aoEnviarVoto?: (valor: number, participaVotacao: boolean) => Promise<void>;
+   aoEnviarVoto?: (valor: number, participaVotacao: boolean, historiaId: string) => Promise<void>;
    aoRevelarVotos?: () => Promise<void>;
    aoResetarVotos?: () => Promise<void>;
    aoSelecionarHistoria?: (historiaId: string) => Promise<void>;
@@ -207,10 +207,7 @@ export function SalaPlanning({
 
    // Forçar busca quando voltamos do modo visualização para a história atual
    useEffect(() => {
-      if (
-         !modoVisualizacao &&
-         sala.historia_atual_id
-      ) {
+      if (!modoVisualizacao && sala.historia_atual_id) {
          // Limpar votos antes de buscar
          setListaVotosCarregados(createEmptyVotes());
          setCarregandoVotos(true);
@@ -300,8 +297,8 @@ export function SalaPlanning({
          } else {
             // Novo voto → ENVIA
             console.log('Enviando novo voto:', valorNumerico);
-            if (aoEnviarVoto) {
-               await aoEnviarVoto(valorNumerico, participaVotacao);
+            if (aoEnviarVoto && historiaAtualId) {
+               await aoEnviarVoto(valorNumerico, participaVotacao, historiaAtualId);
             }
          }
       } catch (error) {

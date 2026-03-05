@@ -15,17 +15,17 @@ import { toastError, toastSuccess } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSafeTimer } from '@/hooks/useSafeAsync';
-import { SalaPlanning } from '@/components/sala-planning';
+import { SalaPlanning } from '@/components/sala/sala-planning';
 import {
    useEncerrarSessaoMutation,
    useRevelarVotosMutation,
    useResetarVotosMutation,
-   useLazyObterVotosPorHistoriaQuery,
    useListarHistoriasSessaoQuery,
 } from '@/services/api/sessoes-api';
 import {
    useVotarMutation,
    useAnularVotoMutation,
+   useLazyObterVotosPorHistoriaSessaoSessaoSalaQuery,
 } from '@/services/api/votos-api';
 import { useAdicionarHistoriaDuranteSessaoMutation } from '@/services/api/historias-api';
 
@@ -72,7 +72,8 @@ const PageSala = () => {
    const [anularVoto] = useAnularVotoMutation();
    const [revelarVotos] = useRevelarVotosMutation();
    const [resetarVotos] = useResetarVotosMutation();
-   const [buscarVotosPorHistoria] = useLazyObterVotosPorHistoriaQuery();
+   const [buscarVotosPorHistoria] =
+      useLazyObterVotosPorHistoriaSessaoSessaoSalaQuery();
    const [adicionarHistoriaDuranteSessao] =
       useAdicionarHistoriaDuranteSessaoMutation();
 
@@ -274,9 +275,9 @@ const PageSala = () => {
    const handleEnviarVoto = async (
       valor: number,
       participaVotacao: boolean,
+      historiaId: string,
    ) => {
       const sessaoId = sessaoAtivaApiId;
-      const historiaId = salaResultado?.historia_atual_id;
 
       if (!sessaoId || !historiaId) {
          toastError({
@@ -285,12 +286,11 @@ const PageSala = () => {
          });
          return;
       }
-
       try {
          await votar({
             sessaoId,
             valor,
-            historia_sessao_id: historiaId,
+            historia_id: historiaId,
             participa_votacao: participaVotacao,
          }).unwrap();
 

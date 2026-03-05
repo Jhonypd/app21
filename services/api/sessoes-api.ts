@@ -77,19 +77,6 @@ export const SessoesApi = apiSlice.injectEndpoints({
          invalidatesTags: ['salaPlaning'],
       }),
 
-      // GET /sessoes/:sessaoId/historias/:historiaId/votos - Obter votos de uma história específica
-      obterVotosPorHistoria: builder.query<
-         ApiResponse<VotosPorHistoriaResponse>,
-         ObterVotosPorHistoriaPayload
-      >({
-         query: ({ sessaoId, historiaId }) => ({
-            url: `/sessoes/${sessaoId}/historias/${historiaId}/votos`,
-            method: 'GET',
-            credentials: 'include',
-         }),
-         providesTags: ['votos'],
-      }),
-
       // GET /sessoes/:sessaoId/historias - Listar histórias da sessão
       listarHistoriasSessao: builder.query<
          ApiResponse<ListarHistoriasSessaoResponse>,
@@ -112,8 +99,8 @@ export const {
    useLazyObterSessaoQuery,
    useEncerrarSessaoMutation,
    useAtualizarParticipaVotacaoMutation,
-   useObterVotosPorHistoriaQuery,
-   useLazyObterVotosPorHistoriaQuery,
+   // useObterVotosPorHistoriaQuery,
+   // useLazyObterVotosPorHistoriaQuery,
    useListarHistoriasSessaoQuery,
    useLazyListarHistoriasSessaoQuery,
 } = SessoesApi;

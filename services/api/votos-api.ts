@@ -1,39 +1,45 @@
 import { ApiResponse } from '../interfaces';
 import { apiSlice } from './configs/api-slice';
-import type { VotarPayload, Voto } from '../types';
+import type {
+   ObterVotosPorHistoriaPayload,
+   VotarPayload,
+   Voto,
+   VotosPorHistoriaResponse,
+} from '../types';
 
 // Re-export dos tipos para compatibilidade
 export type { VotarPayload, Voto };
 
 export const VotosApi = apiSlice.injectEndpoints({
    endpoints: (builder) => ({
-      // POST /sessoes/:id/votos
+      // POST /votos/votar
       votar: builder.mutation<ApiResponse, VotarPayload>({
-         query: ({
-            sessaoId,
-            valor,
-            historia_sessao_id,
-            participa_votacao,
-         }) => ({
-            url: `/sessoes/${sessaoId}/votos`,
+         query: ({ valor, historia_id, participa_votacao }) => ({
+            url: `/votos/votar`,
             method: 'POST',
             body: {
                valor,
-               historia_sessao_id,
+               historia_id,
                participa_votacao,
             },
          }),
          invalidatesTags: ['votos', 'sessao'],
       }),
 
-      // GET /sessoes/:id/votos
-      obterVotos: builder.query<ApiResponse<{ votos: Voto[] }>, string>({
-         query: (sessaoId) => ({
-            url: `/sessoes/${sessaoId}/votos`,
+      obterVotosPorHistoriaSessaoSessaoSala: builder.query<
+         ApiResponse<VotosPorHistoriaResponse>,
+         ObterVotosPorHistoriaPayload
+      >({
+         query: ({ sessaoId, historiaId }) => ({
+            url: `/votos/obterVotosPorHistoriaSessaoSessaoSala`,
             method: 'GET',
+            credentials: 'include',
+            headers: {
+               sessao_sala_id: sessaoId,
+               historia_id: historiaId,
+            },
          }),
          providesTags: ['votos'],
-         keepUnusedDataFor: 10,
       }),
 
       // DELETE /votos/:id - Anular voto
@@ -49,7 +55,7 @@ export const VotosApi = apiSlice.injectEndpoints({
 
 export const {
    useVotarMutation,
-   useObterVotosQuery,
-   useLazyObterVotosQuery,
    useAnularVotoMutation,
+   useObterVotosPorHistoriaSessaoSessaoSalaQuery,
+   useLazyObterVotosPorHistoriaSessaoSessaoSalaQuery,
 } = VotosApi;
