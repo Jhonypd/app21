@@ -33,7 +33,6 @@ import CardHistoria from './card-historia';
 import { ButtonCustom } from '../button-custom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Skeleton } from '../ui/skeleton';
-import Loading from '../loading';
 
 interface Historia {
    id: string;
@@ -47,9 +46,12 @@ interface Historia {
 
 interface ListaHistoriasProps {
    loading: boolean;
+   uiDisabled?: boolean;
    role: number;
    historias: Historia[];
    historiaAtualId?: string;
+   modoVisualizacao?: boolean;
+   historiaVisualizadaId?: string | null;
    votacaoFinalizada: boolean;
    onMudarHistoria: (historiaId: string) => Promise<void>;
    onReordenar?: (
@@ -64,6 +66,8 @@ interface ListaHistoriasProps {
 export function ListaHistorias({
    historias: historiasIniciais,
    historiaAtualId,
+   modoVisualizacao = false,
+   historiaVisualizadaId = null,
    votacaoFinalizada,
    onMudarHistoria,
    onReordenar,
@@ -71,6 +75,7 @@ export function ListaHistorias({
    onAdicionarHistorias,
    role,
    loading,
+   uiDisabled = false,
 }: ListaHistoriasProps) {
    const [modalReordenarAberto, setModalReordenarAberto] = useState(false);
    const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
@@ -81,10 +86,6 @@ export function ListaHistorias({
    const [proximaHistoriaId, setProximaHistoriaId] = useState<string | null>(
       null,
    );
-   const [modoVisualizacao, setModoVisualizacao] = useState(false);
-   const [historiaVisualizadaId, setHistoriaVisualizadaId] = useState<
-      string | null
-   >(null);
 
    // Sincronizar historiasOrdenadas com historiasIniciais quando houver mudanças
    useEffect(() => {
@@ -100,7 +101,7 @@ export function ListaHistorias({
 
    // História exibida (atual ou visualizada)
    const historiaExibidaId = modoVisualizacao
-      ? historiaVisualizadaId
+      ? (historiaVisualizadaId ?? historiaAtualId)
       : historiaAtualId;
 
    const indiceExibido = historiaExibidaId
@@ -212,12 +213,9 @@ export function ListaHistorias({
       if (modoVisualizacao) {
          // Se a próxima é a história atual, sai do modo visualização
          if (proximaHistoria.id === historiaAtualId) {
-            setModoVisualizacao(false);
-            setHistoriaVisualizadaId(null);
             onModoVisualizacaoChange?.(false);
          } else {
             // Continua em modo visualização na próxima
-            setHistoriaVisualizadaId(proximaHistoria.id);
             onModoVisualizacaoChange?.(true, proximaHistoria.id);
          }
          return;
@@ -235,14 +233,10 @@ export function ListaHistorias({
       const historiaAnterior = historiasIniciais[indiceExibido - 1];
 
       // Ativa/atualiza modo visualização
-      setModoVisualizacao(true);
-      setHistoriaVisualizadaId(historiaAnterior.id);
       onModoVisualizacaoChange?.(true, historiaAnterior.id);
    };
 
    const handleVoltarParaAtual = () => {
-      setModoVisualizacao(false);
-      setHistoriaVisualizadaId(null);
       onModoVisualizacaoChange?.(false);
    };
 
@@ -253,13 +247,6 @@ export function ListaHistorias({
    const podeMudarHistoria = role < 2;
    return (
       <>
-         {salvandoReordenacao ||
-            (loading && (
-               <Loading
-                  active
-                  type="transaction"
-               />
-            ))}
          <div className="space-y-3">
             {/* História atual/visualizada em destaque */}
             {historiaExibida && !loading ? (
@@ -291,7 +278,7 @@ export function ListaHistorias({
                            icon={
                               <Plus className="text-muted-foreground h-4 w-4" />
                            }
-                           disabled={loading}
+                           disabled={loading || uiDisabled}
                            title="Adicionar histórias"
                         />
                      )}
@@ -301,7 +288,7 @@ export function ListaHistorias({
                         icon={
                            <ListChevronsDownUpIcon className="text-muted-foreground" />
                         }
-                        disabled={loading}
+                        disabled={loading || uiDisabled}
                      />
                   </div>
                </div>
@@ -323,7 +310,12 @@ export function ListaHistorias({
                   {/* Botão Anterior */}
                   <ButtonCustom
                      onClick={handleAnterior}
-                     disabled={!temAnterior || !podeMudarHistoria || loading}
+                     disabled={
+                        !temAnterior ||
+                        !podeMudarHistoria ||
+                        loading ||
+                        uiDisabled
+                     }
                      variant="default"
                      size="md"
                      title={!temAnterior ? 'Não há história anterior' : ''}
@@ -345,6 +337,7 @@ export function ListaHistorias({
                         !temProxima ||
                         !podeMudarHistoria ||
                         loading ||
+                        uiDisabled ||
                         (estaNoAtual && !votacaoFinalizada)
                      }
                      variant="default"
@@ -391,6 +384,39 @@ export function ListaHistorias({
                      <ScrollText className="text-muted-foreground h-5 w-5" />
                      Histórias
                   </p>
+               </div>
+            }
+            maxWidth="lg"
+            botoesAcoes={
+               <>
+                  <ButtonCustom
+                     className="uppercase"
+                     variant="outline"
+                     onClick={handleCancelarReordenacao}
+                     disabled={salvandoReordenacao || uiDisabled}
+                  >
+                     {podeMudarHistoria ? 'Cancelar' : 'Fechar'}
+                  </ButtonCustom>
+                  {podeMudarHistoria && (
+                     <ButtonCustom
+                        onClick={handleSalvarOrdem}
+                        className="uppercase"
+                        disabled={salvandoReordenacao || uiDisabled}
+                     >
+                        salvar
+                     </ButtonCustom>
+                  )}
+               </>
+            }
+         >
+            <div className="w-full space-y-3 overflow-hidden px-3">
+               <div className="flex w-full items-center justify-between border-b border-b-slate-400/10">
+                  <div className="text-muted-foreground flex w-full items-center gap-2 pb-2 text-lg font-semibold">
+                     Histórias
+                     <h2 className="text-base">
+                        ({historiasOrdenadas.length})
+                     </h2>
+                  </div>
                   <Tooltip delayDuration={800}>
                      <TooltipTrigger>
                         <InfoIcon className="text-muted-foreground" />
@@ -403,35 +429,6 @@ export function ListaHistorias({
                      </TooltipContent>
                   </Tooltip>
                </div>
-            }
-            maxWidth="lg"
-            botoesAcoes={
-               <>
-                  <ButtonCustom
-                     className="uppercase"
-                     variant="outline"
-                     onClick={handleCancelarReordenacao}
-                     disabled={salvandoReordenacao}
-                  >
-                     {podeMudarHistoria ? 'Cancelar' : 'Fechar'}
-                  </ButtonCustom>
-                  {podeMudarHistoria && (
-                     <ButtonCustom
-                        onClick={handleSalvarOrdem}
-                        className="uppercase"
-                        disabled={salvandoReordenacao}
-                     >
-                        salvar
-                     </ButtonCustom>
-                  )}
-               </>
-            }
-         >
-            <div className="w-full space-y-3 overflow-hidden px-3">
-               <div className="text-muted-foreground flex w-full items-center gap-2 border-b border-b-slate-400/10 pb-2 text-lg font-semibold">
-                  Histórias
-                  <h2 className="text-base">({historiasOrdenadas.length})</h2>
-               </div>
                <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -440,7 +437,7 @@ export function ListaHistorias({
                   <SortableContext
                      items={historiasOrdenadas.map((h) => h.id)}
                      strategy={verticalListSortingStrategy}
-                     disabled={!podeMudarHistoria}
+                     disabled={!podeMudarHistoria || uiDisabled}
                   >
                      <div className="no-scrollbar max-h-60 w-full space-y-2 overflow-y-auto p-2">
                         {historiasOrdenadas.map((historia) => (
@@ -467,7 +464,8 @@ export function ListaHistorias({
                                  <ButtonCustom
                                     disabled={
                                        historia.id === historiaAtualId ||
-                                       historia.jaFoiVotada
+                                       historia.jaFoiVotada ||
+                                       uiDisabled
                                     }
                                     variant="ghost"
                                     size="sm"
@@ -494,7 +492,7 @@ export function ListaHistorias({
                proximaOrdemInicial={proximaOrdemInicial}
                aoFechar={() => setModalAdicionarAberto(false)}
                aoSalvar={onAdicionarHistorias}
-               loading={loading}
+               loading={loading || uiDisabled}
             />
          )}
 
@@ -506,7 +504,7 @@ export function ListaHistorias({
             btnConfirmar="Confirmar"
             dialogAberto={dialogConfirmacao}
             setDialogAberto={setDialogConfirmacao}
-            dialogLoading={loading}
+            dialogLoading={loading || uiDisabled}
             handleSubmit={handleConfirmarMudanca}
          />
       </>

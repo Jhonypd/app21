@@ -1,15 +1,11 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CardParticipante } from './card-participante';
 import CardVotacaoSimples from './card-participante-simples';
 import { ModalBase } from './modal-base';
 import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-visitante';
 import { Button } from '../ui/button';
-import { Loader2, UserPlus, UsersIcon } from 'lucide-react';
+import { UserPlus, UsersIcon } from 'lucide-react';
 import { ButtonCustom } from '../button-custom';
-import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
-import { useAdicionarParticipanteMutation } from '@/services/api/salas-api';
-import { toastError, toastSuccess } from '../custom-toast';
-import { getApiErrorMessage } from '@/utils/api-error';
 
 interface Voto {
    id: string;
@@ -33,16 +29,17 @@ interface ListaParticipantesProps {
    participantes: ParticipanteItem[];
    open: boolean;
    onOpenChange: (open: boolean) => void;
-   onBuscarParticipantes: () => void;
-   carregando: boolean;
+   onBuscarParticipantes: () => void | Promise<unknown>;
+   uiDisabled: boolean;
    votos: Voto[];
    totalOnline: number;
    totalParticipantes: number;
    meuRole: number;
    votosRevelados: boolean;
    handleAnularVoto: (votoId: string, nomeParticipante: string) => void;
-   salaId: string;
-   sessaoId?: string;
+   pessoasEncontradas: Array<{ id: string; nome: string; email: string }>;
+   onBuscarPessoas: (termo: string) => void;
+   onAdicionarParticipante: (pessoaId: string) => Promise<boolean>;
 }
 
 const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
@@ -50,26 +47,19 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
    open,
    onOpenChange,
    onBuscarParticipantes,
-   carregando,
+   uiDisabled,
    votos,
    totalOnline,
    totalParticipantes,
    meuRole,
    votosRevelados,
    handleAnularVoto,
-   salaId,
-   sessaoId,
+   pessoasEncontradas,
+   onBuscarPessoas,
+   onAdicionarParticipante,
 }) => {
    const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
    const [termoBusca, setTermoBusca] = useState('');
-   const buscaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-   const [
-      pesquisarPessoas,
-      { data: pessoasEncontradas, isFetching: buscandoPessoas },
-   ] = useLazyPesquisarPorNomeOuEmailQuery();
-   const [adicionarParticipante, { isLoading: adicionandoParticipante }] =
-      useAdicionarParticipanteMutation();
    const participantesOnline = useMemo(
       () => participantes.filter((p) => p.online),
       [participantes],
@@ -82,33 +72,14 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
 
    const handleBuscarPessoas = (termo: string) => {
       setTermoBusca(termo);
-      if (buscaTimerRef.current) {
-         clearTimeout(buscaTimerRef.current);
-      }
-      if (termo.length < 2) return;
-      buscaTimerRef.current = setTimeout(() => {
-         pesquisarPessoas({ termo });
-      }, 800);
+      onBuscarPessoas(termo);
    };
 
    const handleAdicionarParticipante = async (pessoaId: string) => {
-      try {
-         const resultado = await adicionarParticipante({
-            sala_id: salaId,
-            pessoa_id: pessoaId,
-            role: 2, // Membro por padrão
-            ...(sessaoId ? { sessao_id: sessaoId } : {}),
-         }).unwrap();
-         toastSuccess({
-            description: `${resultado.Mensagem}`,
-         });
+      const sucesso = await onAdicionarParticipante(pessoaId);
+      if (sucesso) {
          setModalAdicionarAberto(false);
          setTermoBusca('');
-      } catch (error) {
-         const erro = getApiErrorMessage(error);
-         toastError({
-            description: erro.Mensagem,
-         });
       }
    };
 
@@ -117,7 +88,7 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
          <Button
             variant="outline"
             onClick={onBuscarParticipantes}
-            disabled={carregando}
+            disabled={uiDisabled}
             className="relative"
          >
             <UsersIcon />
@@ -214,10 +185,9 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
             onOpenChange={setModalAdicionarAberto}
             termoBusca={termoBusca}
             onBuscar={handleBuscarPessoas}
-            pessoas={pessoasEncontradas?.Resultado?.pessoas || []}
-            carregando={buscandoPessoas}
+            pessoas={pessoasEncontradas}
+            loading={uiDisabled}
             onAdicionar={handleAdicionarParticipante}
-            adicionando={adicionandoParticipante}
          />
       </>
    );

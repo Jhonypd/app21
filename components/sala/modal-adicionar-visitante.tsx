@@ -7,7 +7,6 @@ import { ModalBase } from './modal-base';
 import { ButtonCustom } from '../button-custom';
 import { useAuth } from '@/hooks/useAuth';
 import { Checkbox } from '../ui/checkbox';
-import Loading from '../loading';
 
 interface Pessoa {
    id: string;
@@ -22,9 +21,8 @@ interface ModalAdicionarVisitanteProps {
    termoBusca: string;
    onBuscar: (termo: string) => void;
    pessoas: Pessoa[];
-   carregando: boolean;
+   loading: boolean;
    onAdicionar: (pessoaId: string) => Promise<void>;
-   adicionando: boolean;
 }
 
 export function ModalAdicionarParticipanteOuVisitante({
@@ -33,9 +31,8 @@ export function ModalAdicionarParticipanteOuVisitante({
    termoBusca,
    onBuscar,
    pessoas,
-   carregando,
+   loading,
    onAdicionar,
-   adicionando,
    titulo,
 }: ModalAdicionarVisitanteProps) {
    const [pessoaSelecionadaId, setPessoaSelecionadaId] = useState('');
@@ -64,52 +61,45 @@ export function ModalAdicionarParticipanteOuVisitante({
    };
 
    return (
-      <>
-         {adicionando && (
-            <Loading
-               active
-               type="transaction"
-            />
-         )}
-         <ModalBase
-            open={open}
-            onOpenChange={handleClose}
-            titulo={titulo}
-            maxWidth="lg"
-            botoesAcoes={
-               <>
-                  <ButtonCustom
-                     onClick={handleClose}
-                     className="rounded-lg bg-slate-700 px-4 py-2 uppercase transition-all hover:bg-slate-600"
-                  >
-                     Cancelar
-                  </ButtonCustom>
-                  <ButtonCustom
-                     onClick={handleAdicionar}
-                     disabled={!pessoaSelecionadaId || adicionando}
-                     className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                     <p className="flex items-center justify-center gap-2 uppercase">
-                        <UserPlus className="h-5 w-5" />
-                        Adicionar
-                     </p>
-                  </ButtonCustom>
-               </>
-            }
-         >
+      <ModalBase
+         open={open}
+         onOpenChange={handleClose}
+         titulo={titulo}
+         maxWidth="lg"
+         botoesAcoes={
+            <>
+               <ButtonCustom
+                  onClick={handleClose}
+                  className="rounded-lg bg-slate-700 px-4 py-2 uppercase transition-all hover:bg-slate-600"
+               >
+                  Cancelar
+               </ButtonCustom>
+               <ButtonCustom
+                  onClick={handleAdicionar}
+                  disabled={!pessoaSelecionadaId || loading}
+                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+               >
+                  <p className="flex items-center justify-center gap-2 uppercase">
+                     <UserPlus className="h-5 w-5" />
+                     Adicionar
+                  </p>
+               </ButtonCustom>
+            </>
+         }
+      >
             {/* Campo de busca */}
             <form onSubmit={handleBuscarSubmit}>
                <SearchInput
                   placeholder="Buscar por nome ou email..."
                   value={termoBuscaLocal}
                   onChange={(e) => setTermoBuscaLocal(e.target.value)}
-                  disabled={carregando}
+                  disabled={loading}
                   className="border-slate-700 bg-slate-800 text-white"
                />
             </form>
 
             {/* Lista de resultados */}
-            {carregando && (
+            {loading && (
                <p className="text-center text-sm text-gray-400">
                   <LoaderIcon className="mx-auto h-5 w-5 animate-spin" />
                </p>
@@ -148,12 +138,11 @@ export function ModalAdicionarParticipanteOuVisitante({
                </div>
             )}
 
-            {!carregando && pessoas.length === 0 && termoBusca.length >= 2 && (
+            {!loading && pessoas.length === 0 && termoBusca.length >= 2 && (
                <p className="text-center text-sm text-gray-400">
                   Nenhuma pessoa encontrada
                </p>
             )}
-         </ModalBase>
-      </>
+      </ModalBase>
    );
 }

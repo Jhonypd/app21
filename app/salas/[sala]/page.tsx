@@ -76,14 +76,6 @@ const PageSala = () => {
    const [adicionarHistoriaDuranteSessao] =
       useAdicionarHistoriaDuranteSessaoMutation();
 
-   // Cleanup ao desmontar
-   useEffect(() => {
-      return () => {
-         setSkipQuery(false);
-         setEncerrandoSessao(false);
-      };
-   }, []);
-
    // Tratar erros da API
    useEffect(() => {
       if (error) {
@@ -103,6 +95,10 @@ const PageSala = () => {
       });
    }, []);
 
+   const invalidarCacheSalas = useCallback(() => {
+      dispatch(SalasApi.util.invalidateTags(['listarSalas', 'salaPlaning']));
+   }, [dispatch]);
+
    // Helper para limpar e sair da sala
    const limparESair = useCallback(
       async (salaId: string) => {
@@ -112,9 +108,7 @@ const PageSala = () => {
             limparTokenSala();
 
             // Invalidar cache das salas para recarregar lista atualizada
-            dispatch(
-               SalasApi.util.invalidateTags(['listarSalas', 'salaPlaning']),
-            );
+            invalidarCacheSalas();
 
             toastSuccess({
                title: 'Saiu da sala',
@@ -124,9 +118,7 @@ const PageSala = () => {
          } catch (error) {
             tratarErro(error, 'Erro ao sair da sala');
             // Invalidar cache mesmo com erro para garantir dados atualizados
-            dispatch(
-               SalasApi.util.invalidateTags(['listarSalas', 'salaPlaning']),
-            );
+            invalidarCacheSalas();
             // Redireciona mesmo com erro
             router.push('/salas');
          }
@@ -135,9 +127,9 @@ const PageSala = () => {
          sairDaSala,
          encerrarSessaoAtiva,
          limparTokenSala,
+         invalidarCacheSalas,
          router,
          tratarErro,
-         dispatch,
       ],
    );
 
@@ -147,8 +139,8 @@ const PageSala = () => {
    const sessaoRegistrada = salaResultado?.id
       ? obterSessaoAtiva(salaResultado.id)
       : null;
-   const sessaoAtivaId =
-      salaResultado?.sessaoAtiva?.id ?? sessaoRegistrada ?? null;
+   const sessaoAtivaApiId = salaResultado?.sessaoAtiva?.id ?? null;
+   const sessaoAtivaId = sessaoAtivaApiId ?? sessaoRegistrada ?? null;
 
    // Determinar role do usuário (vem calculado do backend)
    const meuRole =
@@ -156,13 +148,12 @@ const PageSala = () => {
       (usuario?.id === salaResultado?.criado_por ? 0 : 2);
 
    // Buscar histórias da sessão ativa separadamente
-   const sessaoAtivaQueryId = salaResultado?.sessaoAtiva?.id;
    const {
       data: historiasData,
       isLoading: carregandoHistorias,
       isFetching: buscandoHistorias,
-   } = useListarHistoriasSessaoQuery(sessaoAtivaQueryId ?? '', {
-      skip: !sessaoAtivaQueryId,
+   } = useListarHistoriasSessaoQuery(sessaoAtivaApiId ?? '', {
+      skip: !sessaoAtivaApiId,
    });
    const historiasSessao = useMemo(
       () =>
@@ -177,10 +168,10 @@ const PageSala = () => {
       const autoSelecionarPrimeiraHistoria = async () => {
          if (
             !salaResultado?.id ||
-            !salaResultado.sessaoAtiva?.id ||
-            salaResultado.historia_atual_id || // Já tem história selecionada
+            !sessaoAtivaApiId ||
+            salaResultado.historia_atual_id ||
             !historiasSessao?.length ||
-            (meuRole !== 0 && meuRole !== 1) // Apenas Dono/Admin
+            (meuRole !== 0 && meuRole !== 1)
          ) {
             return;
          }
@@ -216,7 +207,7 @@ const PageSala = () => {
       salaResultado?.id,
       salaResultado?.historia_atual_id,
       historiasSessao,
-      salaResultado?.sessaoAtiva?.id,
+      sessaoAtivaApiId,
       meuRole,
       selecionarHistoriaAtual,
       scheduleAutoSelect,
@@ -241,7 +232,7 @@ const PageSala = () => {
       setLoading(false);
    };
 
-   const handleAbrirDialogEncerrar = async () => {
+   const handleAbrirDialogEncerrar = () => {
       setDialogEncerrarAberto(true);
    };
 
@@ -284,7 +275,7 @@ const PageSala = () => {
       valor: number,
       participaVotacao: boolean,
    ) => {
-      const sessaoId = salaResultado?.sessaoAtiva?.id;
+      const sessaoId = sessaoAtivaApiId;
       const historiaId = salaResultado?.historia_atual_id;
 
       if (!sessaoId || !historiaId) {
@@ -327,7 +318,7 @@ const PageSala = () => {
    };
 
    const handleRevelarVotos = async () => {
-      if (!salaResultado?.sessaoAtiva?.id) {
+      if (!sessaoAtivaApiId) {
          toastError({
             title: 'Erro',
             description: 'Nenhuma sessão ativa encontrada',
@@ -336,7 +327,7 @@ const PageSala = () => {
       }
 
       try {
-         await revelarVotos(salaResultado.sessaoAtiva.id).unwrap();
+         await revelarVotos(sessaoAtivaApiId).unwrap();
          toastSuccess({
             description: 'Votos revelados com sucesso!',
          });
@@ -346,7 +337,7 @@ const PageSala = () => {
    };
 
    const handleResetarVotos = async () => {
-      if (!salaResultado?.sessaoAtiva?.id) {
+      if (!sessaoAtivaApiId) {
          toastError({
             title: 'Erro',
             description: 'Nenhuma sessão ativa encontrada',
@@ -355,7 +346,7 @@ const PageSala = () => {
       }
 
       try {
-         await resetarVotos(salaResultado.sessaoAtiva.id).unwrap();
+         await resetarVotos(sessaoAtivaApiId).unwrap();
          toastSuccess({
             description: 'Votos resetados! Podem votar novamente.',
          });
@@ -381,7 +372,9 @@ const PageSala = () => {
             description: 'Todos os participantes foram notificados',
          });
       } catch (error: unknown) {
-         console.error('❌ [handleSelecionarHistoria] Erro:', error);
+         if (process.env.NODE_ENV === 'development') {
+            console.error('[handleSelecionarHistoria] Erro:', error);
+         }
          tratarErro(error, 'Erro ao selecionar história');
       }
    };
@@ -402,7 +395,7 @@ const PageSala = () => {
    const handleAdicionarHistorias = async (
       historias: Array<{ titulo: string; descricao?: string; ordem: number }>,
    ) => {
-      const sessaoId = salaResultado?.sessaoAtiva?.id;
+      const sessaoId = sessaoAtivaApiId;
 
       if (!sessaoId) {
          toastError({
@@ -425,7 +418,7 @@ const PageSala = () => {
    const handleReordenarHistorias = async (
       novasHistorias: Array<{ id: string; titulo: string; descricao?: string }>,
    ) => {
-      const sessaoId = salaResultado?.sessaoAtiva?.id;
+      const sessaoId = sessaoAtivaApiId;
 
       if (!sessaoId) {
          toastError({
@@ -468,7 +461,7 @@ const PageSala = () => {
    };
 
    const handleBuscarVotosPorHistoria = async (historiaId: string) => {
-      const sessaoId = salaResultado?.sessaoAtiva?.id;
+      const sessaoId = sessaoAtivaApiId;
       if (!sessaoId) {
          console.warn('Nenhuma sessão ativa para buscar votos');
          return {
@@ -532,19 +525,18 @@ const PageSala = () => {
 
    return (
       <>
-         {encerrandoSessao ||
-            (estaCarregando && (
-               <Loading
-                  active
-                  type="transaction"
-               />
-            ))}
+         {estaCarregando && (
+            <Loading
+               active
+               type="transaction"
+            />
+         )}
 
-         {estaCarregando === false && (
+         {!estaCarregando && salaResultado && (
             <SalaPlanning
                usuarioAtualId={usuarioId}
                aoVoltar={handleVoltar}
-               sala={salaResultado!}
+               sala={salaResultado}
                historias={historiasSessao}
                sessaoId={sessaoAtivaId ?? ''}
                meuRole={meuRole}

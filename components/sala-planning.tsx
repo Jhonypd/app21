@@ -1,16 +1,11 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Eye, RotateCcw, UserPlus } from 'lucide-react';
-import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
-import {
-   useLazyListarParticipantesSalaQuery,
-   useAdicionarVisitanteMutation,
-} from '@/services/api/salas-api';
 import { toast } from 'sonner';
 import { toastError, toastSuccess } from './custom-toast';
-import { getApiErrorMessage } from '@/utils/api-error';
 import { useVotosPolling } from '@/hooks/useVotosPolling';
+import { useSalaPlanningData } from '@/hooks/useSalaPlanning';
 import { ModalAdicionarParticipanteOuVisitante } from './sala/modal-adicionar-visitante';
 import CardVotos from './sala/card-votos';
 import ListaParticipantes from './sala/lista-participantes';
@@ -43,7 +38,7 @@ interface SalaPlanningProps {
    aoRevelarVotos?: () => Promise<void>;
    aoResetarVotos?: () => Promise<void>;
    aoSelecionarHistoria?: (historiaId: string) => Promise<void>;
-   aoEncerrarSessao?: () => Promise<void>;
+   aoEncerrarSessao?: () => void | Promise<void>;
    aoAnularVoto?: (votoId: string) => Promise<void>;
    aoReordenarHistorias?: (
       historias: Historia[],
@@ -75,6 +70,12 @@ const VOTO_MAP: Record<string, number> = {
    '89': 89,
 };
 
+const createEmptyVotes = (): VotosPorHistoriaResponse => ({
+   media: 0,
+   voto_vencedor: 0,
+   votos: [],
+});
+
 export function SalaPlanning({
    sala,
    historias,
@@ -103,12 +104,6 @@ export function SalaPlanning({
       useState(false);
    const [loadingAcao, setLoadingAcao] = useState(false);
    const [termoBusca, setTermoBusca] = useState('');
-   const [listaVotosCarregados, setListaVotosCarregados] =
-      useState<VotosPorHistoriaResponse>({
-         media: 0,
-         voto_vencedor: 0,
-         votos: [],
-      });
    const [carregandoVotos, setCarregandoVotos] = useState(false);
    const [pausarPolling, setPausarPolling] = useState(false);
 
@@ -116,28 +111,44 @@ export function SalaPlanning({
    const iniciouSessao =
       sala && sala.sessaoAtiva?.iniciada_por === usuarioAtualId;
    const podeEncerrarSessao = eProprietario || iniciouSessao;
+   const participaSempre = meuRole === 2 || meuRole === 3;
+   const [participaVotacao, setParticipaVotacao] = useState(true);
 
-   // Mutations
-   const [adicionarVisitante, { isLoading: adicionandoVisitante }] =
-      useAdicionarVisitanteMutation();
-
-   // Lazy query para listar participantes
-   const [
-      buscarParticipantes,
-      { data: participantesData, isFetching: carregandoParticipantes },
-   ] = useLazyListarParticipantesSalaQuery();
-   const [
-      pesquisarPessoas,
-      { data: pessoasEncontradas, isFetching, reset: resetBuscaPessoas },
-   ] = useLazyPesquisarPorNomeOuEmailQuery();
+   const {
+      state: {
+         participantes,
+         pessoasEncontradas,
+         loadingApi,
+         listaVotosCarregados,
+      },
+      actions: {
+         onBuscarParticipantes,
+         onBuscarPessoas,
+         onAdicionarVisitante,
+         onAdicionarParticipante,
+         onCarregarVotos,
+         onAtualizarParticipaVotacao,
+         resetBuscaPessoas,
+         setListaVotosCarregados,
+      },
+   } = useSalaPlanningData({
+      salaId: sala.id,
+      sessaoId,
+      aoBuscarVotosPorHistoria,
+   });
 
    // Verifica se está em modo prática (sem histórias)
    const emModoPratica = !historias || historias.length === 0;
-
-   const buscaPessoasTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-      null,
-   );
    const votosRevelados = modoVisualizacao ? true : sala.votos_revelados;
+   const loadingGlobal =
+      loadingAcao || carregandoVotos || carregandoHistorias || loadingApi;
+   const uiDisabled = loadingGlobal;
+
+   useEffect(() => {
+      if (participaSempre) {
+         setParticipaVotacao(true);
+      }
+   }, [participaSempre]);
 
    // Hook de polling de votos a cada 3 segundos
    // Apenas gerencia os timers, a busca é feita pela função aoBuscarVotosPorHistoria
@@ -159,15 +170,9 @@ export function SalaPlanning({
          // Buscar votos apenas da história atual da sala
          const idHistoria = sala.historia_atual_id;
 
-         if (idHistoria && aoBuscarVotosPorHistoria) {
+         if (idHistoria) {
             try {
-               const votos = await aoBuscarVotosPorHistoria(idHistoria);
-               // Atualizar estado com votos carregados via polling
-               setListaVotosCarregados({
-                  media: votos?.media ?? 0,
-                  voto_vencedor: votos?.voto_vencedor ?? 0,
-                  votos: votos?.votos ?? [],
-               });
+               await onCarregarVotos(idHistoria);
             } catch (erro) {
                if (process.env.NODE_ENV === 'development') {
                   console.error('[Polling] Erro ao buscar votos:', erro);
@@ -179,33 +184,14 @@ export function SalaPlanning({
 
    // Forçar busca imediata quando é selecionada uma história em modo visualização
    useEffect(() => {
-      if (
-         modoVisualizacao &&
-         historiaVisualizadaId &&
-         aoBuscarVotosPorHistoria
-      ) {
+      if (modoVisualizacao && historiaVisualizadaId) {
          // Limpar votos antes de buscar
-         setListaVotosCarregados({
-            media: 0,
-            voto_vencedor: 0,
-            votos: [],
-         });
+         setListaVotosCarregados(createEmptyVotes());
          setCarregandoVotos(true);
 
-         aoBuscarVotosPorHistoria(historiaVisualizadaId)
-            .then((votos) => {
-               setListaVotosCarregados({
-                  media: votos?.media ?? 0,
-                  voto_vencedor: votos?.voto_vencedor ?? 0,
-                  votos: votos?.votos ?? [],
-               });
-            })
+         onCarregarVotos(historiaVisualizadaId)
             .catch((erro: unknown) => {
-               setListaVotosCarregados({
-                  media: 0,
-                  voto_vencedor: 0,
-                  votos: [],
-               });
+               setListaVotosCarregados(createEmptyVotes());
                toastError({
                   title: 'Erro ao carregar votos',
                   description:
@@ -223,32 +209,16 @@ export function SalaPlanning({
    useEffect(() => {
       if (
          !modoVisualizacao &&
-         sala.historia_atual_id &&
-         aoBuscarVotosPorHistoria
+         sala.historia_atual_id
       ) {
          // Limpar votos antes de buscar
-         setListaVotosCarregados({
-            media: 0,
-            voto_vencedor: 0,
-            votos: [],
-         });
+         setListaVotosCarregados(createEmptyVotes());
          setCarregandoVotos(true);
          setPausarPolling(true);
 
-         aoBuscarVotosPorHistoria(sala.historia_atual_id)
-            .then((votos) => {
-               setListaVotosCarregados({
-                  media: votos?.media ?? 0,
-                  voto_vencedor: votos?.voto_vencedor ?? 0,
-                  votos: votos?.votos ?? [],
-               });
-            })
+         onCarregarVotos(sala.historia_atual_id)
             .catch((erro: unknown) => {
-               setListaVotosCarregados({
-                  media: 0,
-                  voto_vencedor: 0,
-                  votos: [],
-               });
+               setListaVotosCarregados(createEmptyVotes());
                if (process.env.NODE_ENV === 'development') {
                   console.error('Erro ao buscar votos:', erro);
                }
@@ -377,6 +347,7 @@ export function SalaPlanning({
    };
 
    const handleMudarHistoria = async (historiaId: string) => {
+      const historiaAnterior = historiaAtualId;
       try {
          setLoadingAcao(true);
          setHistoriaAtualId(historiaId);
@@ -388,6 +359,7 @@ export function SalaPlanning({
          if (process.env.NODE_ENV === 'development') {
             console.error('Erro ao buscar votos da história:', error);
          }
+         setHistoriaAtualId(historiaAnterior);
       } finally {
          setLoadingAcao(false);
       }
@@ -398,7 +370,7 @@ export function SalaPlanning({
          return false;
       }
 
-      return await aoReordenarHistorias(novasHistorias);
+      return aoReordenarHistorias(novasHistorias);
    };
 
    const handleEncerrarSessao = async () => {
@@ -423,78 +395,42 @@ export function SalaPlanning({
    };
 
    const handleBuscarPessoas = (termo: string) => {
-      resetBuscaPessoas();
       setTermoBusca(termo);
-      if (buscaPessoasTimerRef.current) {
-         clearTimeout(buscaPessoasTimerRef.current);
-      }
-      if (termo.length < 2) {
-         return;
-      }
-      buscaPessoasTimerRef.current = setTimeout(() => {
-         pesquisarPessoas({ termo });
-      }, 800);
+      onBuscarPessoas(termo);
    };
 
-   useEffect(() => {
-      return () => {
-         if (buscaPessoasTimerRef.current) {
-            clearTimeout(buscaPessoasTimerRef.current);
-         }
-      };
-   }, []);
-
    const handleAdicionarVisitante = async (pessoaId: string) => {
-      if (!sala?.id) {
-         toastError({
-            description:
-               'ID da sala não encontrado. Não é possível adicionar visitante.',
-         });
-         return;
-      }
-
-      try {
-         const resultado = await adicionarVisitante({
-            sala_id: sala.id,
-            pessoa_id: pessoaId,
-         }).unwrap();
-
-         if (!resultado.Sucesso) {
-            toastError({
-               description: `${resultado.Mensagem}`,
-            });
-            return;
-         }
-
-         toastSuccess({
-            description: `${resultado.Mensagem}`,
-         });
+      const sucesso = await onAdicionarVisitante(pessoaId);
+      if (sucesso) {
          setModalVisitantesAberto(false);
          setTermoBusca('');
          resetBuscaPessoas();
-      } catch (error) {
-         setLoadingAcao(false);
-         const erro = getApiErrorMessage(error);
-         toastError({
-            description: erro.Mensagem,
-         });
       }
    };
 
    const handleBuscarParticipantes = async () => {
-      try {
-         await buscarParticipantes({
-            sala_id: sala.id,
-            ...(sessaoId ? { sessao_id: sessaoId } : {}),
-            apenasOnline: true,
-         }).unwrap();
+      const sucesso = await onBuscarParticipantes();
+      if (sucesso) {
          setModalParticipantesAberto(true);
-      } catch (error) {
-         const erro = getApiErrorMessage(error);
-         toastError({
-            description: erro.Mensagem,
-         });
       }
+   };
+
+   const handleToggleParticipacao = async (ativo: boolean) => {
+      if (participaSempre) return;
+      if (!sessaoId) {
+         setParticipaVotacao(ativo);
+         return;
+      }
+
+      const sucesso = await onAtualizarParticipaVotacao(ativo);
+      if (!sucesso) return;
+
+      setParticipaVotacao(ativo);
+      toastSuccess({
+         description: ativo
+            ? 'Agora você está participando da votação'
+            : 'Agora você não está participando da votação',
+      });
    };
 
    const handleAnularVoto = async (
@@ -519,7 +455,7 @@ export function SalaPlanning({
 
    return (
       <>
-         {(loadingAcao || carregandoVotos || carregandoParticipantes) && (
+         {loadingGlobal && (
             <Loading
                active
                type="transaction"
@@ -535,7 +471,7 @@ export function SalaPlanning({
                      subtitulo={sala.proprietario.nome}
                      podeEncerrarSessao={podeEncerrarSessao}
                      handleEncerrarSessao={handleEncerrarSessao}
-                     loadingAcao={loadingAcao}
+                     loadingAcao={uiDisabled}
                   />
 
                   {/* Lista de Histórias - apenas se não estiver em modo prática */}
@@ -543,9 +479,12 @@ export function SalaPlanning({
                   <div className="mt-4">
                      <ListaHistorias
                         loading={carregandoVotos || carregandoHistorias}
+                        uiDisabled={uiDisabled}
                         role={meuRole}
                         historias={historias}
                         historiaAtualId={historiaAtualId || undefined}
+                        modoVisualizacao={modoVisualizacao}
+                        historiaVisualizadaId={historiaVisualizadaId}
                         votacaoFinalizada={votosRevelados}
                         onMudarHistoria={handleMudarHistoria}
                         onReordenar={handleReordenarHistorias}
@@ -576,21 +515,20 @@ export function SalaPlanning({
                      {/* Modal de lista de participantes */}
 
                      <ListaParticipantes
-                        participantes={
-                           participantesData?.Resultado?.participantes ?? []
-                        }
+                        participantes={participantes}
                         open={modalParticipantesAberto}
                         onOpenChange={setModalParticipantesAberto}
                         onBuscarParticipantes={handleBuscarParticipantes}
-                        carregando={carregandoParticipantes}
+                        uiDisabled={uiDisabled}
                         votos={votosAtivos}
                         totalOnline={totalOnline}
                         totalParticipantes={totalParticipantes}
                         meuRole={meuRole}
                         votosRevelados={votosRevelados || modoVisualizacao}
                         handleAnularVoto={handleAnularVoto}
-                        salaId={sala.id}
-                        sessaoId={sessaoId}
+                        pessoasEncontradas={pessoasEncontradas}
+                        onBuscarPessoas={onBuscarPessoas}
+                        onAdicionarParticipante={onAdicionarParticipante}
                      />
                   </div>
                </div>
@@ -610,10 +548,10 @@ export function SalaPlanning({
                   emModoPratica={emModoPratica}
                   votosRevelados={votosRevelados}
                   votoSelecionado={votoSelecionado}
-                  loadingAcao={loadingAcao}
-                  sessaoId={sessaoId}
-                  participaVotacaoInicial={undefined}
+                  uiDisabled={uiDisabled}
+                  participaVotacao={participaVotacao}
                   modoVisualizacao={modoVisualizacao}
+                  onToggleParticipacao={handleToggleParticipacao}
                   handleSelecionarVoto={handleSelecionarVoto}
                />
 
@@ -623,6 +561,7 @@ export function SalaPlanning({
                   {sessaoId && meuRole <= 1 && (
                      <ButtonCustom
                         icon={<UserPlus className="h-4 w-4" />}
+                        disabled={uiDisabled}
                         onClick={() => {
                            setModalVisitantesAberto(true);
                            resetBuscaPessoas();
@@ -637,7 +576,7 @@ export function SalaPlanning({
                   {eProprietario && !votosRevelados && !modoVisualizacao && (
                      <ButtonCustom
                         onClick={handleRevelarVotos}
-                        disabled={!todosVotaram || loadingAcao}
+                        disabled={!todosVotaram || uiDisabled}
                         loading={loadingAcao}
                         icon={<Eye className="h-5 w-5" />}
                         text="Revelar Votos"
@@ -647,7 +586,7 @@ export function SalaPlanning({
                   {eProprietario && votosRevelados && !modoVisualizacao && (
                      <ButtonCustom
                         onClick={() => handleResetarVotacao()}
-                        disabled={loadingAcao}
+                        disabled={uiDisabled}
                         loading={loadingAcao}
                         icon={<RotateCcw className="h-5 w-5" />}
                      >
@@ -664,10 +603,9 @@ export function SalaPlanning({
                onOpenChange={setModalVisitantesAberto}
                termoBusca={termoBusca}
                onBuscar={handleBuscarPessoas}
-               pessoas={pessoasEncontradas?.Resultado?.pessoas || []}
-               carregando={isFetching}
+               pessoas={pessoasEncontradas}
+               loading={uiDisabled}
                onAdicionar={handleAdicionarVisitante}
-               adicionando={adicionandoVisitante}
             />
          </div>
       </>
