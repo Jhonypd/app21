@@ -77,13 +77,13 @@ export const SessoesApi = apiSlice.injectEndpoints({
          invalidatesTags: ['salaPlaning'],
       }),
 
-      // GET /sessoes/:sessaoId/historias - Listar histórias da sessão
+      // GET /historias/listarHistoriasPorSessaoSala/:sessaoId
       listarHistoriasSessao: builder.query<
          ApiResponse<ListarHistoriasSessaoResponse>,
          string
       >({
          query: (sessaoId) => ({
-            url: `/sessoes/${sessaoId}/historias`,
+            url: `/historias/listarHistoriasPorSessaoSala/${sessaoId}`,
             method: 'GET',
          }),
          providesTags: ['historias'],

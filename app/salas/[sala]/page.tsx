@@ -27,7 +27,7 @@ import {
    useAnularVotoMutation,
    useLazyObterVotosPorHistoriaSessaoSessaoSalaQuery,
 } from '@/services/api/votos-api';
-import { useAdicionarHistoriaDuranteSessaoMutation } from '@/services/api/historias-api';
+import { useAdicionarOuRemoverHistoriaSessaoSalaMutation } from '@/services/api/historias-api';
 
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
@@ -75,7 +75,7 @@ const PageSala = () => {
    const [buscarVotosPorHistoria] =
       useLazyObterVotosPorHistoriaSessaoSessaoSalaQuery();
    const [adicionarHistoriaDuranteSessao] =
-      useAdicionarHistoriaDuranteSessaoMutation();
+      useAdicionarOuRemoverHistoriaSessaoSalaMutation();
 
    // Tratar erros da API
    useEffect(() => {
@@ -406,7 +406,6 @@ const PageSala = () => {
       }
 
       await adicionarHistoriaDuranteSessao({
-         sessaoId,
          adicionar: historias.map((historia) => ({
             titulo: historia.titulo,
             descricao: historia.descricao,
@@ -442,7 +441,6 @@ const PageSala = () => {
 
       try {
          await adicionarHistoriaDuranteSessao({
-            sessaoId,
             remover,
          }).unwrap();
 
