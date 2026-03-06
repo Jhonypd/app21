@@ -21,9 +21,19 @@ export const rawBaseQuery: BaseQueryFn<
    object,
    RawBaseQueryMeta
 > = async (args) => {
-   const { url, method = 'GET', body, headers } = args;
+   const { url, method = 'GET', body, headers, params } = args;
 
-   const fullUrl = `${baseUrl}${url}`;
+   let fullUrl = `${baseUrl}${url}`;
+   if (params && Object.keys(params).length > 0) {
+      const queryString = new URLSearchParams(
+         Object.entries(params)
+            .filter(([, v]) => v !== undefined && v !== null)
+            .map(([k, v]) => [k, String(v)]),
+      ).toString();
+      if (queryString) {
+         fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryString;
+      }
+   }
 
    try {
       const response = await fetch(fullUrl, {

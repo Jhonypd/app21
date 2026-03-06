@@ -162,23 +162,17 @@ export const SalasApi = apiSlice.injectEndpoints({
          invalidatesTags: ['participantes'],
       }),
 
-      listarParticipantesSala: builder.query<
+      ListarParticipantesSala: builder.query<
          ApiResponse<ListarParticipantesSalaResponse>,
          ListarParticipantesSalaPayload
       >({
-         query: (payload) => {
-            const params = new URLSearchParams();
-            if (payload.apenasOnline) {
-               params.append('apenasOnline', 'true');
-            }
-            return {
-               url: `/salas/${payload.sala_id}/ListarParticipantesSala?${params.toString()}`,
-               method: 'GET',
-               headers: {
-                  sessao_id: payload.sessao_id,
-               },
-            };
-         },
+         query: (payload) => ({
+            url: `/salas/ListarParticipantesSala`,
+            method: 'GET',
+            params: {
+               ...(payload.apenasOnline ? { apenasOnline: 'true' } : {}),
+            },
+         }),
          providesTags: ['participantes'],
       }),
 
@@ -190,7 +184,7 @@ export const SalasApi = apiSlice.injectEndpoints({
          query: ({ sala_id, pessoa_id }) => ({
             url: `/salas/${sala_id}/participantes`,
             method: 'POST',
-            body: { 
+            body: {
                pessoa_id,
                role: 3, // 3 = Visitante
             },
@@ -206,7 +200,7 @@ export const SalasApi = apiSlice.injectEndpoints({
          query: ({ sala_id, pessoa_id, role, sessao_id }) => ({
             url: `/salas/${sala_id}/participantes`,
             method: 'POST',
-            body: { 
+            body: {
                pessoa_id,
                role,
                ...(sessao_id && { sessao_id }),

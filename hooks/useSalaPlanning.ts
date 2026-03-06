@@ -48,8 +48,10 @@ export function useSalaPlanningData({
       useAdicionarVisitanteMutation();
    const [adicionarParticipante, { isLoading: adicionandoParticipante }] =
       useAdicionarParticipanteMutation();
-   const [atualizarParticipaVotacao, { isLoading: atualizandoParticipaVotacao }] =
-      useAtualizarParticipaVotacaoMutation();
+   const [
+      atualizarParticipaVotacao,
+      { isLoading: atualizandoParticipaVotacao },
+   ] = useAtualizarParticipaVotacaoMutation();
 
    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
