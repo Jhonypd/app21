@@ -243,7 +243,7 @@ export const SalasApi = apiSlice.injectEndpoints({
       // POST /salas/:id/sair - Sair da sala (marca offline e limpa autorização)
       sairDaSala: builder.mutation<ApiResponse, string>({
          query: (salaId) => ({
-            url: `/salas/${salaId}/sair`,
+            url: `/salas/sairDaSala?id=${salaId}`,
             method: 'POST',
          }),
          invalidatesTags: ['salaPlaning', 'listarSalas'],

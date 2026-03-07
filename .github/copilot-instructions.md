@@ -152,5 +152,5 @@ They are **not strict rules** and should be used only as guidance.
 - `.agent/skills/skills/web-artifacts-builder/SKILL.md`
 
 ```
-
+Responder sempre em Português.
 ```
