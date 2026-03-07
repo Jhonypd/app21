@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import type { LoginSalaPayload, Salas } from '@/services/types';
 import {
    useListarSalasQuery,
-   useSalaEntrarMutation,
+   useEntrarSalaMutation,
 } from '@/services/api/salas-api';
 import { useEffect, useState } from 'react';
 import { CardSala } from '@/components/card-sala';
@@ -37,7 +37,7 @@ const LandingPage = () => {
    const [salaParaIniciar, setSalaParaIniciar] = useState<Salas | null>(null);
 
    // Queries e mutations
-   const [salaEntrar, { isLoading: isLoadingEntrar }] = useSalaEntrarMutation();
+   const [entrarSala, { isLoading: isLoadingEntrar }] = useEntrarSalaMutation();
    const { data, isLoading } = useListarSalasQuery({
       itensPagina: 10,
       pagina: 0,
@@ -57,7 +57,7 @@ const LandingPage = () => {
             codigo,
             senha: senha || undefined,
          };
-         const result = await salaEntrar(loginPayload).unwrap();
+         const result = await entrarSala(loginPayload).unwrap();
 
          if (result.Sucesso) {
             // Salvar sessão ativa no Redux (CRÍTICO!)

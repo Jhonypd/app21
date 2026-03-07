@@ -44,12 +44,12 @@ export type {
 
 export const SalasApi = apiSlice.injectEndpoints({
    endpoints: (builder) => ({
-      salaEntrar: builder.mutation<
+      entrarSala: builder.mutation<
          ApiResponse<ResponseLoginSala>,
          LoginSalaPayload
       >({
          query: (credenciais) => ({
-            url: '/salas/entrar',
+            url: '/salas/entrarSala',
             method: 'POST',
             body: credenciais,
          }),
@@ -268,7 +268,7 @@ export const SalasApi = apiSlice.injectEndpoints({
 });
 
 export const {
-   useSalaEntrarMutation,
+   useEntrarSalaMutation,
    useCriarSalaMutation,
    useAlterarSalaMutation,
    useDeletarSalaMutation,

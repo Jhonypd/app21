@@ -5,7 +5,7 @@ import { StepConvidados } from './wizard-steps/step-convidados';
 import { StepHistorias } from './wizard-steps/step-historias';
 import { StepConclusao } from './wizard-steps/step-conclusao';
 import {
-   useSalaEntrarMutation,
+   useEntrarSalaMutation,
    useCriarSessaoMutation,
 } from '@/services/api/salas-api';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
@@ -44,7 +44,7 @@ export function WizardCriarSessao({
    >([]);
    const [termoBusca, setTermoBusca] = useState('');
 
-   const [entrarSala] = useSalaEntrarMutation();
+   const [entrarSala] = useEntrarSalaMutation();
    const [criarSessao] = useCriarSessaoMutation();
    const [buscarPessoas, { data: dadosPessoas, isLoading: buscandoPessoas }] =
       useLazyPesquisarPorNomeOuEmailQuery();
