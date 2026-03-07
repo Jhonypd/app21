@@ -188,7 +188,6 @@ const PageSala = () => {
 
          try {
             await selecionarHistoriaAtual({
-               salaId: salaResultado.id,
                historiaId: primeiraHistoria.id,
             }).unwrap();
          } catch (error) {
@@ -363,7 +362,6 @@ const PageSala = () => {
          resetSelecionarHistoria();
 
          await selecionarHistoriaAtual({
-            salaId: salaResultado.id,
             historiaId,
          }).unwrap();
 

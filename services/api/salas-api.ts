@@ -234,7 +234,7 @@ export const SalasApi = apiSlice.injectEndpoints({
       // GET /salas/codigo/:codigo/sessao-ativa - Obter dados da sessão ativa
       obterDadosSessaoAtiva: builder.query<ApiResponse<SalaPorCodigo>, string>({
          query: (codigo: string) => ({
-            url: `/salas/codigo/${codigo}/sessao-ativa`,
+            url: `/salas/obterDadosSessaoAtiva?codigo=${codigo}`,
             method: 'GET',
          }),
          providesTags: ['salaPlaning'],
@@ -252,12 +252,11 @@ export const SalasApi = apiSlice.injectEndpoints({
       // PUT /salas/:id/historia-atual - Selecionar história atual
       selecionarHistoriaAtual: builder.mutation<
          ApiResponse,
-         { salaId: string; historiaId: string }
+         { historiaId: string }
       >({
-         query: ({ salaId, historiaId }) => ({
-            url: `/salas/${salaId}/historia-atual`,
+         query: ({ historiaId }) => ({
+            url: `/salas/selecionarHistoriaAtual?id=${historiaId}`,
             method: 'PUT',
-            body: { historia_id: historiaId },
          }),
          invalidatesTags: ['salaPlaning'],
          // Forçar bypass de cache para garantir que sempre usa tokens atuais
