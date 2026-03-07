@@ -34,7 +34,11 @@ interface SalaPlanningProps {
    sessaoId: string;
    meuRole: number;
    aoVoltar: () => void | Promise<void>;
-   aoEnviarVoto?: (valor: number, participaVotacao: boolean, historiaId: string) => Promise<void>;
+   aoEnviarVoto?: (
+      valor: number,
+      participaVotacao: boolean,
+      historiaId: string,
+   ) => Promise<void>;
    aoRevelarVotos?: () => Promise<void>;
    aoResetarVotos?: () => Promise<void>;
    aoSelecionarHistoria?: (historiaId: string) => Promise<void>;
@@ -106,6 +110,8 @@ export function SalaPlanning({
    const [termoBusca, setTermoBusca] = useState('');
    const [carregandoVotos, setCarregandoVotos] = useState(false);
    const [pausarPolling, setPausarPolling] = useState(false);
+   const [votoLocalmenteDeselecionado, setVotoLocalmenteDeselecionado] =
+      useState(false);
 
    const eProprietario = sala && sala.criado_por === usuarioAtualId;
    const iniciouSessao =
@@ -254,11 +260,12 @@ export function SalaPlanning({
    const votoUsuario = votosPorPessoaId.get(usuarioAtualId);
    const votoDoServidor = votoUsuario?.valor;
    const votoEstaConfirmado = !!votoUsuario;
-   const votoSelecionado = votoEstaConfirmado
-      ? votoDoServidor !== undefined
-         ? votoDoServidor.toString()
-         : null
-      : null;
+   const votoSelecionado =
+      votoEstaConfirmado && !votoLocalmenteDeselecionado
+         ? votoDoServidor !== undefined
+            ? votoDoServidor.toString()
+            : null
+         : null;
 
    // Usar resumoParticipantes do backend para contadores
    const totalDevemVotar = sala.resumoParticipantes?.totalDevemVotar ?? 0;
@@ -268,6 +275,11 @@ export function SalaPlanning({
    const totalOnline = sala.resumoParticipantes?.totalOnline ?? 0;
    const totalParticipantes = sala.resumoParticipantes?.totalParticipantes ?? 0;
 
+   // Reset deselect local ao trocar de história
+   useEffect(() => {
+      setVotoLocalmenteDeselecionado(false);
+   }, [sala.historia_atual_id]);
+
    // Handlers
    const handleSelecionarVoto = async (
       carta: string,
@@ -275,6 +287,12 @@ export function SalaPlanning({
    ) => {
       // Impossível votar em modo visualização ou após revelar votos
       if (modoVisualizacao || votosRevelados) return;
+
+      // Clicou no card do voto atual → deseleciona só na UI, sem chamar API
+      if (votoSelecionado === carta && votoEstaConfirmado) {
+         setVotoLocalmenteDeselecionado(true);
+         return;
+      }
 
       try {
          setLoadingAcao(true);
@@ -284,22 +302,13 @@ export function SalaPlanning({
             return;
          }
 
-         // Se já tem um voto e clica no mesmo → CANCELA
-         if (
-            votoSelecionado === carta &&
-            votoEstaConfirmado &&
-            votoUsuario?.id &&
-            aoAnularVoto
-         ) {
-            console.log('Cancelando voto:', votoUsuario.id);
-            await aoAnularVoto(votoUsuario.id);
-            toastSuccess({ description: 'Voto cancelado' });
-         } else {
-            // Novo voto → ENVIA
-            console.log('Enviando novo voto:', valorNumerico);
-            if (aoEnviarVoto && historiaAtualId) {
-               await aoEnviarVoto(valorNumerico, participaVotacao, historiaAtualId);
-            }
+         if (aoEnviarVoto && historiaAtualId) {
+            await aoEnviarVoto(
+               valorNumerico,
+               participaVotacao,
+               historiaAtualId,
+            );
+            setVotoLocalmenteDeselecionado(false);
          }
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {

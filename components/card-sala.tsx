@@ -13,7 +13,7 @@ import {
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 import { DialogEditarSala } from './dialog-editar-sala';
 import type { Salas, SalaParaEdicao } from '@/services/types';
-import { useLazyObterSalaParaEdicaoQuery } from '@/services/api/salas-api';
+import { useLazyObterDadosFormAlterarQuery } from '@/services/api/salas-api';
 import { toastError } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import Loading from './loading';
@@ -49,7 +49,7 @@ export function CardSala({
    const [modalEntrarSalaAberto, setModalEntrarSalaAberto] = useState(false);
    const [dadosSala, setDadosSala] = useState<SalaParaEdicao | null>(null);
    const [obterSala, { isLoading: carregandoDados }] =
-      useLazyObterSalaParaEdicaoQuery();
+      useLazyObterDadosFormAlterarQuery();
 
    // const copiarCodigo = (codigo: string) => {
    //   copiarParaAreaTransferencia(codigo);

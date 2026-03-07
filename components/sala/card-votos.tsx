@@ -56,87 +56,86 @@ const CardVotos: React.FC<CardVotosProps> = ({
 
    return (
       <div className="border-border bg-card mx-auto w-full max-w-md rounded-lg border p-6 shadow-sm">
-            <header className="mb-4 flex items-center justify-between px-6">
-               <h2 className="text-lg">
-                  {modoVisualizacao
-                     ? 'Visualizando história anterior'
-                     : participaVotacaoAtual
-                        ? 'Selecione sua pontuação'
-                        : 'Você não está votando'}
-               </h2>
+         <header className="mb-4 flex items-center justify-between px-6">
+            <h2 className="text-lg">
+               {modoVisualizacao
+                  ? 'Visualizando história anterior'
+                  : participaVotacaoAtual
+                    ? 'Selecione sua pontuação'
+                    : 'Você não está votando'}
+            </h2>
 
-               <BannerModoSemHistoria mostrar={emModoPratica} />
+            <BannerModoSemHistoria mostrar={emModoPratica} />
 
-               {!participaSempre && !modoVisualizacao && (
-                  <div className="flex flex-col items-center gap-2">
-                     <Label>Votar?</Label>
-                     <Switch
-                        checked={participaVotacaoAtual}
-                        onCheckedChange={onToggleParticipacao}
-                        disabled={votosRevelados || uiDisabled}
-                     />
-                  </div>
-               )}
-            </header>
+            {!participaSempre && !modoVisualizacao && (
+               <div className="flex flex-col items-center gap-2">
+                  <Label>Votar?</Label>
+                  <Switch
+                     checked={participaVotacaoAtual}
+                     onCheckedChange={onToggleParticipacao}
+                     disabled={votosRevelados || uiDisabled}
+                  />
+               </div>
+            )}
+         </header>
 
-             {participaVotacaoAtual && !modoVisualizacao && (
-                <div
-                   className={
-                      votoSelecionado
-                        ? 'flex w-full items-center justify-center p-2'
-                        : 'grid grid-cols-3 place-items-center gap-3 sm:grid-cols-4 md:grid-cols-6'
-                  }
-               >
-                  {!votoSelecionado &&
-                     CARTAS_PLANNING.map((carta) => (
-                        <Button
-                           key={carta}
-                           onClick={() =>
-                              handleSelecionarVoto(carta, participaVotacaoAtual)
-                           }
-                           disabled={!podeVotar}
-                           className="mx-auto aspect-[3/4] h-28 rounded-2xl border-2 text-2xl transition-all active:scale-95"
-                        >
-                           {carta}
-                        </Button>
-                     ))}
-
-                  {votoSelecionado && (
+         {participaVotacaoAtual && !modoVisualizacao && (
+            <div
+               className={
+                  votoSelecionado
+                     ? 'flex w-full items-center justify-center p-2'
+                     : 'grid grid-cols-3 place-items-center gap-3 sm:grid-cols-4 md:grid-cols-6'
+               }
+            >
+               {!votoSelecionado &&
+                  CARTAS_PLANNING.map((carta) => (
                      <Button
+                        key={carta}
                         onClick={() =>
-                           handleSelecionarVoto(
-                              votoSelecionado,
-                              participaVotacaoAtual,
-                           )
+                           handleSelecionarVoto(carta, participaVotacaoAtual)
                         }
-                        disabled={votosRevelados || uiDisabled}
-                        className="!mx-auto aspect-[3/4] h-56 rounded-2xl border-2 text-9xl transition-all md:h-96"
+                        disabled={!podeVotar}
+                        className="mx-auto aspect-[3/4] h-28 rounded-2xl border-2 text-2xl transition-all active:scale-95"
                      >
-                        {votoSelecionado}
+                        {carta}
                      </Button>
-                  )}
-               </div>
-            )}
+                  ))}
 
-            {votoSelecionado && !votosRevelados && !modoVisualizacao && (
-               <div className="mt-4 rounded-xl border border-green-500/30 bg-green-600/10 px-4 py-3 text-center text-sm text-green-400">
-                  ✓ Voto enviado: {votoSelecionado} | Clique novamente para
-                  cancelar
-               </div>
-            )}
+               {votoSelecionado && (
+                  <Button
+                     onClick={() =>
+                        handleSelecionarVoto(
+                           votoSelecionado,
+                           participaVotacaoAtual,
+                        )
+                     }
+                     disabled={votosRevelados || uiDisabled}
+                     className="!mx-auto aspect-[3/4] h-56 rounded-2xl border-2 text-9xl transition-all md:h-96"
+                  >
+                     {votoSelecionado}
+                  </Button>
+               )}
+            </div>
+         )}
 
-            {votosRevelados && votoSelecionado && !modoVisualizacao && (
-               <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-600/10 px-4 py-3 text-center text-sm text-amber-400">
-                  Votos revelados - votação encerrada
-               </div>
-            )}
+         {votoSelecionado && !votosRevelados && !modoVisualizacao && (
+            <div className="mt-4 rounded-xl border border-green-500/30 bg-green-600/10 px-4 py-3 text-center text-sm text-green-400">
+               ✓ Voto enviado: {votoSelecionado} | Clique no card para mudar
+            </div>
+         )}
 
-            {modoVisualizacao && (
-               <div className="mt-4 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-3 text-center text-sm text-blue-400">
-                  Clique em &quot;VOLTAR PARA HISTORIA ATUAL&quot; para
-                  continuar votando
-               </div>
-            )}
+         {votosRevelados && votoSelecionado && !modoVisualizacao && (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-600/10 px-4 py-3 text-center text-sm text-amber-400">
+               Votos revelados - votação encerrada
+            </div>
+         )}
+
+         {modoVisualizacao && (
+            <div className="mt-4 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-3 text-center text-sm text-blue-400">
+               Clique em &quot;VOLTAR PARA HISTORIA ATUAL&quot; para continuar
+               votando
+            </div>
+         )}
       </div>
    );
 };

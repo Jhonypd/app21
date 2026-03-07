@@ -116,12 +116,12 @@ export const SalasApi = apiSlice.injectEndpoints({
          providesTags: ['salaPlaning'],
       }),
 
-      obterSalaParaEdicao: builder.query<
+      obterDadosFormAlterar: builder.query<
          ApiResponse<{ sala: SalaParaEdicao }>,
          string
       >({
          query: (id: string) => ({
-            url: `/salas/${id}/editar`,
+            url: `/salas/obterDadosFormAlterar?id=${id}`,
             method: 'GET',
          }),
          providesTags: ['participantes'],
@@ -279,7 +279,7 @@ export const {
    useLazyObterSalaPorCodigoQuery,
    useObterSalaPorIdQuery,
    useLazyObterSalaPorIdQuery,
-   useLazyObterSalaParaEdicaoQuery,
+   useLazyObterDadosFormAlterarQuery,
    useAdicionarParticipanteMutation,
    useRemoverParticipanteMutation,
    useAlterarRoleParticipanteMutation,
