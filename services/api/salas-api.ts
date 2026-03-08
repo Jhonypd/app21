@@ -20,6 +20,7 @@ import type {
    AdicionarVisitantePayload,
    RemoverVisitantePayload,
    AdicionarParticipanteOuVisitantePayload,
+   ListarHistoriasSessaoResponse,
 } from '../types';
 
 // Re-export dos tipos para manter compatibilidade com imports existentes
@@ -70,8 +71,8 @@ export const SalasApi = apiSlice.injectEndpoints({
       }),
 
       alterarSala: builder.mutation<ApiResponse, AlterarSalaPayload>({
-         query: ({ id, ...body }) => ({
-            url: `/salas/alterar/${id}`,
+         query: (body) => ({
+            url: `/salas/alterarSala`,
             method: 'PUT',
             body,
          }),
@@ -132,9 +133,14 @@ export const SalasApi = apiSlice.injectEndpoints({
          AdicionarParticipanteSalaPayload
       >({
          query: ({ sala_id, pessoa_id, role, sessao_id }) => ({
-            url: `/salas/${sala_id}/participantes/adicionar`,
+            url: `/salas/adicionarParticipante`,
             method: 'POST',
-            body: { pessoa_id, role, ...(sessao_id ? { sessao_id } : {}) },
+            body: {
+               pessoa_id,
+               role,
+               sala_id,
+               ...(sessao_id ? { sessao_id } : {}),
+            },
          }),
          invalidatesTags: ['participantes', 'listarSalas'],
       }),
@@ -264,6 +270,18 @@ export const SalasApi = apiSlice.injectEndpoints({
             maxRetries: 0, // Sem retry automático
          },
       }),
+
+      // GET /historias/listarHistoriasPorSessaoSala
+      listarHistoriasPorSessaoSala: builder.query<
+         ApiResponse<ListarHistoriasSessaoResponse>,
+         void
+      >({
+         query: () => ({
+            url: `/salas/listarHistoriasPorSessaoSala`,
+            method: 'GET',
+         }),
+         providesTags: ['historias'],
+      }),
    }),
 });
 
@@ -292,4 +310,6 @@ export const {
    useAdicionarVisitanteMutation,
    useAdicionarParticipanteOuVisitanteMutation,
    useRemoverVisitanteMutation,
+   useListarHistoriasPorSessaoSalaQuery,
+   useLazyListarHistoriasPorSessaoSalaQuery,
 } = SalasApi;

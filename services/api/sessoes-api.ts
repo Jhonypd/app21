@@ -4,10 +4,7 @@ import type {
    AdicionarParticipanteSessaoPayload,
    Sessao,
    AtualizarParticipaVotacaoPayload,
-   ObterVotosPorHistoriaPayload,
-   VotosPorHistoriaResponse,
    //  ObterVotosPorHistoriaResult,
-   ListarHistoriasSessaoResponse,
 } from '../types';
 
 // Re-export dos tipos para compatibilidade
@@ -77,17 +74,17 @@ export const SessoesApi = apiSlice.injectEndpoints({
          invalidatesTags: ['salaPlaning'],
       }),
 
-      // GET /historias/listarHistoriasPorSessaoSala/:sessaoId
-      listarHistoriasSessao: builder.query<
-         ApiResponse<ListarHistoriasSessaoResponse>,
-         string
-      >({
-         query: (sessaoId) => ({
-            url: `/historias/listarHistoriasPorSessaoSala/${sessaoId}`,
-            method: 'GET',
-         }),
-         providesTags: ['historias'],
-      }),
+      // // GET /historias/listarHistoriasPorSessaoSala
+      // listarHistoriasPorSessaoSala: builder.query<
+      //    ApiResponse<ListarHistoriasSessaoResponse>,
+      //    string
+      // >({
+      //    query: () => ({
+      //       url: `/historias/listarHistoriasPorSessaoSala`,
+      //       method: 'GET',
+      //    }),
+      //    providesTags: ['historias'],
+      // }),
    }),
 });
 
@@ -101,6 +98,6 @@ export const {
    useAtualizarParticipaVotacaoMutation,
    // useObterVotosPorHistoriaQuery,
    // useLazyObterVotosPorHistoriaQuery,
-   useListarHistoriasSessaoQuery,
-   useLazyListarHistoriasSessaoQuery,
+   // useListarHistoriasSessaoQuery,
+   // useLazyListarHistoriasSessaoQuery,
 } = SessoesApi;

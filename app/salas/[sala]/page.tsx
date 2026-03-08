@@ -8,6 +8,7 @@ import {
    useSairDaSalaMutation,
    useSelecionarHistoriaAtualMutation,
    SalasApi,
+   useListarHistoriasPorSessaoSalaQuery,
 } from '@/services/api/salas-api';
 import { useDispatch } from 'react-redux';
 import Loading from '@/components/loading';
@@ -20,7 +21,6 @@ import {
    useEncerrarSessaoMutation,
    useRevelarVotosMutation,
    useResetarVotosMutation,
-   useListarHistoriasSessaoQuery,
 } from '@/services/api/sessoes-api';
 import {
    useVotarMutation,
@@ -153,9 +153,7 @@ const PageSala = () => {
       data: historiasData,
       isLoading: carregandoHistorias,
       isFetching: buscandoHistorias,
-   } = useListarHistoriasSessaoQuery(sessaoAtivaApiId ?? '', {
-      skip: !sessaoAtivaApiId,
-   });
+   } = useListarHistoriasPorSessaoSalaQuery();
    const historiasSessao = useMemo(
       () =>
          [...(historiasData?.Resultado?.historias ?? [])].sort(
