@@ -11,7 +11,6 @@ import {
    KeyRoundIcon,
 } from 'lucide-react';
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
-import { DialogEditarSala } from './dialog-editar-sala';
 import type { Salas, SalaParaEdicao } from '@/services/types';
 import { useLazyObterDadosFormAlterarQuery } from '@/services/api/salas-api';
 import { toastError } from './custom-toast';
@@ -19,6 +18,7 @@ import { getApiErrorMessage } from '@/utils/api-error';
 import Loading from './loading';
 import { ButtonCustom } from './button-custom';
 import { ModalEntrarSala } from './sala/modal-entrar-sala';
+import { DialogEditarSala } from './sala/dialog-editar-sala';
 
 interface CardSalaProps {
    sala: Salas;
