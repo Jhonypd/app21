@@ -245,7 +245,6 @@ export function WizardCriarSessao({
          aoFechar={handleFechar}
          aoConfirmar={handleConfirmar}
          titulo="Iniciar Sessão de Planning"
-         descricao="Configure sua sessão em 3 passos"
          steps={steps}
          textoBotaoFinal="Iniciar Sessão"
          permitirPularSteps={false}

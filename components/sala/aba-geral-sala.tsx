@@ -45,7 +45,7 @@ export const AbaGeralSala = ({
    podeEditarSenha,
 }: AbaGeralSalaProps) => {
    return (
-      <div className="space-y-4 overflow-y-auto p-6">
+      <div className="h-fit space-y-4 p-6">
          <FormField
             control={form.control}
             name="titulo"

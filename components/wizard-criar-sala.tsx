@@ -346,7 +346,6 @@ export function WizardCriarSala({
             aoFechar={handleFechar}
             aoConfirmar={handleConfirmar}
             titulo="Criar Nova Sala"
-            descricao="Configure sua sala de Planning Poker em 3 passos"
             steps={steps}
             textoBotaoFinal="Criar Sala"
             permitirPularSteps={false}

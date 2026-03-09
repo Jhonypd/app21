@@ -21,6 +21,7 @@ import {
    type EditarSalaFormData,
 } from './aba-geral-sala';
 import { ButtonCustom } from '../button-custom';
+import { ScrollArea } from '../ui/scroll-area';
 
 // Tipo para mudanças pendentes
 type ParticipanteLocal = SalaParaEdicao['participantes'][0];
@@ -46,9 +47,9 @@ function ResumoConfiguracoesSala() {
             <TooltipTrigger>
                <InfoIcon />
             </TooltipTrigger>
-            <TooltipContent className="bg-accent">
-               <p className="w-60 text-xs text-purple-200 sm:w-3xs">
-                  <strong>ℹ️ Importante:</strong> As alterações de participantes
+            <TooltipContent className="">
+               <p className="w-60 text-xs text-slate-800/80 sm:w-3xs">
+                  <strong> Importante:</strong> As alterações de participantes
                   serão salvas apenas quando você clicar em &quot;Salvar&quot;
                   no final.
                </p>
@@ -396,13 +397,15 @@ export const DialogEditarSala = ({
                               {
                                  value: 'geral',
                                  content: (
-                                    <AbaGeralSala
-                                       form={form}
-                                       salaPrivada={salaPrivada}
-                                       alterarSenha={alterarSenha}
-                                       podeEditarTitulo={podeEditarTitulo}
-                                       podeEditarSenha={podeEditarSenha}
-                                    />
+                                    <ScrollArea className="h-[350px] w-full">
+                                       <AbaGeralSala
+                                          form={form}
+                                          salaPrivada={salaPrivada}
+                                          alterarSenha={alterarSenha}
+                                          podeEditarTitulo={podeEditarTitulo}
+                                          podeEditarSenha={podeEditarSenha}
+                                       />
+                                    </ScrollArea>
                                  ),
                               },
                               {

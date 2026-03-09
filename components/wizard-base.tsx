@@ -2,12 +2,7 @@
 
 import React, { useState, ReactNode } from 'react';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
-import {
-   Dialog,
-   DialogContent,
-   DialogTitle,
-   DialogDescription,
-} from './ui/dialog';
+import { ModalBase } from './modal-base';
 
 export interface WizardStep {
    id: string;
@@ -23,7 +18,7 @@ interface WizardBaseProps<TData = unknown> {
    aoFechar: () => void;
    aoConfirmar: (dados?: TData) => void;
    titulo: string;
-   descricao?: string;
+   // descricao?: string;
    steps: WizardStep[];
    textoBotaoFinal?: string;
    permitirPularSteps?: boolean;
@@ -36,7 +31,7 @@ export function WizardBase<TData = unknown>({
    aoFechar,
    aoConfirmar,
    titulo,
-   descricao,
+   // descricao,
    steps,
    textoBotaoFinal = 'Confirmar',
    permitirPularSteps = false,
@@ -90,78 +85,12 @@ export function WizardBase<TData = unknown>({
    };
 
    return (
-      <Dialog
+      <ModalBase
          open={aberto}
+         titulo={titulo}
          onOpenChange={(open) => !open && handleFechar()}
-      >
-         <DialogContent
-            className="max-h-[90vh] min-h-[520px] overflow-hidden rounded-sm border-white/20 bg-slate-900 p-0 text-white sm:max-w-2xl"
-            onPointerDownOutside={(e) => e.preventDefault()}
-            onEscapeKeyDown={(e) => e.preventDefault()}
-         >
-            {/* Header */}
-            <div className="border-b border-white/10 p-6">
-               <div className="mb-4">
-                  <DialogTitle className="text-xl">{titulo}</DialogTitle>
-                  {descricao && (
-                     <DialogDescription className="mt-1 text-gray-400">
-                        {descricao}
-                     </DialogDescription>
-                  )}
-               </div>
-
-               {/* Steps Indicator */}
-               <div className="scrollbar-hide flex items-center gap-2 overflow-x-auto">
-                  {steps.map((step, index) => (
-                     <React.Fragment key={step.id}>
-                        <div className="flex flex-shrink-0 items-center gap-2">
-                           <div
-                              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs transition-all ${
-                                 stepCompleto(index)
-                                    ? 'bg-green-600 text-white'
-                                    : stepAtualIndex === index
-                                      ? 'bg-purple-600 text-white'
-                                      : 'bg-white/10 text-gray-400'
-                              }`}
-                           >
-                              {stepCompleto(index) ? (
-                                 <Check className="h-4 w-4" />
-                              ) : (
-                                 index + 1
-                              )}
-                           </div>
-                           <span
-                              className={`text-sm whitespace-nowrap ${
-                                 stepAtualIndex === index
-                                    ? 'text-white'
-                                    : 'text-gray-400'
-                              }`}
-                           >
-                              {step.titulo}
-                           </span>
-                        </div>
-                        {index < steps.length - 1 && (
-                           <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-600" />
-                        )}
-                     </React.Fragment>
-                  ))}
-               </div>
-
-               {/* Descrição do step atual */}
-               {stepAtual?.descricao && (
-                  <p className="mt-3 text-sm text-gray-400">
-                     {stepAtual.descricao}
-                  </p>
-               )}
-            </div>
-
-            {/* Content */}
-            <div className="max-h-[50vh] overflow-y-auto p-6">
-               {stepAtual?.conteudo}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-white/10 p-6">
+         botoesAcoes={
+            <div className="flex justify-end gap-4">
                <button
                   onClick={handleVoltar}
                   disabled={stepAtualIndex === 0}
@@ -170,21 +99,69 @@ export function WizardBase<TData = unknown>({
                   <ChevronLeft className="h-4 w-4" />
                   Voltar
                </button>
-
-               <div className="flex items-center gap-3">
-                  <button
-                     onClick={handleProximo}
-                     disabled={!podeAvancar()}
-                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 transition-all hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                     {stepAtualIndex === steps.length - 1
-                        ? textoBotaoFinal
-                        : 'Próximo'}
-                     <ChevronRight className="h-4 w-4" />
-                  </button>
-               </div>
+               <button
+                  onClick={handleProximo}
+                  disabled={!podeAvancar()}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 transition-all hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+               >
+                  {stepAtualIndex === steps.length - 1
+                     ? textoBotaoFinal
+                     : 'Próximo'}
+                  <ChevronRight className="h-4 w-4" />
+               </button>
             </div>
-         </DialogContent>
-      </Dialog>
+         }
+      >
+         <div className="border-b border-white/10 p-6">
+            {/* Steps Indicator */}
+            <div className="scrollbar-hide flex items-center gap-2 overflow-x-auto">
+               {steps.map((step, index) => (
+                  <React.Fragment key={step.id}>
+                     <div className="flex flex-shrink-0 items-center gap-2">
+                        <div
+                           className={`flex h-8 w-8 items-center justify-center rounded-full text-xs transition-all ${
+                              stepCompleto(index)
+                                 ? 'bg-green-600 text-white'
+                                 : stepAtualIndex === index
+                                   ? 'bg-purple-600 text-white'
+                                   : 'bg-white/10 text-gray-400'
+                           }`}
+                        >
+                           {stepCompleto(index) ? (
+                              <Check className="h-4 w-4" />
+                           ) : (
+                              index + 1
+                           )}
+                        </div>
+                        <span
+                           className={`text-sm whitespace-nowrap ${
+                              stepAtualIndex === index
+                                 ? 'text-white'
+                                 : 'text-gray-400'
+                           }`}
+                        >
+                           {step.titulo}
+                        </span>
+                     </div>
+                     {index < steps.length - 1 && (
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-600" />
+                     )}
+                  </React.Fragment>
+               ))}
+            </div>
+
+            {/* Descrição do step atual */}
+            {stepAtual?.descricao && (
+               <p className="mt-3 text-sm text-gray-400">
+                  {stepAtual.descricao}
+               </p>
+            )}
+         </div>
+
+         {/* Content */}
+         <div className="max-h-[50vh] overflow-y-auto p-6">
+            {stepAtual?.conteudo}
+         </div>
+      </ModalBase>
    );
 }
