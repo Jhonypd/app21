@@ -4,6 +4,7 @@ import { FormControl, FormField, FormItem, FormMessage } from '../ui/form';
 import { type UseFormReturn } from 'react-hook-form';
 import { Switch } from '../ui/switch';
 import { PasswordInput } from '../inputs/input-password';
+import { BsFillHouseLockFill, BsGlobeAmericas } from 'react-icons/bs';
 import z from 'zod';
 // Schema de validação
 export const EditarSalaSchema = z
@@ -71,12 +72,10 @@ export const AbaGeralSala = ({
          />
 
          <div className="flex items-center justify-between rounded-xl bg-white/5 p-4">
-            <div className="space-y-0.5">
-               <label className="text-sm font-medium">Sala Privada</label>
-               <p className="text-xs text-gray-400">
-                  {salaPrivada
-                     ? 'Esta sala possui senha'
-                     : 'Esta sala é pública'}
+            <div className="flex items-center gap-2 space-y-0.5">
+               <label className="text-sm font-medium">Privacidade</label>
+               <p className="text-center text-sm text-gray-400">
+                  {salaPrivada ? <BsFillHouseLockFill /> : <BsGlobeAmericas />}
                </p>
             </div>
             <div className="flex items-center gap-2">
@@ -87,7 +86,7 @@ export const AbaGeralSala = ({
             </div>
          </div>
 
-         {salaPrivada && podeEditarSenha && (
+         {podeEditarSenha && (
             <div className="space-y-4">
                <FormField
                   control={form.control}
