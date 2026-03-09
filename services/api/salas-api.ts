@@ -12,8 +12,6 @@ import type {
    SalaPorCodigo,
    AlterarSalaPayload,
    DeletarSalaPayload,
-   AdicionarParticipanteSalaPayload,
-   RemoverParticipanteSalaPayload,
    AlterarRoleParticipantePayload,
    ListarParticipantesSalaResponse,
    ListarParticipantesSalaPayload,
@@ -89,10 +87,10 @@ export const SalasApi = apiSlice.injectEndpoints({
       }),
 
       deletarSala: builder.mutation<ApiResponse, DeletarSalaPayload>({
-         query: ({ id }) => ({
-            url: `/salas/delete`,
+         query: (ids) => ({
+            url: `/salas/excluirSala`,
             method: 'DELETE',
-            body: { id },
+            headers: { ids: ids.ids.join(',') },
          }),
          invalidatesTags: ['listarSalas'],
       }),
@@ -135,36 +133,6 @@ export const SalasApi = apiSlice.injectEndpoints({
             method: 'GET',
          }),
          providesTags: ['participantes'],
-      }),
-
-      adicionarParticipante: builder.mutation<
-         ApiResponse,
-         AdicionarParticipanteSalaPayload
-      >({
-         query: ({ sala_id, pessoa_id, role, sessao_id }) => ({
-            // TODO: endpoint depreciado - use alterarSala com participantesAdicionarIds
-            url: `/salas/adicionarParticipante`,
-            method: 'POST',
-            body: {
-               pessoa_id,
-               role,
-               sala_id,
-               ...(sessao_id ? { sessao_id } : {}),
-            },
-         }),
-         invalidatesTags: ['participantes', 'listarSalas'],
-      }),
-
-      removerParticipante: builder.mutation<
-         ApiResponse,
-         RemoverParticipanteSalaPayload
-      >({
-         query: ({ sala_id, pessoa_id }) => ({
-            // TODO: endpoint depreciado - use alterarSala com participantesRemoverIds
-            url: `/salas/${sala_id}/participantes/${pessoa_id}/remover`,
-            method: 'DELETE',
-         }),
-         invalidatesTags: ['participantes', 'listarSalas'],
       }),
 
       alterarRoleParticipante: builder.mutation<
@@ -309,8 +277,6 @@ export const {
    useObterSalaPorIdQuery,
    useLazyObterSalaPorIdQuery,
    useLazyObterDadosFormAlterarQuery,
-   useAdicionarParticipanteMutation,
-   useRemoverParticipanteMutation,
    useAlterarRoleParticipanteMutation,
    useCriarSessaoMutation,
    useObterDadosSessaoAtivaQuery,

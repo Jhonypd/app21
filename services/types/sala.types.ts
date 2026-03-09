@@ -146,7 +146,7 @@ export interface AlterarSalaPayload {
 }
 
 export interface DeletarSalaPayload {
-   id: string;
+   ids: string[];
 }
 
 export interface ListarSalasQuery {

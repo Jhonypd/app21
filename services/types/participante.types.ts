@@ -4,18 +4,6 @@
 
 // ---- Payloads de Participante de Sala (gerenciamento permanente) ----
 
-export interface AdicionarParticipanteSalaPayload {
-   sala_id: string;
-   pessoa_id: string;
-   role: 1 | 2; // 1=Admin, 2=Membro
-   sessao_id?: string; // Se fornecido, também cria ParticipanteSessao
-}
-
-export interface RemoverParticipanteSalaPayload {
-   sala_id: string;
-   pessoa_id: string;
-}
-
 export interface AlterarRoleParticipantePayload {
    sala_id: string;
    pessoa_id: string;
