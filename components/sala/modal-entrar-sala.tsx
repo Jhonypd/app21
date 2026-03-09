@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ModalBase } from './modal-base';
 import Loading from '../loading';
 import { TextInput } from '../inputs/input-text';
 import { PasswordInput } from '../inputs/input-password';
 import { ButtonCustom } from '../button-custom';
+import { ModalBase } from '../modal-base';
 
 interface ModalEntrarSalaProps {
    open: boolean;

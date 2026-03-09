@@ -28,7 +28,7 @@ import {
    sortableKeyboardCoordinates,
    verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ModalBase } from './modal-base';
+import { ModalBase } from '../modal-base';
 import CardHistoria from './card-historia';
 import { ButtonCustom } from '../button-custom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';

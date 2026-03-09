@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { CardParticipante } from './card-participante';
 import CardVotacaoSimples from './card-participante-simples';
-import { ModalBase } from './modal-base';
+import { ModalBase } from '../modal-base';
 import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-visitante';
 import { Button } from '../ui/button';
 import { UserPlus, UsersIcon } from 'lucide-react';

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Plus, Upload, FileText, Trash2, Loader2 } from 'lucide-react';
-import { ModalBase } from './modal-base';
+import { ModalBase } from '../modal-base';
 import { ButtonCustom } from '../button-custom';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
