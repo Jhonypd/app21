@@ -58,12 +58,21 @@ export const SalasApi = apiSlice.injectEndpoints({
          invalidatesTags: ['salaPlaning'],
       }),
 
+      // POST /salas/encerrarSessaoSalaAtiva?id={salaId} - Encerrar sessão
+      encerrarSessaoSalaAtiva: builder.mutation<ApiResponse, string>({
+         query: (salaId) => ({
+            url: `/salas/encerrarSessaoSalaAtiva?id=${salaId}`,
+            method: 'POST',
+         }),
+         invalidatesTags: ['sessao', 'salaPlaning'],
+      }),
+
       criarSala: builder.mutation<
          ApiResponse<ResponseCriarSala>,
          CriarSalaPayload
       >({
          query: (salaData) => ({
-            url: '/salas/inserir',
+            url: '/salas/criarSala',
             method: 'POST',
             body: salaData,
          }),
@@ -133,6 +142,7 @@ export const SalasApi = apiSlice.injectEndpoints({
          AdicionarParticipanteSalaPayload
       >({
          query: ({ sala_id, pessoa_id, role, sessao_id }) => ({
+            // TODO: endpoint depreciado - use alterarSala com participantesAdicionarIds
             url: `/salas/adicionarParticipante`,
             method: 'POST',
             body: {
@@ -150,6 +160,7 @@ export const SalasApi = apiSlice.injectEndpoints({
          RemoverParticipanteSalaPayload
       >({
          query: ({ sala_id, pessoa_id }) => ({
+            // TODO: endpoint depreciado - use alterarSala com participantesRemoverIds
             url: `/salas/${sala_id}/participantes/${pessoa_id}/remover`,
             method: 'DELETE',
          }),
@@ -287,6 +298,7 @@ export const SalasApi = apiSlice.injectEndpoints({
 
 export const {
    useEntrarSalaMutation,
+   useEncerrarSessaoSalaAtivaMutation,
    useCriarSalaMutation,
    useAlterarSalaMutation,
    useDeletarSalaMutation,

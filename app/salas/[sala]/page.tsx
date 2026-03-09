@@ -9,6 +9,7 @@ import {
    useSelecionarHistoriaAtualMutation,
    SalasApi,
    useListarHistoriasPorSessaoSalaQuery,
+   useEncerrarSessaoSalaAtivaMutation,
 } from '@/services/api/salas-api';
 import { useDispatch } from 'react-redux';
 import Loading from '@/components/loading';
@@ -18,7 +19,6 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSafeTimer } from '@/hooks/useSafeAsync';
 import { SalaPlanning } from '@/components/sala/sala-planning';
 import {
-   useEncerrarSessaoMutation,
    useRevelarVotosMutation,
    useResetarVotosMutation,
 } from '@/services/api/sessoes-api';
@@ -64,7 +64,7 @@ const PageSala = () => {
       },
    );
 
-   const [encerrarSessao] = useEncerrarSessaoMutation();
+   const [encerrarSessao] = useEncerrarSessaoSalaAtivaMutation();
    const [sairDaSala] = useSairDaSalaMutation();
    const [selecionarHistoriaAtual, { reset: resetSelecionarHistoria }] =
       useSelecionarHistoriaAtualMutation();

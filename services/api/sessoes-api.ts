@@ -52,15 +52,6 @@ export const SessoesApi = apiSlice.injectEndpoints({
          providesTags: ['sessao', 'salaPlaning'],
       }),
 
-      // POST /salas/:id/sessoes/encerrar - Encerrar sessão
-      encerrarSessao: builder.mutation<ApiResponse, string>({
-         query: (salaId) => ({
-            url: `/salas/${salaId}/sessoes/encerrar`,
-            method: 'POST',
-         }),
-         invalidatesTags: ['sessao', 'salaPlaning'],
-      }),
-
       // PATCH /sessoes/:id/participa-votacao - Atualizar flag de participação
       atualizarParticipaVotacao: builder.mutation<
          ApiResponse,
@@ -73,18 +64,6 @@ export const SessoesApi = apiSlice.injectEndpoints({
          }),
          invalidatesTags: ['salaPlaning'],
       }),
-
-      // // GET /historias/listarHistoriasPorSessaoSala
-      // listarHistoriasPorSessaoSala: builder.query<
-      //    ApiResponse<ListarHistoriasSessaoResponse>,
-      //    string
-      // >({
-      //    query: () => ({
-      //       url: `/historias/listarHistoriasPorSessaoSala`,
-      //       method: 'GET',
-      //    }),
-      //    providesTags: ['historias'],
-      // }),
    }),
 });
 
@@ -94,7 +73,6 @@ export const {
    useResetarVotosMutation,
    useObterSessaoQuery,
    useLazyObterSessaoQuery,
-   useEncerrarSessaoMutation,
    useAtualizarParticipaVotacaoMutation,
    // useObterVotosPorHistoriaQuery,
    // useLazyObterVotosPorHistoriaQuery,

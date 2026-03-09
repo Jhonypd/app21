@@ -141,6 +141,8 @@ export interface AlterarSalaPayload {
    titulo?: string;
    senha?: string | null;
    salaPrivada?: boolean;
+   participantesAdicionarIds?: string[];
+   participantesRemoverIds?: string[];
 }
 
 export interface DeletarSalaPayload {

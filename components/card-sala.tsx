@@ -30,6 +30,8 @@ interface CardSalaProps {
       dados: {
          titulo: string;
          senha?: string;
+         participantesAdicionarIds?: string[];
+         participantesRemoverIds?: string[];
       },
    ) => Promise<void>;
    podeIniciarSessao?: boolean; // Se o usuário pode iniciar sessão (dono ou admin)

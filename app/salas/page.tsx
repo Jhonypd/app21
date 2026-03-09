@@ -118,16 +118,29 @@ const PageSalas = () => {
    // Handler para editar sala
    const handleEditarSala = async (
       salaId: string,
-      dados: { titulo: string; senha?: string },
+      dados: {
+         titulo: string;
+         senha?: string;
+         participantesAdicionarIds?: string[];
+         participantesRemoverIds?: string[];
+      },
    ): Promise<void> => {
       try {
          const payload: {
             id: string;
             titulo: string;
             senha?: string;
+            participantesAdicionarIds?: string[];
+            participantesRemoverIds?: string[];
          } = {
             id: salaId,
             titulo: dados.titulo,
+            ...(dados.participantesAdicionarIds && {
+               participantesAdicionarIds: dados.participantesAdicionarIds,
+            }),
+            ...(dados.participantesRemoverIds && {
+               participantesRemoverIds: dados.participantesRemoverIds,
+            }),
          };
 
          // Só incluir senha se foi fornecida (não enviar null ou undefined)
