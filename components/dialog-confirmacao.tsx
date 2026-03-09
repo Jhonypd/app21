@@ -16,7 +16,7 @@ interface DialogConfirmacaoProps {
    dialogAberto: boolean;
    setDialogAberto: (aberto: boolean) => void;
    dialogLoading: boolean;
-   handleSubmit: () => Promise<void>;
+   handleSubmit: () => void | Promise<void>;
    btnCancelar?: string;
    btnConfirmar?: string;
    tipo: 'destrutivo' | 'padrao' | 'cancelamento';

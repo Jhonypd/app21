@@ -5,40 +5,24 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Lock, Settings, Users, UserPlus, InfoIcon } from 'lucide-react';
-import {
-   Dialog,
-   DialogContent,
-   DialogTrigger,
-   DialogHeader,
-   DialogTitle,
-   DialogDescription,
-} from './ui/dialog';
 import { FormField, FormItem, FormControl, FormMessage } from './ui/form';
 import { TabsCustom } from './tabs';
 import { TextInput } from './inputs/input-text';
 import { PasswordInput } from './inputs/input-password';
 import { Switch } from './ui/switch';
-import type { SalaParaEdicao } from '@/services/types';
+import type { DadosPessoaResumo, SalaParaEdicao } from '@/services/types';
 import { useAlterarRoleParticipanteMutation } from '@/services/api/salas-api';
 import { CardParticipante } from './sala/card-participante';
-import { DialogAdicionarParticipante } from './sala/dialog-adicionar-participante';
-import { DialogRemoverParticipante } from './sala/dialog-remover-participante';
+import { ModalAdicionarParticipanteOuVisitante } from './sala/modal-adicionar-visitante';
 import { toastError, toastSuccess } from './custom-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
 import Loading from './loading';
+import { ModalBase } from './modal-base';
+import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 
-import {
-   AlertDialog,
-   AlertDialogAction,
-   AlertDialogCancel,
-   AlertDialogContent,
-   AlertDialogDescription,
-   AlertDialogFooter,
-   AlertDialogHeader,
-   AlertDialogTitle,
-} from './ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import DialogConfirmacao from './dialog-confirmacao';
 
 // Schema de validação
 const EditarSalaSchema = z
@@ -86,6 +70,12 @@ function AbaParticipantes({
       nome: string;
    } | null>(null);
    const [dialogAdicionarAberto, setDialogAdicionarAberto] = useState(false);
+   const [termoBusca, setTermoBusca] = useState('');
+   const [pessoasEncontradas, setPessoasEncontradas] = useState<
+      DadosPessoaResumo[]
+   >([]);
+   const [buscarPessoas, { isLoading: buscandoPessoas }] =
+      useLazyPesquisarPorNomeOuEmailQuery();
 
    // Permissões
    const podeAdicionar = meuRole === 0 || meuRole === 1; // Dono ou Admin
@@ -108,11 +98,51 @@ function AbaParticipantes({
    };
 
    const handleAbrirDialogAdicionar = () => {
+      setTermoBusca('');
+      setPessoasEncontradas([]);
       setDialogAdicionarAberto(true);
    };
 
    const handleFecharDialogAdicionar = () => {
+      setTermoBusca('');
+      setPessoasEncontradas([]);
       setDialogAdicionarAberto(false);
+   };
+
+   const handleBuscarPessoas = async (termo: string) => {
+      setTermoBusca(termo);
+
+      if (termo.trim().length < 2) {
+         setPessoasEncontradas([]);
+         return;
+      }
+
+      try {
+         const resultado = await buscarPessoas({ termo }).unwrap();
+         const pessoas = resultado.Resultado?.pessoas || [];
+         const idsExistentes = new Set(participantes.map((p) => p.id));
+
+         setPessoasEncontradas(
+            pessoas.filter((pessoa) => !idsExistentes.has(pessoa.id)),
+         );
+      } catch {
+         setPessoasEncontradas([]);
+      }
+   };
+
+   const handleAdicionarParticipante = async (pessoaId: string) => {
+      const pessoa = pessoasEncontradas.find((item) => item.id === pessoaId);
+      if (!pessoa) return;
+
+      const novoParticipante: ParticipanteLocal = {
+         id: pessoa.id,
+         nome: pessoa.nome,
+         role: 2,
+         inativo: false,
+      };
+
+      onAlterarParticipantes([...participantes, novoParticipante]);
+      handleFecharDialogAdicionar();
    };
 
    return (
@@ -164,31 +194,36 @@ function AbaParticipantes({
             </div>
          </div>
 
-         {/* Dialog para Adicionar Participante */}
-         <DialogAdicionarParticipante
-            aberto={dialogAdicionarAberto}
-            aoFechar={handleFecharDialogAdicionar}
-            participantesExistentes={participantes}
-            meuRole={meuRole}
-            onAdicionar={(pessoaId, nome, role) => {
-               const novoParticipante: ParticipanteLocal = {
-                  id: pessoaId,
-                  nome,
-                  role,
-                  inativo: false,
-               };
-
-               onAlterarParticipantes([...participantes, novoParticipante]);
-
-               handleFecharDialogAdicionar();
+         {/* Modal para Adicionar Participante */}
+         <ModalAdicionarParticipanteOuVisitante
+            titulo="Adicionar participante"
+            open={dialogAdicionarAberto}
+            onOpenChange={(open) => {
+               if (!open) {
+                  handleFecharDialogAdicionar();
+               }
             }}
+            termoBusca={termoBusca}
+            onBuscar={handleBuscarPessoas}
+            pessoas={pessoasEncontradas}
+            loading={buscandoPessoas}
+            onAdicionar={handleAdicionarParticipante}
          />
 
-         {/* Dialog de Confirmação de Remoção */}
-         <DialogRemoverParticipante
-            participante={participanteRemover}
-            onFechar={() => setParticipanteRemover(null)}
-            onConfirmar={handleRemoverParticipante}
+         <DialogConfirmacao
+            titulo="Remover Participante"
+            btnConfirmar="Remover"
+            btnCancelar="Cancelar"
+            textoPadrao={`Tem certeza que deseja remover ${participanteRemover?.nome} da sala? Esta ação não pode ser desfeita.`}
+            dialogAberto={!!participanteRemover}
+            setDialogAberto={(open) => {
+               if (!open) {
+                  setParticipanteRemover(null);
+               }
+            }}
+            tipo="destrutivo"
+            handleSubmit={handleRemoverParticipante}
+            dialogLoading={false}
          />
       </>
    );
@@ -200,12 +235,11 @@ interface DialogEditarSalaProps {
    dadosSala: SalaParaEdicao | null;
    meuRole?: number | null; // 0=Dono, 1=Admin, 2=Membro
    aoSalvar: (dados: {
-    titulo: string;
-    senha?: string;
-    participantesAdicionarIds?: string[];
-    participantesRemoverIds?: string[];
-  }) => Promise<void>;
-   children?: React.ReactNode;
+      titulo: string;
+      senha?: string;
+      participantesAdicionarIds?: string[];
+      participantesRemoverIds?: string[];
+   }) => Promise<void>;
 }
 
 export function DialogEditarSala({
@@ -214,7 +248,6 @@ export function DialogEditarSala({
    dadosSala,
    meuRole,
    aoSalvar,
-   children,
 }: DialogEditarSalaProps) {
    const [salvando, setSalvando] = useState(false);
    const [abaAtiva, setAbaAtiva] = useState('geral');
@@ -487,297 +520,258 @@ export function DialogEditarSala({
                type="transaction"
             />
          )}
-         <Dialog
+         <ModalBase
             open={aberto}
-            onOpenChange={aoFechar}
+            onOpenChange={(open) => {
+               if (!open) {
+                  handleFechar(false);
+               }
+            }}
+            titulo="Editar Sala"
+            maxWidth="2xl"
+            botoesAcoes={
+               <>
+                  <button
+                     onClick={() => handleFechar(false)}
+                     disabled={salvando}
+                     className="flex-1 rounded-xl bg-white/5 py-3 text-sm transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                     Cancelar
+                  </button>
+                  <button
+                     onClick={handleSalvar}
+                     disabled={
+                        salvando || (!podeEditarTitulo && !podeEditarSenha)
+                     }
+                     className={`flex-1 rounded-xl py-3 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                        temMudancasNaoSalvas
+                           ? 'animate-pulse bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                           : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                     }`}
+                  >
+                     <span className="flex items-center justify-center gap-2">
+                        Salvar
+                        {temMudancasNaoSalvas && (
+                           <span className="flex h-2 w-2 items-center justify-center rounded-full bg-white">
+                              <span className="h-2 w-2 animate-ping rounded-full bg-white opacity-75"></span>
+                           </span>
+                        )}
+                     </span>
+                  </button>
+               </>
+            }
          >
-            <DialogTrigger asChild>{children}</DialogTrigger>
+            <div className="flex max-h-[70vh] flex-col overflow-hidden">
+               <p className="mt-2 flex items-center justify-between px-4 text-sm text-gray-400">
+                  Gerencie as configurações da sala{' '}
+                  <Tooltip>
+                     <TooltipTrigger>
+                        <InfoIcon />
+                     </TooltipTrigger>
+                     <TooltipContent className="bg-accent">
+                        <p className="w-60 text-xs text-purple-200 sm:w-3xs">
+                           <strong>ℹ️ Importante:</strong> As alterações de
+                           participantes serão salvas apenas quando você clicar
+                           em &quot;Salvar&quot; no final.
+                        </p>
+                     </TooltipContent>
+                  </Tooltip>
+               </p>
 
-            <DialogContent
-               className="h-full rounded-sm border-white/20 bg-slate-900 p-0 text-white sm:h-[600px] sm:max-w-2xl"
-               onPointerDownOutside={(e) => e.preventDefault()}
-               onEscapeKeyDown={(e) => e.preventDefault()}
-            >
-               <DialogHeader className="sr-only">
-                  <DialogTitle>Editar Sala</DialogTitle>
-                  <DialogDescription>
-                     Gerencie as configurações da sala
-                  </DialogDescription>
-               </DialogHeader>
-
-               <div className="flex max-h-[90vh] flex-col">
-                  {/* Header Visual */}
-                  <div className="border-b border-white/10 p-6">
-                     <h2 className="text-xl">Editar Sala</h2>
-                     <p className="mt-1 flex items-center justify-between text-sm text-gray-400">
-                        Gerencie as configurações da sala{' '}
-                        <Tooltip>
-                           <TooltipTrigger>
-                              <InfoIcon />
-                           </TooltipTrigger>
-                           <TooltipContent className="bg-accent">
-                              <p className="w-60 text-xs text-purple-200 sm:w-3xs">
-                                 <strong>ℹ️ Importante:</strong> As alterações
-                                 de participantes serão salvas apenas quando
-                                 você clicar em &quot;Salvar&quot; no final.
-                              </p>
-                           </TooltipContent>
-                        </Tooltip>
-                     </p>
+               {!dadosSala ? (
+                  <div className="flex items-center justify-center p-8">
+                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
                   </div>
+               ) : (
+                  <FormProvider {...form}>
+                     <div className="flex min-h-0 flex-1 flex-col">
+                        <TabsCustom
+                           value={abaAtiva}
+                           onValueChange={setAbaAtiva}
+                           className="flex min-h-0 flex-1 flex-col"
+                           tabsListClassName="bg-transparent grid h-fit w-full grid-cols-2 items-center gap-2 "
+                           tabsTrigger={[
+                              {
+                                 value: 'geral',
+                                 label: 'Geral',
+                                 icon: <Settings className="h-4 w-4" />,
+                              },
+                              {
+                                 value: 'participantes',
+                                 label: 'Participantes',
+                                 icon: <Users className="h-4 w-4" />,
+                              },
+                           ]}
+                           tabsContent={[
+                              {
+                                 value: 'geral',
+                                 content: (
+                                    <div className="space-y-4 overflow-y-auto p-6">
+                                       {/* Título */}
+                                       <FormField
+                                          control={form.control}
+                                          name="titulo"
+                                          render={({ field, fieldState }) => (
+                                             <FormItem>
+                                                <FormControl>
+                                                   <TextInput
+                                                      label="Título da Sala"
+                                                      value={field.value}
+                                                      onChange={field.onChange}
+                                                      placeholder="Ex: Sprint Planning - Time Alpha"
+                                                      error={!!fieldState.error}
+                                                      disabled={
+                                                         !podeEditarTitulo
+                                                      }
+                                                   />
+                                                </FormControl>
+                                                <FormMessage />
+                                                {!podeEditarTitulo && (
+                                                   <p className="text-xs text-gray-500">
+                                                      Apenas dono e
+                                                      administradores podem
+                                                      alterar o título
+                                                   </p>
+                                                )}
+                                             </FormItem>
+                                          )}
+                                       />
 
-                  {!dadosSala ? (
-                     <div className="flex items-center justify-center p-8">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-                     </div>
-                  ) : (
-                     <FormProvider {...form}>
-                        <div className="flex flex-1 flex-col">
-                           <TabsCustom
-                              value={abaAtiva}
-                              onValueChange={setAbaAtiva}
-                              className="flex flex-1 flex-col"
-                              tabsListClassName="bg-transparent grid h-fit w-full grid-cols-2 items-center gap-2 "
-                              tabsTrigger={[
-                                 {
-                                    value: 'geral',
-                                    label: 'Geral',
-                                    icon: <Settings className="h-4 w-4" />,
-                                 },
-                                 {
-                                    value: 'participantes',
-                                    label: 'Participantes',
-                                    icon: <Users className="h-4 w-4" />,
-                                 },
-                              ]}
-                              tabsContent={[
-                                 {
-                                    value: 'geral',
-                                    content: (
-                                       <div className="space-y-4 overflow-y-auto p-6">
-                                          {/* Título */}
-                                          <FormField
-                                             control={form.control}
-                                             name="titulo"
-                                             render={({
-                                                field,
-                                                fieldState,
-                                             }) => (
-                                                <FormItem>
-                                                   <FormControl>
-                                                      <TextInput
-                                                         label="Título da Sala"
-                                                         value={field.value}
-                                                         onChange={
-                                                            field.onChange
-                                                         }
-                                                         placeholder="Ex: Sprint Planning - Time Alpha"
-                                                         error={
-                                                            !!fieldState.error
-                                                         }
-                                                         disabled={
-                                                            !podeEditarTitulo
-                                                         }
-                                                      />
-                                                   </FormControl>
-                                                   <FormMessage />
-                                                   {!podeEditarTitulo && (
-                                                      <p className="text-xs text-gray-500">
-                                                         Apenas dono e
-                                                         administradores podem
-                                                         alterar o título
-                                                      </p>
-                                                   )}
-                                                </FormItem>
-                                             )}
-                                          />
-
-                                          {/* Status Sala Privada (apenas visualização) */}
-                                          <div className="flex items-center justify-between rounded-xl bg-white/5 p-4">
-                                             <div className="space-y-0.5">
-                                                <label className="text-sm font-medium">
-                                                   Sala Privada
-                                                </label>
-                                                <p className="text-xs text-gray-400">
-                                                   {salaPrivada
-                                                      ? 'Esta sala possui senha'
-                                                      : 'Esta sala é pública'}
-                                                </p>
-                                             </div>
-                                             <div className="flex items-center gap-2">
-                                                <Lock className="h-4 w-4 text-gray-400" />
-                                                <span className="text-sm text-gray-400">
-                                                   {salaPrivada
-                                                      ? 'Com senha'
-                                                      : 'Sem senha'}
-                                                </span>
-                                             </div>
+                                       {/* Status Sala Privada (apenas visualização) */}
+                                       <div className="flex items-center justify-between rounded-xl bg-white/5 p-4">
+                                          <div className="space-y-0.5">
+                                             <label className="text-sm font-medium">
+                                                Sala Privada
+                                             </label>
+                                             <p className="text-xs text-gray-400">
+                                                {salaPrivada
+                                                   ? 'Esta sala possui senha'
+                                                   : 'Esta sala é pública'}
+                                             </p>
                                           </div>
+                                          <div className="flex items-center gap-2">
+                                             <Lock className="h-4 w-4 text-gray-400" />
+                                             <span className="text-sm text-gray-400">
+                                                {salaPrivada
+                                                   ? 'Com senha'
+                                                   : 'Sem senha'}
+                                             </span>
+                                          </div>
+                                       </div>
 
-                                          {/* Alterar Senha (apenas se sala privada e dono) */}
-                                          {salaPrivada && podeEditarSenha && (
-                                             <div className="space-y-4">
+                                       {/* Alterar Senha (apenas se sala privada e dono) */}
+                                       {salaPrivada && podeEditarSenha && (
+                                          <div className="space-y-4">
+                                             <FormField
+                                                control={form.control}
+                                                name="alterarSenha"
+                                                render={({ field }) => (
+                                                   <FormItem>
+                                                      <FormControl>
+                                                         <div className="flex items-center justify-between rounded-xl bg-white/5 p-4">
+                                                            <div className="space-y-0.5">
+                                                               <label className="text-sm font-medium">
+                                                                  Alterar Senha
+                                                               </label>
+                                                               <p className="text-xs text-gray-400">
+                                                                  Defina uma
+                                                                  nova senha
+                                                                  para a sala
+                                                               </p>
+                                                            </div>
+                                                            <Switch
+                                                               checked={
+                                                                  field.value
+                                                               }
+                                                               onCheckedChange={
+                                                                  field.onChange
+                                                               }
+                                                            />
+                                                         </div>
+                                                      </FormControl>
+                                                   </FormItem>
+                                                )}
+                                             />
+
+                                             {alterarSenha && (
                                                 <FormField
                                                    control={form.control}
-                                                   name="alterarSenha"
-                                                   render={({ field }) => (
+                                                   name="senha"
+                                                   render={({
+                                                      field,
+                                                      fieldState,
+                                                   }) => (
                                                       <FormItem>
                                                          <FormControl>
-                                                            <div className="flex items-center justify-between rounded-xl bg-white/5 p-4">
-                                                               <div className="space-y-0.5">
-                                                                  <label className="text-sm font-medium">
-                                                                     Alterar
-                                                                     Senha
-                                                                  </label>
-                                                                  <p className="text-xs text-gray-400">
-                                                                     Defina uma
-                                                                     nova senha
-                                                                     para a sala
-                                                                  </p>
-                                                               </div>
-                                                               <Switch
-                                                                  checked={
-                                                                     field.value
-                                                                  }
-                                                                  onCheckedChange={
-                                                                     field.onChange
-                                                                  }
-                                                               />
-                                                            </div>
+                                                            <PasswordInput
+                                                               value={
+                                                                  field.value
+                                                               }
+                                                               onChange={
+                                                                  field.onChange
+                                                               }
+                                                               name={field.name}
+                                                               placeholder="Digite a nova senha (mínimo 6 caracteres)"
+                                                               error={
+                                                                  !!fieldState.error
+                                                               }
+                                                            />
                                                          </FormControl>
+                                                         <FormMessage />
                                                       </FormItem>
                                                    )}
                                                 />
+                                             )}
+                                          </div>
+                                       )}
 
-                                                {alterarSenha && (
-                                                   <FormField
-                                                      control={form.control}
-                                                      name="senha"
-                                                      render={({
-                                                         field,
-                                                         fieldState,
-                                                      }) => (
-                                                         <FormItem>
-                                                            <FormControl>
-                                                               <PasswordInput
-                                                                  value={
-                                                                     field.value
-                                                                  }
-                                                                  onChange={
-                                                                     field.onChange
-                                                                  }
-                                                                  name={
-                                                                     field.name
-                                                                  }
-                                                                  placeholder="Digite a nova senha (mínimo 6 caracteres)"
-                                                                  error={
-                                                                     !!fieldState.error
-                                                                  }
-                                                               />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                         </FormItem>
-                                                      )}
-                                                   />
-                                                )}
-                                             </div>
-                                          )}
-
-                                          {!podeEditarSenha && salaPrivada && (
-                                             <p className="text-xs text-gray-500">
-                                                Apenas o dono pode alterar a
-                                                senha da sala
-                                             </p>
-                                          )}
-                                       </div>
-                                    ),
-                                 },
-                                 {
-                                    value: 'participantes',
-                                    content: (
-                                       <div className="overflow-y-auto p-6">
-                                          <AbaParticipantes
-                                             participantes={participantesLocais}
-                                             participantesOriginais={
-                                                dadosSala?.participantes || []
-                                             }
-                                             onAlterarParticipantes={
-                                                setParticipantesLocais
-                                             }
-                                             meuRole={meuRole}
-                                          />
-                                       </div>
-                                    ),
-                                 },
-                              ]}
-                           />
-                        </div>
-
-                        {/* Footer */}
-                        <div className="fixed right-0 bottom-0 flex w-full gap-2 border-t border-white/10 p-6">
-                           <button
-                              onClick={() => handleFechar(false)}
-                              disabled={salvando}
-                              className="flex-1 rounded-xl bg-white/5 py-3 text-sm transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                           >
-                              Cancelar
-                           </button>
-                           <button
-                              onClick={handleSalvar}
-                              disabled={
-                                 salvando ||
-                                 (!podeEditarTitulo && !podeEditarSenha)
-                              }
-                              className={`flex-1 rounded-xl py-3 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-                                 temMudancasNaoSalvas
-                                    ? 'animate-pulse bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                              }`}
-                           >
-                              <span className="flex items-center justify-center gap-2">
-                                 Salvar
-                                 {temMudancasNaoSalvas && (
-                                    <span className="flex h-2 w-2 items-center justify-center rounded-full bg-white">
-                                       <span className="h-2 w-2 animate-ping rounded-full bg-white opacity-75"></span>
-                                    </span>
-                                 )}
-                              </span>
-                           </button>
-                        </div>
-                     </FormProvider>
-                  )}
-               </div>
-            </DialogContent>
-         </Dialog>
+                                       {!podeEditarSenha && salaPrivada && (
+                                          <p className="text-xs text-gray-500">
+                                             Apenas o dono pode alterar a senha
+                                             da sala
+                                          </p>
+                                       )}
+                                    </div>
+                                 ),
+                              },
+                              {
+                                 value: 'participantes',
+                                 content: (
+                                    <div className="h-full overflow-y-auto p-6">
+                                       <AbaParticipantes
+                                          participantes={participantesLocais}
+                                          participantesOriginais={
+                                             dadosSala?.participantes || []
+                                          }
+                                          onAlterarParticipantes={
+                                             setParticipantesLocais
+                                          }
+                                          meuRole={meuRole}
+                                       />
+                                    </div>
+                                 ),
+                              },
+                           ]}
+                        />
+                     </div>
+                  </FormProvider>
+               )}
+            </div>
+         </ModalBase>
 
          {/* Dialog de Confirmação ao Fechar com Mudanças */}
-         <AlertDialog
-            open={dialogConfirmarFechamento}
-            onOpenChange={setDialogConfirmarFechamento}
-         >
-            <AlertDialogContent className="border-white/20 bg-slate-900 text-white">
-               <AlertDialogHeader>
-                  <AlertDialogTitle className="text-xl font-semibold">
-                     Alterações não salvas
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="mt-2 text-gray-400">
-                     Você tem alterações não salvas. Deseja realmente sair sem
-                     salvar?
-                  </AlertDialogDescription>
-               </AlertDialogHeader>
-               <AlertDialogFooter className="mt-4 gap-2">
-                  <AlertDialogCancel className="border-white/10 bg-white/5 text-white hover:bg-white/10">
-                     Continuar Editando
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                     onClick={handleConfirmarFechamento}
-                     className="bg-gradient-to-r from-red-500 to-rose-500 text-white hover:from-red-600 hover:to-rose-600"
-                  >
-                     Sair sem Salvar
-                  </AlertDialogAction>
-               </AlertDialogFooter>
-            </AlertDialogContent>
-         </AlertDialog>
+         <DialogConfirmacao
+            titulo="Alterações não salvas"
+            btnConfirmar="Sim"
+            btnCancelar="não"
+            textoPadrao="Você tem alterações não salvas. Deseja realmente sair sem
+                     salvar?"
+            dialogAberto={dialogConfirmarFechamento}
+            setDialogAberto={setDialogConfirmarFechamento}
+            tipo="cancelamento"
+            handleSubmit={handleConfirmarFechamento}
+            dialogLoading={salvando || salvandoParticipantes}
+         />
       </>
    );
 }

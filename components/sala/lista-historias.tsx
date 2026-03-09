@@ -506,6 +506,7 @@ export function ListaHistorias({
             setDialogAberto={setDialogConfirmacao}
             dialogLoading={loading || uiDisabled}
             handleSubmit={handleConfirmarMudanca}
+            tipo="padrao"
          />
       </>
    );
