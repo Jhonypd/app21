@@ -119,7 +119,11 @@ export function ListaHistorias({
    const estaNoAtual =
       !modoVisualizacao || historiaExibidaId === historiaAtualId;
 
-   const historiaExibida = historiasIniciais[indiceExibido];
+   const historiaExibida =
+      historiasIniciais.length > 1
+         ? historiasIniciais[indiceExibido]
+         : historiasIniciais[0];
+
    const proximaOrdemInicial =
       Math.max(0, ...historiasIniciais.map((h) => h.ordem ?? 0)) + 1;
 
@@ -245,6 +249,7 @@ export function ListaHistorias({
    }
 
    const podeMudarHistoria = role < 2;
+
    return (
       <>
          <div className="space-y-3">
