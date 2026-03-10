@@ -86,7 +86,7 @@ export const SalasApi = apiSlice.injectEndpoints({
          invalidatesTags: ['listarSalas', 'salaPlaning'],
       }),
 
-      deletarSala: builder.mutation<ApiResponse, DeletarSalaPayload>({
+      excluirSala: builder.mutation<ApiResponse, DeletarSalaPayload>({
          query: (ids) => ({
             url: `/salas/excluirSala`,
             method: 'DELETE',
@@ -269,7 +269,7 @@ export const {
    useEncerrarSessaoSalaAtivaMutation,
    useCriarSalaMutation,
    useAlterarSalaMutation,
-   useDeletarSalaMutation,
+   useExcluirSalaMutation,
    useListarSalasQuery,
    useLazyListarSalasQuery,
    useObterSalaPorCodigoQuery,

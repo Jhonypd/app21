@@ -1,24 +1,30 @@
 import React, { useState } from 'react';
 import {
-   Share2,
-   Crown,
-   Users,
-   Edit,
-   Play,
-   ChevronRight,
-   HousePlugIcon,
-   UnplugIcon,
-   KeyRoundIcon,
-} from 'lucide-react';
+   MdGroups,
+   MdOutlineBroadcastOnPersonal,
+   MdLockPerson,
+   MdOutlineChevronRight,
+   MdOutlinePlayArrow,
+   MdDelete,
+   MdEditSquare,
+   MdShare,
+} from 'react-icons/md';
+import { GiUnplugged } from 'react-icons/gi';
+
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 import type { Salas, SalaParaEdicao } from '@/services/types';
-import { useLazyObterDadosFormAlterarQuery } from '@/services/api/salas-api';
-import { toastError } from './custom-toast';
+import {
+   useExcluirSalaMutation,
+   useLazyObterDadosFormAlterarQuery,
+} from '@/services/api/salas-api';
+import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import Loading from './loading';
 import { ButtonCustom } from './button-custom';
 import { ModalEntrarSala } from './sala/modal-entrar-sala';
 import { DialogEditarSala } from './sala/dialog-editar-sala';
+import { Card, CardContent } from './ui/card';
+import DialogConfirmacao from './dialog-confirmacao';
 
 interface CardSalaProps {
    sala: Salas;
@@ -47,11 +53,13 @@ export function CardSala({
 }: CardSalaProps) {
    const urlCompartilhamento = `${window.location.origin}/entrar/${sala.codigo}`;
 
-   const [dialogAberto, setDialogAberto] = useState(false);
+   const [dialogEditarAberto, setDialogEditarAberto] = useState(false);
+   const [dialogExcluirAberto, setDialogExcluirAberto] = useState(false);
    const [modalEntrarSalaAberto, setModalEntrarSalaAberto] = useState(false);
    const [dadosSala, setDadosSala] = useState<SalaParaEdicao | null>(null);
    const [obterSala, { isLoading: carregandoDados }] =
       useLazyObterDadosFormAlterarQuery();
+   const [excluirSala, { isLoading: excluindoSala }] = useExcluirSalaMutation();
 
    // const copiarCodigo = (codigo: string) => {
    //   copiarParaAreaTransferencia(codigo);
@@ -61,7 +69,7 @@ export function CardSala({
       try {
          const response = await obterSala(sala.id).unwrap();
          setDadosSala(response.Resultado?.sala || null);
-         setDialogAberto(true);
+         setDialogEditarAberto(true);
       } catch (error) {
          const apiError = getApiErrorMessage(error);
          toastError({
@@ -70,8 +78,33 @@ export function CardSala({
       }
    };
 
+   const handleAbrirDialogExcluir = async (id: string) => {
+      try {
+         if (!id) {
+            throw new Error('Id da sala é necessário para exclusão.');
+         }
+
+         const sala = await excluirSala({ ids: [id] }).unwrap();
+
+         if (!sala.Sucesso) {
+            throw new Error(`${sala.Mensagem}`);
+         }
+
+         toastSuccess({ description: `${sala.Mensagem}` });
+      } catch (error) {
+         const errorMessage = getApiErrorMessage(error);
+         toastError({
+            description: `${errorMessage.Mensagem}`,
+         });
+      } finally {
+         setDialogExcluirAberto(false);
+      }
+
+      // Lógica para abrir dialog de exclusão
+   };
+
    const handleFecharDialog = () => {
-      setDialogAberto(false);
+      setDialogEditarAberto(false);
       setDadosSala(null);
    };
 
@@ -142,7 +175,7 @@ export function CardSala({
       return cores[index];
    };
 
-   const eProprietario = sala.meuRole === 0;
+   // const eProprietario = sala.meuRole === 0;
 
    const tempoDecorrido =
       sala.data_ultima_sessao &&
@@ -153,71 +186,93 @@ export function CardSala({
 
    return (
       <>
-         {carregandoDados && (
-            <Loading
-               active
-               type="transaction"
-            />
-         )}
-         <div
+         {carregandoDados ||
+            (excluindoSala && (
+               <Loading
+                  active
+                  type="transaction"
+               />
+            ))}
+         <Card
             className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl transition-all active:scale-98"
             style={{ animationDelay: `${index * 100}ms` }}
          >
-            <div className="p-4">
-               <div className="mb-4 flex items-center gap-3">
-                  <div className="relative flex-shrink-0">
-                     <div
-                        className={`h-14 w-14 bg-gradient-to-br ${corAvatar} flex items-center justify-center rounded-2xl shadow-lg shadow-purple-500/50`}
-                     >
-                        <span className="text-lg uppercase">{avatar}</span>
-                     </div>
-                     {sala.status === 'online' && (
-                        <div className="absolute -top-1 -right-1 h-4 w-4 animate-pulse rounded-full border-2 border-slate-950 bg-green-500 shadow-lg shadow-green-500/50"></div>
-                     )}
-                  </div>
-
-                  <div className="min-w-0 flex-1 items-start justify-start">
-                     <div className="relative mb-1 flex items-center gap-2">
-                        <div className="flex items-center gap-4">
-                           <h4 className="truncate text-base">{sala.titulo}</h4>
-                           {eProprietario && (
-                              <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-yellow-500/20">
-                                 <Crown className="h-3 w-3 text-yellow-400" />
-                              </div>
-                           )}
+            <CardContent className="flex h-full items-start justify-between gap-4 p-3">
+               <div className="flex w-full flex-col items-start justify-start gap-3">
+                  <div className="flex items-center gap-4">
+                     <div className="relative flex-shrink-0">
+                        <div
+                           className={`h-14 w-14 bg-gradient-to-br ${corAvatar} flex items-center justify-center rounded-2xl shadow-lg shadow-purple-500/50`}
+                        >
+                           <span className="text-lg uppercase">{avatar}</span>
                         </div>
                         {sala.salaPrivada && (
-                           <KeyRoundIcon className="h4 w-4 text-gray-400" />
+                           <MdLockPerson className="h4 absolute bottom-1 left-1 w-4 text-slate-300" />
+                        )}
+                        {sala.status === 'online' && (
+                           <div className="absolute -top-1 -right-1 h-4 w-4 animate-pulse rounded-full border-2 border-slate-950 bg-green-500 shadow-lg shadow-green-500/50"></div>
                         )}
                      </div>
-                     <div className="flex items-center justify-start gap-2 text-xs">
-                        <span className="flex items-center justify-start gap-1 text-gray-400">
-                           <Users className="h-3 w-3" />
-                           {sala.membros > 0
-                              ? `${sala.membros} ${sala.membros === 1 ? 'membro' : 'membros'}`
-                              : 'Sem membros'}
-                        </span>
-                        <span className="text-gray-600">•</span>
-                        <span className="">
-                           {sala.status === 'online' ? (
-                              <HousePlugIcon
-                                 className="text-green-500"
-                                 size={14}
-                              />
-                           ) : (
-                              <UnplugIcon
-                                 className="text-gray-600"
-                                 size={14}
-                              />
-                           )}
-                        </span>
-                        <span className="text-gray-400">{tempoDecorrido}</span>
+
+                     <div className="min-w-0 flex-1 items-start justify-start">
+                        <h4 className="truncate text-base">{sala.titulo}</h4>
+                        <div className="flex items-center justify-start gap-2 text-xs">
+                           <span className="flex items-center justify-start gap-1 text-gray-400">
+                              <MdGroups className="h-4 w-4" />
+                              {sala.membros > 0
+                                 ? `${sala.membros} ${sala.membros === 1 ? 'membro' : 'membros'}`
+                                 : 'Sem membros'}
+                           </span>
+                           <span className="text-gray-600">•</span>
+                           <span className="text-center text-gray-400">
+                              {sala.status === 'online' ? (
+                                 <MdOutlineBroadcastOnPersonal
+                                    className="text-green-500"
+                                    size={16}
+                                 />
+                              ) : (
+                                 <GiUnplugged
+                                    className="text-gray-400"
+                                    size={16}
+                                 />
+                              )}
+                           </span>
+                           <span className="text-gray-400">
+                              {tempoDecorrido}
+                           </span>
+                        </div>
+                        <p className="mt-1 truncate text-start text-xs text-gray-500">
+                           por {sala.proprietario.nome}
+                        </p>
                      </div>
-                     <p className="mt-1 truncate text-start text-xs text-gray-500">
-                        por {sala.proprietario.nome}
-                     </p>
                   </div>
 
+                  {/* Action Buttons */}
+                  <div className="flex w-full gap-2">
+                     <ButtonCustom
+                        onClick={handleEntrarClick}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm uppercase transition-all hover:bg-purple-700 active:bg-purple-800"
+                        disabled={sala.inativo || sala.status !== 'online'}
+                        icon={<MdOutlineChevronRight className="h-6 w-6" />}
+                        iconPosition="right"
+                     >
+                        Entrar
+                     </ButtonCustom>
+
+                     {podeIniciarSessao && abrirWizard && (
+                        <ButtonCustom
+                           disabled={sala.inativo || sala.status === 'online'}
+                           onClick={() => abrirWizard(sala)}
+                           className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 uppercase transition-all hover:bg-green-700 active:scale-95 active:bg-green-800"
+                           icon={<MdOutlinePlayArrow className="h-6 w-6" />}
+                        >
+                           <span className="text-xs">Iniciar</span>
+                        </ButtonCustom>
+                     )}
+                  </div>
+               </div>
+
+               <div className="flex h-full w-fit flex-1 flex-col justify-between gap-2">
                   {/* Botão Editar (dono ou admin) */}
                   {(sala.meuRole === 0 || sala.meuRole === 1) && editarSala && (
                      <ButtonCustom
@@ -228,34 +283,23 @@ export function CardSala({
                         title={
                            carregandoDados ? 'Carregando...' : 'Editar sala'
                         }
-                        icon={<Edit className="h-4 w-4" />}
+                        icon={<MdEditSquare className="h-6 w-6" />}
                      ></ButtonCustom>
                   )}
-               </div>
-
-               {/* Action Buttons */}
-               <div className="flex gap-2">
-                  <ButtonCustom
-                     onClick={handleEntrarClick}
-                     className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm uppercase transition-all hover:bg-purple-700 active:bg-purple-800"
-                     disabled={sala.inativo || sala.status !== 'online'}
-                     icon={<ChevronRight className="h-4 w-4" />}
-                     iconPosition="right"
-                  >
-                     Entrar
-                  </ButtonCustom>
-
-                  {podeIniciarSessao && abrirWizard && (
+                  {/* Botão excluir (dono) */}
+                  {sala.meuRole === 0 && (
                      <ButtonCustom
-                        disabled={sala.inativo || sala.status === 'online'}
-                        onClick={() => abrirWizard(sala)}
-                        className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 uppercase transition-all hover:bg-green-700 active:scale-95 active:bg-green-800"
-                        icon={<Play className="h-4 w-4" />}
-                     >
-                        <span className="text-xs">Iniciar</span>
-                     </ButtonCustom>
+                        size={'sm'}
+                        variant={'destructive'}
+                        onClick={() => setDialogExcluirAberto(true)}
+                        disabled={sala.inativo || carregandoDados}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl p-2 transition-all hover:bg-red-500/80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                        title={
+                           carregandoDados ? 'Carregando...' : 'Excluir sala'
+                        }
+                        icon={<MdDelete className="h-6 w-6" />}
+                     ></ButtonCustom>
                   )}
-
                   <ButtonCustom
                      size={'sm'}
                      onClick={() => {
@@ -264,10 +308,10 @@ export function CardSala({
                      }}
                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 p-2 transition-all hover:bg-white/10 active:scale-95"
                   >
-                     <Share2 className="h-4 w-4" />
+                     <MdShare className="h-4 w-4" />
                   </ButtonCustom>
                </div>
-            </div>
+            </CardContent>
 
             {/* Modal de entrar na sala com senha */}
 
@@ -283,7 +327,7 @@ export function CardSala({
 
             {/* Dialog Editar - Renderizado fora do dropdown */}
             <DialogEditarSala
-               aberto={dialogAberto}
+               aberto={dialogEditarAberto}
                aoFechar={handleFecharDialog}
                dadosSala={dadosSala}
                meuRole={sala.meuRole}
@@ -293,7 +337,21 @@ export function CardSala({
                   }
                }}
             />
-         </div>
+
+            <DialogConfirmacao
+               dialogLoading={false}
+               dialogAberto={dialogExcluirAberto}
+               setDialogAberto={() =>
+                  setDialogExcluirAberto(
+                     (dialogExcluirAberto) => !dialogExcluirAberto,
+                  )
+               }
+               titulo="Confirmar exclusão?"
+               textoPadrao="Tem certeza que deseja excluir esta sala? Esta ação não pode ser desfeita."
+               handleSubmit={() => handleAbrirDialogExcluir(sala.id)}
+               tipo="destrutivo"
+            />
+         </Card>
       </>
    );
 }
