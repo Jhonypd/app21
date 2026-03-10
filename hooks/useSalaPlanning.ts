@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import { useAtualizarParticipaVotacaoMutation } from '@/services/api/sessoes-api';
 import {
-   useAdicionarParticipanteMutation,
+   useAdicionarParticipanteOuVisitanteMutation,
    useAdicionarVisitanteMutation,
    useLazyListarParticipantesSalaQuery,
 } from '@/services/api/salas-api';
@@ -47,7 +47,7 @@ export function useSalaPlanningData({
    const [adicionarVisitante, { isLoading: adicionandoVisitante }] =
       useAdicionarVisitanteMutation();
    const [adicionarParticipante, { isLoading: adicionandoParticipante }] =
-      useAdicionarParticipanteMutation();
+      useAdicionarParticipanteOuVisitanteMutation();
    const [
       atualizarParticipaVotacao,
       { isLoading: atualizandoParticipaVotacao },

@@ -3,6 +3,7 @@
 import React, { useState, ReactNode } from 'react';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { ModalBase } from './modal-base';
+import { ButtonCustom } from './button-custom';
 
 export interface WizardStep {
    id: string;
@@ -90,25 +91,35 @@ export function WizardBase<TData = unknown>({
          titulo={titulo}
          onOpenChange={(open) => !open && handleFechar()}
          botoesAcoes={
-            <div className="flex justify-end gap-4">
-               <button
+            <div className="flex justify-between gap-4">
+               <ButtonCustom
+                  variant={'outline'}
                   onClick={handleVoltar}
                   disabled={stepAtualIndex === 0}
-                  className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 uppercase transition-all disabled:cursor-not-allowed"
+                  icon={<ChevronLeft className="h-4 w-4" />}
+                  iconPosition="left"
                >
-                  <ChevronLeft className="h-4 w-4" />
                   Voltar
-               </button>
-               <button
+               </ButtonCustom>
+               <ButtonCustom
+                  variant={'outline'}
+                  onClick={handleFechar}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 uppercase transition-all disabled:cursor-not-allowed"
+               >
+                  Cancelar
+               </ButtonCustom>
+               <ButtonCustom
                   onClick={handleProximo}
                   disabled={!podeAvancar()}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 transition-all hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl px-6 py-2 uppercase transition-all disabled:cursor-not-allowed"
+                  icon={<ChevronRight className="h-4 w-4" />}
+                  iconPosition="right"
                >
                   {stepAtualIndex === steps.length - 1
                      ? textoBotaoFinal
                      : 'Próximo'}
-                  <ChevronRight className="h-4 w-4" />
-               </button>
+               </ButtonCustom>
             </div>
          }
       >
@@ -133,15 +144,19 @@ export function WizardBase<TData = unknown>({
                               index + 1
                            )}
                         </div>
-                        <span
-                           className={`text-sm whitespace-nowrap ${
-                              stepAtualIndex === index
-                                 ? 'text-white'
-                                 : 'text-gray-400'
-                           }`}
-                        >
-                           {step.titulo}
-                        </span>
+                        {stepCompleto(index) && index < stepAtualIndex ? (
+                           step.titulo.slice(0, 3).replace(/\s/g, '') + '...'
+                        ) : (
+                           <span
+                              className={`text-sm whitespace-nowrap ${
+                                 stepAtualIndex === index
+                                    ? 'text-white'
+                                    : 'text-gray-400'
+                              }`}
+                           >
+                              {step.titulo}
+                           </span>
+                        )}
                      </div>
                      {index < steps.length - 1 && (
                         <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-600" />

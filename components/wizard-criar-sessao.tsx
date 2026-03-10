@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { iniciarSessao } from '@/services/api/configs/store/sala-auth-slice';
 import { WizardBase, WizardStep } from './wizard-base';
+import Loading from './loading';
 
 interface WizardCriarSessaoProps {
    aberto: boolean;
@@ -45,7 +46,8 @@ export function WizardCriarSessao({
    const [termoBusca, setTermoBusca] = useState('');
 
    const [entrarSala] = useEntrarSalaMutation();
-   const [criarSessao] = useCriarSessaoMutation();
+   const [criarSessao, { isLoading: iniciandoSessao }] =
+      useCriarSessaoMutation();
    const [buscarPessoas, { data: dadosPessoas, isLoading: buscandoPessoas }] =
       useLazyPesquisarPorNomeOuEmailQuery();
 
@@ -240,14 +242,22 @@ export function WizardCriarSessao({
    ];
 
    return (
-      <WizardBase
-         aberto={aberto}
-         aoFechar={handleFechar}
-         aoConfirmar={handleConfirmar}
-         titulo="Iniciar Sessão de Planning"
-         steps={steps}
-         textoBotaoFinal="Iniciar Sessão"
-         permitirPularSteps={false}
-      />
+      <>
+         {iniciandoSessao && (
+            <Loading
+               active
+               type="transaction"
+            />
+         )}
+         <WizardBase
+            aberto={aberto}
+            aoFechar={handleFechar}
+            aoConfirmar={handleConfirmar}
+            titulo="Iniciar Sessão de Planning"
+            steps={steps}
+            textoBotaoFinal="Iniciar"
+            permitirPularSteps={false}
+         />
+      </>
    );
 }
