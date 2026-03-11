@@ -51,19 +51,6 @@ export const SessoesApi = apiSlice.injectEndpoints({
          }),
          providesTags: ['sessao', 'salaPlaning'],
       }),
-
-      // PATCH /sessoes/:id/participa-votacao - Atualizar flag de participação
-      atualizarParticipaVotacao: builder.mutation<
-         ApiResponse,
-         AtualizarParticipaVotacaoPayload
-      >({
-         query: ({ sessaoId, participaVotacao }) => ({
-            url: `/sessoes/${sessaoId}/participa-votacao`,
-            method: 'PATCH',
-            body: { participa_votacao: participaVotacao },
-         }),
-         invalidatesTags: ['salaPlaning'],
-      }),
    }),
 });
 
@@ -73,7 +60,7 @@ export const {
    useResetarVotosMutation,
    useObterSessaoQuery,
    useLazyObterSessaoQuery,
-   useAtualizarParticipaVotacaoMutation,
+   // useAtualizarParticipaVotacaoMutation,
    // useObterVotosPorHistoriaQuery,
    // useLazyObterVotosPorHistoriaQuery,
    // useListarHistoriasSessaoQuery,

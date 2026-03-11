@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
-import { useAtualizarParticipaVotacaoMutation } from '@/services/api/sessoes-api';
 import {
    useAdicionarParticipanteOuVisitanteMutation,
    useAdicionarVisitanteMutation,
    useLazyListarParticipantesSalaQuery,
+   useAtualizarParticipaVotacaoMutation,
 } from '@/services/api/salas-api';
 import { getApiErrorMessage } from '@/utils/api-error';
 import type { VotosPorHistoriaResponse } from '@/services/types';

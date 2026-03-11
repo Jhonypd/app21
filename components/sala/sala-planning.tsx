@@ -166,7 +166,8 @@ export function SalaPlanning({
          !!sala.sessaoAtiva?.id &&
          !!sala.historia_atual_id &&
          !modoVisualizacao &&
-         !pausarPolling,
+         !pausarPolling &&
+         !loadingGlobal,
       onBuscaIntervalo: async () => {
          // Em modo visualização não realiza polling
          if (modoVisualizacao) {

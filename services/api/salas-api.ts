@@ -19,6 +19,7 @@ import type {
    RemoverVisitantePayload,
    AdicionarParticipanteOuVisitantePayload,
    ListarHistoriasSessaoResponse,
+   AtualizarParticipaVotacaoPayload,
 } from '../types';
 
 // Re-export dos tipos para manter compatibilidade com imports existentes
@@ -261,6 +262,19 @@ export const SalasApi = apiSlice.injectEndpoints({
          }),
          providesTags: ['historias'],
       }),
+
+      // PATCH /sessoes/:id/participa-votacao - Atualizar flag de participação
+      atualizarParticipaVotacao: builder.mutation<
+         ApiResponse,
+         AtualizarParticipaVotacaoPayload
+      >({
+         query: ({ sessaoId, participaVotacao }) => ({
+            url: `/salas/atualizarParticipaVotacaoSessaoSala?id=${sessaoId}`,
+            method: 'PATCH',
+            body: { participa_votacao: participaVotacao },
+         }),
+         invalidatesTags: ['salaPlaning'],
+      }),
    }),
 });
 
@@ -290,4 +304,5 @@ export const {
    useRemoverVisitanteMutation,
    useListarHistoriasPorSessaoSalaQuery,
    useLazyListarHistoriasPorSessaoSalaQuery,
+   useAtualizarParticipaVotacaoMutation,
 } = SalasApi;
