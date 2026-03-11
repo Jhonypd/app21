@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LoaderIcon, UserPlus } from 'lucide-react';
+import { MdOutlinePersonAddAlt } from 'react-icons/md';
+import { BsArrowClockwise } from 'react-icons/bs';
 import { SearchInput } from '@/components/inputs/input-search';
 import { ModalBase } from '../modal-base';
 import { ButtonCustom } from '../button-custom';
@@ -80,7 +81,7 @@ export function ModalAdicionarParticipanteOuVisitante({
                   className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
                >
                   <p className="flex items-center justify-center gap-2 uppercase">
-                     <UserPlus className="h-5 w-5" />
+                     <MdOutlinePersonAddAlt className="h-5 w-5" />
                      Adicionar
                   </p>
                </ButtonCustom>
@@ -101,7 +102,7 @@ export function ModalAdicionarParticipanteOuVisitante({
          {/* Lista de resultados */}
          {loading && (
             <p className="text-center text-sm text-gray-400">
-               <LoaderIcon className="mx-auto h-5 w-5 animate-spin" />
+               <BsArrowClockwise className="mx-auto h-5 w-5 animate-spin" />
             </p>
          )}
 

@@ -553,6 +553,7 @@ const PageSala = () => {
          {/* Dialog de confirmação para encerrar sessão */}
 
          <DialogConfirmacao
+            tipo="destrutivo"
             textoPadrao="Isso vai encerrar a sessão atual de votação 
               para todos os participantes. Deseja continuar?"
             dialogAberto={dialogEncerrarAberto}

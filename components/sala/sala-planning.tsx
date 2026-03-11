@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { toastError, toastSuccess } from '../custom-toast';
 import { useVotosPolling } from '@/hooks/useVotosPolling';
 import { useSalaPlanningData } from '@/hooks/useSalaPlanning';
-import { ModalAdicionarParticipanteOuVisitante } from '../sala/modal-adicionar-visitante';
 import CardVotos from '../sala/card-votos';
 import ListaParticipantes from '../sala/lista-participantes';
 import HeaderSala from '../sala/header-sala';
@@ -16,6 +15,8 @@ import CardMediaVotacao from '../sala/card-media-votacao';
 import { ButtonCustom } from '../button-custom';
 import Loading from '../loading';
 import { SalaCompleta, VotosPorHistoriaResponse } from '@/services/types';
+import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-participante-visitante';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 interface Historia {
    id: string;
@@ -299,7 +300,7 @@ export function SalaPlanning({
          setLoadingAcao(true);
          const valorNumerico = VOTO_MAP[carta];
          if (valorNumerico === undefined) {
-            toast.error('Voto inválido');
+            toastError({ description: 'Voto inválido' });
             return;
          }
 
@@ -315,7 +316,8 @@ export function SalaPlanning({
          if (process.env.NODE_ENV === 'development') {
             console.error('Erro ao selecionar voto:', error);
          }
-         toastError({ description: 'Erro ao processar voto' });
+         const m = getApiErrorMessage(error);
+         toastError({ description: m.Mensagem });
       } finally {
          setLoadingAcao(false);
       }

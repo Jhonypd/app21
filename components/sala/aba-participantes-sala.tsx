@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import DialogConfirmacao from '../dialog-confirmacao';
-import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-visitante';
+import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-participante-visitante';
 import { DadosPessoaResumo, SalaParaEdicao } from '@/services/types';
-import { UserPlus } from 'lucide-react';
+import { MdOutlinePersonAddAlt } from 'react-icons/md';
 import { CardParticipante } from './card-participante';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 
@@ -124,7 +124,7 @@ export const AbaParticipantes = ({
                      onClick={handleAbrirDialogAdicionar}
                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm text-white transition-all hover:from-purple-700 hover:to-pink-700 active:scale-95"
                   >
-                     <UserPlus className="h-4 w-4" />
+                     <MdOutlinePersonAddAlt className="h-4 w-4" />
                      Adicionar
                   </button>
                )}

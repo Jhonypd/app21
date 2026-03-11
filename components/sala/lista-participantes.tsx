@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { CardParticipante } from './card-participante';
 import CardVotacaoSimples from './card-participante-simples';
 import { ModalBase } from '../modal-base';
-import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-visitante';
+import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-participante-visitante';
 import { Button } from '../ui/button';
-import { UserPlus, UsersIcon } from 'lucide-react';
+import { MdOutlinePersonAddAlt, MdGroups } from 'react-icons/md';
 import { ButtonCustom } from '../button-custom';
 
 interface Voto {
@@ -91,7 +91,7 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
             disabled={uiDisabled}
             className="relative"
          >
-            <UsersIcon />
+            <MdGroups />
             <p>Participantes</p>
             <span className="bg-accent absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full text-[10px]">
                {totalOnline}
@@ -102,7 +102,7 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
             open={open}
             titulo={
                <div className="flex w-full items-center gap-2 truncate text-left text-nowrap text-ellipsis">
-                  <UsersIcon className="h-5 w-5" /> Participantes da Sala
+                  <MdGroups className="h-5 w-5" /> Participantes da Sala
                </div>
             }
             botoesAcoes={
@@ -126,7 +126,7 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
                      <ButtonCustom
                         variant={'outline'}
                         className="uppercase"
-                        icon={<UserPlus className="h-4 w-4" />}
+                        icon={<MdOutlinePersonAddAlt className="h-4 w-4" />}
                         onClick={() => setModalAdicionarAberto(true)}
                      >
                         Adicionar
