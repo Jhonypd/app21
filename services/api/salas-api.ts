@@ -163,33 +163,32 @@ export const SalasApi = apiSlice.injectEndpoints({
       }),
 
       // POST /salas/:id/participantes - Adicionar visitante à sessão ativa (rota unificada)
-      adicionarVisitante: builder.mutation<
-         ApiResponse,
-         AdicionarVisitantePayload
-      >({
-         query: ({ sala_id, pessoa_id }) => ({
-            url: `/salas/${sala_id}/participantes`,
-            method: 'POST',
-            body: {
-               pessoa_id,
-               role: 3, // 3 = Visitante
-            },
-         }),
-         invalidatesTags: ['participantes', 'salaPlaning'],
-      }),
+      // adicionarVisitante: builder.mutation<
+      //    ApiResponse,
+      //    AdicionarVisitantePayload
+      // >({
+      //    query: ({ sala_id, pessoa_id }) => ({
+      //       url: `/salas/${sala_id}/participantes`,
+      //       method: 'POST',
+      //       body: {
+      //          pessoa_id,
+      //          role: 3, // 3 = Visitante
+      //       },
+      //    }),
+      //    invalidatesTags: ['participantes', 'salaPlaning'],
+      // }),
 
       // POST /salas/:id/participantes - Adicionar participante ou visitante (rota unificada genérica)
-      adicionarParticipanteOuVisitante: builder.mutation<
+      adicionarParticipanteOuVisitanteSala: builder.mutation<
          ApiResponse,
          AdicionarParticipanteOuVisitantePayload
       >({
-         query: ({ sala_id, pessoa_id, role, sessao_id }) => ({
-            url: `/salas/${sala_id}/participantes`,
+         query: ({ pessoa_id, role }) => ({
+            url: `/salas/adicionarParticipanteOuVisitanteSala`,
             method: 'POST',
             body: {
-               pessoa_id,
+               pessoaId: pessoa_id,
                role,
-               ...(sessao_id && { sessao_id }),
             },
          }),
          invalidatesTags: ['participantes', 'salaPlaning'],
@@ -299,8 +298,8 @@ export const {
    useSelecionarHistoriaAtualMutation,
    useListarParticipantesSalaQuery,
    useLazyListarParticipantesSalaQuery,
-   useAdicionarVisitanteMutation,
-   useAdicionarParticipanteOuVisitanteMutation,
+   // useAdicionarVisitanteMutation,
+   useAdicionarParticipanteOuVisitanteSalaMutation,
    useRemoverVisitanteMutation,
    useListarHistoriasPorSessaoSalaQuery,
    useLazyListarHistoriasPorSessaoSalaQuery,

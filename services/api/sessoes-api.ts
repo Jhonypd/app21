@@ -3,7 +3,7 @@ import { apiSlice } from './configs/api-slice';
 import type {
    AdicionarParticipanteSessaoPayload,
    Sessao,
-   AtualizarParticipaVotacaoPayload,
+   // AtualizarParticipaVotacaoPayload,
    //  ObterVotosPorHistoriaResult,
 } from '../types';
 

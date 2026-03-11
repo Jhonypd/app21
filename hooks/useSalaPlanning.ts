@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api';
 import {
-   useAdicionarParticipanteOuVisitanteMutation,
-   useAdicionarVisitanteMutation,
+   useAdicionarParticipanteOuVisitanteSalaMutation,
+   // useAdicionarVisitanteMutation,
    useLazyListarParticipantesSalaQuery,
    useAtualizarParticipaVotacaoMutation,
 } from '@/services/api/salas-api';
@@ -44,10 +44,12 @@ export function useSalaPlanningData({
       { data: pessoasEncontradasData, isFetching: buscandoPessoas, reset },
    ] = useLazyPesquisarPorNomeOuEmailQuery();
 
-   const [adicionarVisitante, { isLoading: adicionandoVisitante }] =
-      useAdicionarVisitanteMutation();
-   const [adicionarParticipante, { isLoading: adicionandoParticipante }] =
-      useAdicionarParticipanteOuVisitanteMutation();
+   // const [adicionarVisitante, { isLoading: adicionandoVisitante }] =
+   //    useAdicionarVisitanteMutation();
+   const [
+      adicionarParticipanteOuVisitante,
+      { isLoading: adicionandoParticipanteOuVisitante },
+   ] = useAdicionarParticipanteOuVisitanteSalaMutation();
    const [
       atualizarParticipaVotacao,
       { isLoading: atualizandoParticipaVotacao },
@@ -73,14 +75,12 @@ export function useSalaPlanningData({
       () =>
          carregandoParticipantes ||
          buscandoPessoas ||
-         adicionandoVisitante ||
-         adicionandoParticipante ||
+         adicionandoParticipanteOuVisitante ||
          atualizandoParticipaVotacao,
       [
          carregandoParticipantes,
          buscandoPessoas,
-         adicionandoVisitante,
-         adicionandoParticipante,
+         adicionandoParticipanteOuVisitante,
          atualizandoParticipaVotacao,
       ],
    );
@@ -108,9 +108,9 @@ export function useSalaPlanningData({
 
    const onAdicionarVisitante = async (pessoaId: string) => {
       try {
-         const res = await adicionarVisitante({
-            sala_id: salaId,
+         const res = await adicionarParticipanteOuVisitante({
             pessoa_id: pessoaId,
+            role: 3,
          }).unwrap();
          if (!res.Sucesso) {
             toastError({ description: `${res.Mensagem}` });
@@ -127,11 +127,9 @@ export function useSalaPlanningData({
 
    const onAdicionarParticipante = async (pessoaId: string) => {
       try {
-         const res = await adicionarParticipante({
-            sala_id: salaId,
+         const res = await adicionarParticipanteOuVisitante({
             pessoa_id: pessoaId,
             role: 2,
-            ...(sessaoId ? { sessao_id: sessaoId } : {}),
          }).unwrap();
          toastSuccess({ description: `${res.Mensagem}` });
          reset();
