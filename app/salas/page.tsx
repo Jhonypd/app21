@@ -10,8 +10,9 @@ import {
    useListarSalasQuery,
    useEntrarSalaMutation,
    useAlterarSalaMutation,
+   useExcluirSalaMutation,
 } from '@/services/api/salas-api';
-import { toastError } from '@/components/custom-toast';
+import { toastError, toastSuccess } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { BarraBuscaSalas } from '@/components/barra-busca-salas';
 import { BotaoFiltro } from '@/components/botao-filtro';
@@ -50,6 +51,7 @@ const PageSalas = () => {
       itensPagina: 10,
       pagina: 0,
    });
+   const [excluirSala, { isLoading: excluindoSala }] = useExcluirSalaMutation();
 
    // Carrega as salas quando os dados chegam
    useEffect(() => {
@@ -152,6 +154,29 @@ const PageSalas = () => {
       } catch (error) {
          throw error; // Deixar o dialog-editar-sala tratar o erro
       }
+   };
+
+   const handleExcluirSala = async (id: string) => {
+      try {
+         if (!id) {
+            throw new Error('Id da sala é necessário para exclusão.');
+         }
+
+         const sala = await excluirSala({ ids: [id] }).unwrap();
+
+         if (!sala.Sucesso) {
+            throw new Error(`${sala.Mensagem}`);
+         }
+
+         toastSuccess({ description: `${sala.Mensagem}` });
+      } catch (error) {
+         const errorMessage = getApiErrorMessage(error);
+         toastError({
+            description: `${errorMessage.Mensagem}`,
+         });
+      }
+
+      // Lógica para abrir dialog de exclusão
    };
 
    // Handler para entrar na sala (compatível com CardSala)
@@ -291,6 +316,8 @@ const PageSalas = () => {
                         podeIniciarSessao={
                            sala.meuRole === 0 || sala.meuRole === 1
                         }
+                        excluirSala={handleExcluirSala}
+                        excluirSalaLoading={excluindoSala}
                      />
                   ))}
                </div>

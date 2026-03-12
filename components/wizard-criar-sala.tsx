@@ -341,6 +341,7 @@ export function WizardCriarSala({
                type="transaction"
             />
          )}
+         {/* precisa adicionar icones nos steps */}
          <WizardBase
             aberto={aberto}
             aoFechar={handleFechar}

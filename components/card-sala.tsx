@@ -13,11 +13,8 @@ import { GiUnplugged } from 'react-icons/gi';
 
 import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 import type { Salas, SalaParaEdicao } from '@/services/types';
-import {
-   useExcluirSalaMutation,
-   useLazyObterDadosFormAlterarQuery,
-} from '@/services/api/salas-api';
-import { toastError, toastSuccess } from './custom-toast';
+import { useLazyObterDadosFormAlterarQuery } from '@/services/api/salas-api';
+import { toastError } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import Loading from './loading';
 import { ButtonCustom } from './button-custom';
@@ -40,6 +37,8 @@ interface CardSalaProps {
          participantesRemoverIds?: string[];
       },
    ) => Promise<void>;
+   excluirSala?: (id: string) => Promise<void>;
+   excluirSalaLoading?: boolean;
    podeIniciarSessao?: boolean; // Se o usuário pode iniciar sessão (dono ou admin)
 }
 
@@ -49,7 +48,9 @@ export function CardSala({
    entrarSessaoAtiva,
    abrirWizard,
    editarSala,
+   excluirSala,
    podeIniciarSessao = false,
+   excluirSalaLoading = false,
 }: CardSalaProps) {
    const urlCompartilhamento = `${window.location.origin}/entrar/${sala.codigo}`;
 
@@ -59,7 +60,7 @@ export function CardSala({
    const [dadosSala, setDadosSala] = useState<SalaParaEdicao | null>(null);
    const [obterSala, { isLoading: carregandoDados }] =
       useLazyObterDadosFormAlterarQuery();
-   const [excluirSala, { isLoading: excluindoSala }] = useExcluirSalaMutation();
+   // const [excluirSala, { isLoading: excluindoSala }] = useExcluirSalaMutation();
 
    // const copiarCodigo = (codigo: string) => {
    //   copiarParaAreaTransferencia(codigo);
@@ -76,31 +77,6 @@ export function CardSala({
             description: `${apiError.Mensagem}`,
          });
       }
-   };
-
-   const handleAbrirDialogExcluir = async (id: string) => {
-      try {
-         if (!id) {
-            throw new Error('Id da sala é necessário para exclusão.');
-         }
-
-         const sala = await excluirSala({ ids: [id] }).unwrap();
-
-         if (!sala.Sucesso) {
-            throw new Error(`${sala.Mensagem}`);
-         }
-
-         toastSuccess({ description: `${sala.Mensagem}` });
-      } catch (error) {
-         const errorMessage = getApiErrorMessage(error);
-         toastError({
-            description: `${errorMessage.Mensagem}`,
-         });
-      } finally {
-         setDialogExcluirAberto(false);
-      }
-
-      // Lógica para abrir dialog de exclusão
    };
 
    const handleFecharDialog = () => {
@@ -187,7 +163,7 @@ export function CardSala({
    return (
       <>
          {carregandoDados ||
-            (excluindoSala && (
+            (excluirSalaLoading && (
                <Loading
                   active
                   type="transaction"
@@ -287,7 +263,7 @@ export function CardSala({
                      ></ButtonCustom>
                   )}
                   {/* Botão excluir (dono) */}
-                  {sala.meuRole === 0 && (
+                  {sala.meuRole === 0 && excluirSala && (
                      <ButtonCustom
                         size={'sm'}
                         variant={'destructive'}
@@ -339,7 +315,7 @@ export function CardSala({
             />
 
             <DialogConfirmacao
-               dialogLoading={false}
+               dialogLoading={excluirSalaLoading}
                dialogAberto={dialogExcluirAberto}
                setDialogAberto={() =>
                   setDialogExcluirAberto(
@@ -348,7 +324,11 @@ export function CardSala({
                }
                titulo="Confirmar exclusão?"
                textoPadrao="Tem certeza que deseja excluir esta sala? Esta ação não pode ser desfeita."
-               handleSubmit={() => handleAbrirDialogExcluir(sala.id)}
+               handleSubmit={async () => {
+                  if (excluirSala) {
+                     await excluirSala(sala.id);
+                  }
+               }}
                tipo="destrutivo"
             />
          </Card>

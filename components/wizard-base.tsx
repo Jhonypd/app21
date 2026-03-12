@@ -2,13 +2,14 @@
 
 import React, { useState, ReactNode } from 'react';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { MdOtherHouses } from 'react-icons/md';
 import { ModalBase } from './modal-base';
 import { ButtonCustom } from './button-custom';
 
 export interface WizardStep {
    id: string;
-   titulo: string;
-   descricao?: string;
+   titulo: string | ReactNode;
+   descricao?: string | ReactNode;
    conteudo: ReactNode;
    validar?: () => boolean;
    obrigatorio?: boolean;
@@ -93,14 +94,13 @@ export function WizardBase<TData = unknown>({
          botoesAcoes={
             <div className="flex justify-between gap-4">
                <ButtonCustom
-                  variant={'outline'}
                   onClick={handleVoltar}
                   disabled={stepAtualIndex === 0}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2 uppercase transition-all disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 rounded-xl px-6 py-2 uppercase transition-all disabled:cursor-not-allowed"
                   icon={<ChevronLeft className="h-4 w-4" />}
                   iconPosition="left"
                >
-                  Voltar
+                  <span className="hidden sm:block">voltar</span>
                </ButtonCustom>
                <ButtonCustom
                   variant={'outline'}
@@ -116,9 +116,11 @@ export function WizardBase<TData = unknown>({
                   icon={<ChevronRight className="h-4 w-4" />}
                   iconPosition="right"
                >
-                  {stepAtualIndex === steps.length - 1
-                     ? textoBotaoFinal
-                     : 'Próximo'}
+                  {stepAtualIndex === steps.length - 1 ? (
+                     textoBotaoFinal
+                  ) : (
+                     <span className="hidden sm:block">Próximo</span>
+                  )}
                </ButtonCustom>
             </div>
          }
@@ -145,7 +147,11 @@ export function WizardBase<TData = unknown>({
                            )}
                         </div>
                         {stepCompleto(index) && index < stepAtualIndex ? (
-                           step.titulo.slice(0, 3).replace(/\s/g, '') + '...'
+                           typeof step.titulo === 'string' ? (
+                              step.titulo.slice(0, 3).replace(/\s/g, '') + '...'
+                           ) : (
+                              step.titulo
+                           )
                         ) : (
                            <span
                               className={`text-sm whitespace-nowrap ${
