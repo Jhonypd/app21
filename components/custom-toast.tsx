@@ -1,12 +1,13 @@
 import { toast } from 'sonner';
-import {
-   OctagonAlert,
-   AlertTriangle,
-   CheckCircle2,
-   Info,
-   X,
-} from 'lucide-react';
+
 import React from 'react';
+import {
+   MdInfoOutline,
+   MdOutlineCheckCircleOutline,
+   MdOutlineErrorOutline,
+   MdOutlineWarningAmber,
+   MdClose,
+} from 'react-icons/md';
 
 type ToastVariant = 'error' | 'warning' | 'success' | 'info';
 
@@ -37,33 +38,31 @@ const getVariantIcon = (variant: ToastVariant) => {
 
    const icons = {
       error: (
-         <OctagonAlert
+         <MdOutlineErrorOutline
             className={`${iconClass} text-red-500 dark:text-red-700`}
          />
       ),
       warning: (
-         <AlertTriangle
+         <MdOutlineWarningAmber
             className={`${iconClass} text-amber-500 dark:text-amber-700`}
          />
       ),
       success: (
-         <CheckCircle2
+         <MdOutlineCheckCircleOutline
             className={`${iconClass} text-emerald-500 dark:text-emerald-700`}
          />
       ),
       info: (
-         <Info className={`${iconClass} text-blue-500 dark:text-blue-700`} />
+         <MdInfoOutline
+            className={`${iconClass} text-blue-500 dark:text-blue-700`}
+         />
       ),
    };
 
    return icons[variant];
 };
 
-const getAutoCloseDuration = (
-   variant: ToastVariant,
-   autoClose?: boolean,
-   duration?: number,
-) => {
+const getAutoCloseDuration = (variant: ToastVariant, autoClose?: boolean) => {
    if (typeof autoClose === 'number') return autoClose;
    if (autoClose === false) return Infinity;
 
@@ -128,13 +127,13 @@ const ToastContent = ({
             onClick={() => toast.dismiss(t)}
             className="text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-500"
          >
-            <X className="h-5 w-5" />
+            <MdClose className="h-5 w-5" />
          </button>
       </div>
    );
 };
 
-// ✅ Função principal
+// Função principal
 export const showToast = ({
    title,
    description,
@@ -159,7 +158,7 @@ export const showToast = ({
    );
 };
 
-// 📦 Versões simplificadas
+// Versões simplificadas
 export const toastError = (
    props: Pick<ToastProps, 'description' | 'title' | 'duration'>,
 ) => showToast({ ...props, variant: 'error' });

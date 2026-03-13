@@ -14,6 +14,7 @@ import { Badge } from '../ui/badge';
 import CardMediaVotacao from '../sala/card-media-votacao';
 import { ButtonCustom } from '../button-custom';
 import Loading from '../loading';
+import DialogConfirmacao from '../dialog-confirmacao';
 import { SalaCompleta, VotosPorHistoriaResponse } from '@/services/types';
 import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-participante-visitante';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -58,6 +59,11 @@ interface SalaPlanningProps {
    historiaVisualizadaId?: string | null;
    onModoVisualizacaoChange?: (ativo: boolean, historiaId?: string) => void;
    carregandoHistorias?: boolean;
+}
+
+interface VotoParaAnular {
+   votoId: string;
+   nomeParticipante: string;
 }
 
 const VOTO_MAP: Record<string, number> = {
@@ -113,6 +119,10 @@ export function SalaPlanning({
    const [pausarPolling, setPausarPolling] = useState(false);
    const [votoLocalmenteDeselecionado, setVotoLocalmenteDeselecionado] =
       useState(false);
+   const [dialogAnularVotoAberto, setDialogAnularVotoAberto] = useState(false);
+   const [votoParaAnular, setVotoParaAnular] = useState<VotoParaAnular | null>(
+      null,
+   );
 
    const eProprietario = sala && sala.criado_por === usuarioAtualId;
    const iniciouSessao =
@@ -442,21 +452,35 @@ export function SalaPlanning({
       });
    };
 
-   const handleAnularVoto = async (
-      votoId: string,
-      nomeParticipante: string,
-   ) => {
-      if (!confirm(`Anular voto de ${nomeParticipante}?`)) return;
+   const handleDialogAnularVotoChange = (aberto: boolean) => {
+      setDialogAnularVotoAberto(aberto);
+
+      if (!aberto) {
+         setVotoParaAnular(null);
+      }
+   };
+
+   const handleAnularVoto = (votoId: string, nomeParticipante: string) => {
+      setVotoParaAnular({ votoId, nomeParticipante });
+      setDialogAnularVotoAberto(true);
+   };
+
+   const handleConfirmarAnularVoto = async () => {
+      if (!votoParaAnular?.votoId || !aoAnularVoto) {
+         return;
+      }
 
       setLoadingAcao(true);
       try {
-         if (aoAnularVoto) {
-            await aoAnularVoto(votoId);
-         }
+         await aoAnularVoto(votoParaAnular.votoId);
+         handleDialogAnularVotoChange(false);
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {
             console.error('Erro ao anular voto:', error);
          }
+
+         const m = getApiErrorMessage(error);
+         toastError({ description: m.Mensagem });
       } finally {
          setLoadingAcao(false);
       }
@@ -615,6 +639,22 @@ export function SalaPlanning({
                pessoas={pessoasEncontradas}
                loading={uiDisabled}
                onAdicionar={handleAdicionarVisitante}
+            />
+
+            <DialogConfirmacao
+               titulo="Anular voto do participante?"
+               textoPadrao={
+                  votoParaAnular
+                     ? `Tem certeza que deseja anular o voto de ${votoParaAnular.nomeParticipante}?`
+                     : 'Tem certeza que deseja anular este voto?'
+               }
+               btnCancelar="Cancelar"
+               btnConfirmar="Anular voto"
+               dialogAberto={dialogAnularVotoAberto}
+               setDialogAberto={handleDialogAnularVotoChange}
+               dialogLoading={loadingAcao}
+               handleSubmit={handleConfirmarAnularVoto}
+               tipo="destrutivo"
             />
          </div>
       </>

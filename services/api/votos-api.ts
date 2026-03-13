@@ -42,10 +42,10 @@ export const VotosApi = apiSlice.injectEndpoints({
          providesTags: ['votos'],
       }),
 
-      // DELETE /votos/:id - Anular voto
+      // DELETE /votos/deletarVotoPessoa?id={id} - Anular voto
       anularVoto: builder.mutation<ApiResponse, string>({
          query: (votoId) => ({
-            url: `/votos/${votoId}`,
+            url: `/votos/deletarVotoPessoa?id=${votoId}`,
             method: 'DELETE',
          }),
          invalidatesTags: ['votos', 'sessao'],

@@ -88,10 +88,9 @@ const PageSala = () => {
    }, [error]);
 
    // Helper para tratar erros consistentemente
-   const tratarErro = useCallback((error: unknown, titulo: string) => {
+   const tratarErro = useCallback((error: unknown) => {
       const msg = getApiErrorMessage(error);
       toastError({
-         title: titulo,
          description: msg.Mensagem,
       });
    }, []);
@@ -117,7 +116,7 @@ const PageSala = () => {
             });
             router.push('/salas');
          } catch (error) {
-            tratarErro(error, 'Erro ao sair da sala');
+            tratarErro(error);
             // Invalidar cache mesmo com erro para garantir dados atualizados
             invalidarCacheSalas();
             // Redireciona mesmo com erro
@@ -265,7 +264,7 @@ const PageSala = () => {
          setEncerrandoSessao(false);
          setEncerrandoDialog(false);
          setSkipQuery(false);
-         tratarErro(error, 'Erro ao encerrar sessão');
+         tratarErro(error);
       }
    };
 
@@ -296,21 +295,19 @@ const PageSala = () => {
                ? 'Voto registrado com sucesso!'
                : 'Você não está participando da votação',
          });
-      } catch (error: unknown) {
-         const msg = getApiErrorMessage(error);
-         tratarErro(error, `Erro ao enviar voto: ${msg.Mensagem}`);
+      } catch (error) {
+         tratarErro(error);
       }
    };
 
    const handleAnularVoto = async (votoId: string) => {
       try {
-         await anularVoto(votoId).unwrap();
+         const res = await anularVoto(votoId).unwrap();
          toastSuccess({
-            description: 'Voto cancelado com sucesso!',
+            description: `${res.Mensagem}`,
          });
-      } catch (error: unknown) {
-         const msg = getApiErrorMessage(error);
-         tratarErro(error, `Erro ao cancelar voto: ${msg.Mensagem}`);
+      } catch (error) {
+         tratarErro(error);
       }
    };
 
@@ -329,7 +326,7 @@ const PageSala = () => {
             description: 'Votos revelados com sucesso!',
          });
       } catch (error: unknown) {
-         tratarErro(error, 'Erro ao revelar votos');
+         tratarErro(error);
       }
    };
 
@@ -348,7 +345,7 @@ const PageSala = () => {
             description: 'Votos resetados! Podem votar novamente.',
          });
       } catch (error: unknown) {
-         tratarErro(error, 'Erro ao resetar votos');
+         tratarErro(error);
       }
    };
 
@@ -371,7 +368,7 @@ const PageSala = () => {
          if (process.env.NODE_ENV === 'development') {
             console.error('[handleSelecionarHistoria] Erro:', error);
          }
-         tratarErro(error, 'Erro ao selecionar história');
+         tratarErro(error);
       }
    };
 
@@ -449,7 +446,7 @@ const PageSala = () => {
 
          return true;
       } catch (error) {
-         tratarErro(error, 'Erro ao remover histórias');
+         tratarErro(error);
          return false;
       }
    };
