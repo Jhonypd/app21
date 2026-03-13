@@ -610,7 +610,6 @@ export function SalaPlanning({
                      <ButtonCustom
                         onClick={handleRevelarVotos}
                         disabled={!todosVotaram || uiDisabled}
-                        loading={loadingAcao}
                         icon={<Eye className="h-5 w-5" />}
                         text="Revelar Votos"
                      ></ButtonCustom>
@@ -620,7 +619,6 @@ export function SalaPlanning({
                      <ButtonCustom
                         onClick={() => handleResetarVotacao()}
                         disabled={uiDisabled}
-                        loading={loadingAcao}
                         icon={<RotateCcw className="h-5 w-5" />}
                      >
                         <span className="text-sm">Reiniciar Votação</span>

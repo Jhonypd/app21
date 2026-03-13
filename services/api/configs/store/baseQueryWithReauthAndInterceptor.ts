@@ -57,7 +57,7 @@ interface ResultadoComLimparToken {
  * Base query com interceptação de erros e autenticação.
  *
  * Fluxo:
- * - limpar_token: true (sem requer_login) → limpa apenas o token da sala
+ * - requer_login_sala: true ou limpar_token: true → limpa apenas o token da sala
  * - requer_login: true → logout completo e redirect para login
  */
 const baseQueryWithReauthAndInterceptor: BaseQueryFn<
@@ -106,16 +106,18 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
    type ErrorData = {
       requer_login?: boolean;
+      requer_login_sala?: boolean;
       Resultado?: { limpar_token?: boolean };
    };
    const errorData = result.error?.data as ErrorData | undefined;
 
    const requerLogin = errorData?.requer_login === true;
+   const requerLoginSala = errorData?.requer_login_sala === true;
 
    // Verificar se é erro da SALA especificamente (limpar_token: true)
    const limparTokenSala = errorData?.Resultado?.limpar_token === true;
 
-   if (limparTokenSala && !requerLogin) {
+   if ((requerLoginSala || limparTokenSala) && !requerLogin) {
       // Apenas limpar token da sala, não fazer logout
       api.dispatch(limparSalaToken());
       return result;

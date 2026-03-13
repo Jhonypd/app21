@@ -1,18 +1,20 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 
 export interface ApiResponse<T = unknown> {
-  Resultado: T | null;
-  Sucesso: boolean;
-  Mensagem: string | null;
-  Detalhe: string | null;
-  CodigoRetorno: number;
-  TipoRetorno: number;
+   Resultado: T | null;
+   Sucesso: boolean;
+   Mensagem: string | null;
+   Detalhe: string | null;
+   CodigoRetorno: number;
+   TipoRetorno: number;
+   requer_login?: boolean;
+   requer_login_sala?: boolean;
 }
 
 /**
  * Tipo de erro padronizado para RTK Query
  * Use com o `error` retornado pelos hooks de query/mutation
- * 
+ *
  * @example
  * const { error } = useMinhaQuery();
  * if (error && 'data' in error) {
@@ -21,7 +23,7 @@ export interface ApiResponse<T = unknown> {
  * }
  */
 export type ApiQueryError<T = unknown> = FetchBaseQueryError & {
-  data: ApiResponse<T>;
+   data: ApiResponse<T>;
 };
 
 /**
@@ -29,4 +31,3 @@ export type ApiQueryError<T = unknown> = FetchBaseQueryError & {
  * Útil para componentes que precisam do tipo do erro
  */
 export type ExtractApiError<T> = T extends { error: infer E } ? E : never;
-
