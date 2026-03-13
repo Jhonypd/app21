@@ -3,10 +3,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/services/api/configs/store/store';
 import { logout as logoutAction } from '@/services/api/configs/store/auth-slice';
-import {
-   limparSalaToken,
-   limparTodasSessoes,
-} from '@/services/api/configs/store/sala-auth-slice';
 import { useRevogarRefreshTokenMutation } from '@/services/api/auth-api';
 import { useRouter } from 'next/navigation';
 
@@ -34,8 +30,6 @@ export function useAuth() {
 
       // Limpar Redux
       dispatch(logoutAction());
-      dispatch(limparSalaToken());
-      dispatch(limparTodasSessoes());
 
       router.push('/auth/login');
    };

@@ -15,7 +15,7 @@ import CardMediaVotacao from '../sala/card-media-votacao';
 import { ButtonCustom } from '../button-custom';
 import Loading from '../loading';
 import DialogConfirmacao from '../dialog-confirmacao';
-import { SalaCompleta, VotosPorHistoriaResponse } from '@/services/types';
+import { SalaCompleta } from '@/services/types';
 import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-participante-visitante';
 import { getApiErrorMessage } from '@/utils/api-error';
 
@@ -36,29 +36,11 @@ interface SalaPlanningProps {
    sessaoId: string;
    meuRole: number;
    aoVoltar: () => void | Promise<void>;
-   aoEnviarVoto?: (
-      valor: number,
-      participaVotacao: boolean,
-      historiaId: string,
-   ) => Promise<void>;
-   aoRevelarVotos?: () => Promise<void>;
-   aoResetarVotos?: () => Promise<void>;
-   aoSelecionarHistoria?: (historiaId: string) => Promise<void>;
    aoEncerrarSessao?: () => void | Promise<void>;
-   aoAnularVoto?: (votoId: string) => Promise<void>;
-   aoReordenarHistorias?: (
-      historias: Historia[],
-   ) => Promise<void | boolean | { Sucesso?: boolean }>;
-   aoAdicionarHistorias?: (
-      historias: Array<{ titulo: string; descricao?: string; ordem: number }>,
-   ) => Promise<void>;
-   aoBuscarVotosPorHistoria?: (
-      historiaId: string,
-   ) => Promise<VotosPorHistoriaResponse | null>;
+   carregandoHistorias?: boolean;
    modoVisualizacao?: boolean;
    historiaVisualizadaId?: string | null;
    onModoVisualizacaoChange?: (ativo: boolean, historiaId?: string) => void;
-   carregandoHistorias?: boolean;
 }
 
 interface VotoParaAnular {
@@ -94,15 +76,7 @@ export function SalaPlanning({
    sessaoId,
    meuRole = 2,
    aoVoltar,
-   aoEnviarVoto,
-   aoRevelarVotos,
-   aoResetarVotos,
-   aoSelecionarHistoria,
    aoEncerrarSessao,
-   aoAnularVoto,
-   aoReordenarHistorias,
-   aoAdicionarHistorias,
-   aoBuscarVotosPorHistoria,
    modoVisualizacao = false,
    historiaVisualizadaId,
    onModoVisualizacaoChange,
@@ -147,11 +121,18 @@ export function SalaPlanning({
          onAtualizarParticipaVotacao,
          resetBuscaPessoas,
          setListaVotosCarregados,
+         onEnviarVoto,
+         onAnularVoto,
+         onRevelarVotos,
+         onResetarVotos,
+         onSelecionarHistoria,
+         onAdicionarHistorias,
+         onReordenarHistorias,
+         onModoVisualizacaoChange: notificarModoVisualizacao,
       },
    } = useSalaPlanningData({
       salaId: sala.id,
       sessaoId,
-      aoBuscarVotosPorHistoria,
    });
 
    // Verifica se está em modo prática (sem histórias)
@@ -314,8 +295,8 @@ export function SalaPlanning({
             return;
          }
 
-         if (aoEnviarVoto && historiaAtualId) {
-            await aoEnviarVoto(
+         if (historiaAtualId) {
+            await onEnviarVoto(
                valorNumerico,
                participaVotacao,
                historiaAtualId,
@@ -338,9 +319,7 @@ export function SalaPlanning({
 
       setLoadingAcao(true);
       try {
-         if (aoRevelarVotos) {
-            await aoRevelarVotos();
-         }
+         await onRevelarVotos();
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {
             console.error('Erro ao revelar votos:', error);
@@ -353,9 +332,7 @@ export function SalaPlanning({
    const handleResetarVotacao = async () => {
       setLoadingAcao(true);
       try {
-         if (aoResetarVotos) {
-            await aoResetarVotos();
-         }
+         await onResetarVotos();
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {
             console.error('Erro ao resetar votação:', error);
@@ -371,9 +348,7 @@ export function SalaPlanning({
          setLoadingAcao(true);
          setHistoriaAtualId(historiaId);
 
-         if (aoSelecionarHistoria) {
-            await aoSelecionarHistoria(historiaId);
-         }
+         await onSelecionarHistoria(historiaId);
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {
             console.error('Erro ao buscar votos da história:', error);
@@ -385,11 +360,7 @@ export function SalaPlanning({
    };
 
    const handleReordenarHistorias = async (novasHistorias: Historia[]) => {
-      if (!aoReordenarHistorias) {
-         return false;
-      }
-
-      return aoReordenarHistorias(novasHistorias);
+      return onReordenarHistorias(novasHistorias, historias);
    };
 
    const handleEncerrarSessao = async () => {
@@ -466,13 +437,13 @@ export function SalaPlanning({
    };
 
    const handleConfirmarAnularVoto = async () => {
-      if (!votoParaAnular?.votoId || !aoAnularVoto) {
+      if (!votoParaAnular?.votoId) {
          return;
       }
 
       setLoadingAcao(true);
       try {
-         await aoAnularVoto(votoParaAnular.votoId);
+         await onAnularVoto(votoParaAnular.votoId);
          handleDialogAnularVotoChange(false);
       } catch (error) {
          if (process.env.NODE_ENV === 'development') {
@@ -521,8 +492,11 @@ export function SalaPlanning({
                         votacaoFinalizada={votosRevelados}
                         onMudarHistoria={handleMudarHistoria}
                         onReordenar={handleReordenarHistorias}
-                        onModoVisualizacaoChange={onModoVisualizacaoChange}
-                        onAdicionarHistorias={aoAdicionarHistorias}
+                        onModoVisualizacaoChange={(ativo, historiaId) => {
+                           notificarModoVisualizacao(ativo);
+                           onModoVisualizacaoChange?.(ativo, historiaId);
+                        }}
+                        onAdicionarHistorias={onAdicionarHistorias}
                      />
                   </div>
                </div>

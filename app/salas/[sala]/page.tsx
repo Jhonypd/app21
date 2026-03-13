@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useSalaAuth } from '@/hooks/salaAuth';
 import { useParams, useRouter } from 'next/navigation';
 import {
    useObterDadosSessaoAtivaQuery,
@@ -17,17 +16,8 @@ import { toastError, toastSuccess } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSafeTimer } from '@/hooks/useSafeAsync';
+
 import { SalaPlanning } from '@/components/sala/sala-planning';
-import {
-   useRevelarVotosMutation,
-   useResetarVotosMutation,
-} from '@/services/api/sessoes-api';
-import {
-   useVotarMutation,
-   useAnularVotoMutation,
-   useLazyObterVotosPorHistoriaSessaoSessaoSalaQuery,
-} from '@/services/api/votos-api';
-import { useAdicionarOuRemoverHistoriaSessaoSalaMutation } from '@/services/api/historias-api';
 
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
@@ -39,8 +29,6 @@ const PageSala = () => {
    const dispatch = useDispatch();
    const codigoSala = params.sala as string;
    const { usuario } = useAuth();
-   const { encerrarSessaoAtiva, obterSessaoAtiva, limparTokenSala } =
-      useSalaAuth();
    const { schedule: scheduleAutoSelect } = useSafeTimer();
 
    // Estados de loading
@@ -66,16 +54,7 @@ const PageSala = () => {
 
    const [encerrarSessao] = useEncerrarSessaoSalaAtivaMutation();
    const [sairDaSala] = useSairDaSalaMutation();
-   const [selecionarHistoriaAtual, { reset: resetSelecionarHistoria }] =
-      useSelecionarHistoriaAtualMutation();
-   const [votar] = useVotarMutation();
-   const [anularVoto] = useAnularVotoMutation();
-   const [revelarVotos] = useRevelarVotosMutation();
-   const [resetarVotos] = useResetarVotosMutation();
-   const [buscarVotosPorHistoria] =
-      useLazyObterVotosPorHistoriaSessaoSessaoSalaQuery();
-   const [adicionarHistoriaDuranteSessao] =
-      useAdicionarOuRemoverHistoriaSessaoSalaMutation();
+   const [selecionarHistoriaAtual] = useSelecionarHistoriaAtualMutation();
 
    // Tratar erros da API
    useEffect(() => {
@@ -104,8 +83,6 @@ const PageSala = () => {
       async (salaId: string) => {
          try {
             await sairDaSala(salaId).unwrap();
-            encerrarSessaoAtiva(salaId);
-            limparTokenSala();
 
             // Invalidar cache das salas para recarregar lista atualizada
             invalidarCacheSalas();
@@ -123,24 +100,14 @@ const PageSala = () => {
             router.push('/salas');
          }
       },
-      [
-         sairDaSala,
-         encerrarSessaoAtiva,
-         limparTokenSala,
-         invalidarCacheSalas,
-         router,
-         tratarErro,
-      ],
+      [sairDaSala, invalidarCacheSalas, router, tratarErro],
    );
 
    // Validações
    const salaResultado = data?.Resultado?.sala;
    const usuarioId = usuario?.id ?? '';
-   const sessaoRegistrada = salaResultado?.id
-      ? obterSessaoAtiva(salaResultado.id)
-      : null;
    const sessaoAtivaApiId = salaResultado?.sessaoAtiva?.id ?? null;
-   const sessaoAtivaId = sessaoAtivaApiId ?? sessaoRegistrada ?? null;
+   const sessaoAtivaId = sessaoAtivaApiId;
 
    // Determinar role do usuário (vem calculado do backend)
    const meuRole =
@@ -249,9 +216,6 @@ const PageSala = () => {
 
          await encerrarSessao(salaResultado.id).unwrap();
 
-         encerrarSessaoAtiva(salaResultado.id);
-         limparTokenSala();
-
          setDialogEncerrarAberto(false);
          toastSuccess({
             title: 'Sessão encerrada',
@@ -268,216 +232,12 @@ const PageSala = () => {
       }
    };
 
-   const handleEnviarVoto = async (
-      valor: number,
-      participaVotacao: boolean,
-      historiaId: string,
-   ) => {
-      const sessaoId = sessaoAtivaApiId;
-
-      if (!sessaoId || !historiaId) {
-         toastError({
-            title: 'Erro ao votar',
-            description: 'Nenhuma história selecionada para votação',
-         });
-         return;
-      }
-      try {
-         await votar({
-            sessaoId,
-            valor,
-            historia_id: historiaId,
-            participa_votacao: participaVotacao,
-         }).unwrap();
-
-         toastSuccess({
-            description: participaVotacao
-               ? 'Voto registrado com sucesso!'
-               : 'Você não está participando da votação',
-         });
-      } catch (error) {
-         tratarErro(error);
-      }
-   };
-
-   const handleAnularVoto = async (votoId: string) => {
-      try {
-         const res = await anularVoto(votoId).unwrap();
-         toastSuccess({
-            description: `${res.Mensagem}`,
-         });
-      } catch (error) {
-         tratarErro(error);
-      }
-   };
-
-   const handleRevelarVotos = async () => {
-      if (!sessaoAtivaApiId) {
-         toastError({
-            title: 'Erro',
-            description: 'Nenhuma sessão ativa encontrada',
-         });
-         return;
-      }
-
-      try {
-         await revelarVotos(sessaoAtivaApiId).unwrap();
-         toastSuccess({
-            description: 'Votos revelados com sucesso!',
-         });
-      } catch (error: unknown) {
-         tratarErro(error);
-      }
-   };
-
-   const handleResetarVotos = async () => {
-      if (!sessaoAtivaApiId) {
-         toastError({
-            title: 'Erro',
-            description: 'Nenhuma sessão ativa encontrada',
-         });
-         return;
-      }
-
-      try {
-         await resetarVotos(sessaoAtivaApiId).unwrap();
-         toastSuccess({
-            description: 'Votos resetados! Podem votar novamente.',
-         });
-      } catch (error: unknown) {
-         tratarErro(error);
-      }
-   };
-
-   const handleSelecionarHistoria = async (historiaId: string) => {
-      try {
-         if (!salaResultado?.id) return;
-
-         // Limpar cache da mutation antes de chamar
-         resetSelecionarHistoria();
-
-         await selecionarHistoriaAtual({
-            historiaId,
-         }).unwrap();
-
-         toastSuccess({
-            title: 'História alterada',
-            description: 'Todos os participantes foram notificados',
-         });
-      } catch (error: unknown) {
-         if (process.env.NODE_ENV === 'development') {
-            console.error('[handleSelecionarHistoria] Erro:', error);
-         }
-         tratarErro(error);
-      }
-   };
-
    const handleModoVisualizacaoChange = (
       ativo: boolean,
       historiaId?: string,
    ) => {
       setModoVisualizacao(ativo);
       setHistoriaVisualizadaId(historiaId || null);
-
-      // Ao voltar para a história atual, recarregar dados da sessão
-      if (!ativo) {
-         dispatch(SalasApi.util.invalidateTags(['salaPlaning']));
-      }
-   };
-
-   const handleAdicionarHistorias = async (
-      historias: Array<{ titulo: string; descricao?: string; ordem: number }>,
-   ) => {
-      const sessaoId = sessaoAtivaApiId;
-
-      if (!sessaoId) {
-         toastError({
-            title: 'Erro',
-            description: 'Nenhuma sessão ativa encontrada',
-         });
-         return;
-      }
-
-      await adicionarHistoriaDuranteSessao({
-         adicionar: historias.map((historia) => ({
-            titulo: historia.titulo,
-            descricao: historia.descricao,
-            ordem: historia.ordem,
-         })),
-      }).unwrap();
-   };
-
-   const handleReordenarHistorias = async (
-      novasHistorias: Array<{ id: string; titulo: string; descricao?: string }>,
-   ) => {
-      const sessaoId = sessaoAtivaApiId;
-
-      if (!sessaoId) {
-         toastError({
-            title: 'Erro',
-            description: 'Nenhuma sessão ativa encontrada',
-         });
-         return false;
-      }
-
-      const idsAtuais = new Set(historiasSessao.map((h) => h.id));
-      const idsNovos = new Set(novasHistorias.map((h) => h.id));
-
-      const remover = historiasSessao
-         .filter((h) => idsAtuais.has(h.id) && !idsNovos.has(h.id))
-         .map((h) => h.id);
-
-      // Se não houve remoção para persistir, não chama API
-      if (remover.length === 0) {
-         return true;
-      }
-
-      try {
-         await adicionarHistoriaDuranteSessao({
-            remover,
-         }).unwrap();
-
-         toastSuccess({
-            description:
-               remover.length === 1
-                  ? 'História removida com sucesso!'
-                  : 'Histórias removidas com sucesso!',
-         });
-
-         return true;
-      } catch (error) {
-         tratarErro(error);
-         return false;
-      }
-   };
-
-   const handleBuscarVotosPorHistoria = async (historiaId: string) => {
-      const sessaoId = sessaoAtivaApiId;
-      if (!sessaoId) {
-         console.warn('Nenhuma sessão ativa para buscar votos');
-         return {
-            voto_vencedor: 0,
-            media: 0,
-            votos: [],
-         };
-      }
-
-      try {
-         const resultado = await buscarVotosPorHistoria({
-            sessaoId,
-            historiaId,
-         }).unwrap();
-
-         const votos = resultado.Resultado;
-         return votos;
-      } catch (error) {
-         console.error('Erro ao buscar votos da história:', error);
-         return {
-            voto_vencedor: 0,
-            media: 0,
-            votos: [],
-         };
-      }
    };
 
    // Sala não encontrada (só mostra após loading terminar)
@@ -531,15 +291,7 @@ const PageSala = () => {
                historias={historiasSessao}
                sessaoId={sessaoAtivaId ?? ''}
                meuRole={meuRole}
-               aoEnviarVoto={handleEnviarVoto}
-               aoAnularVoto={handleAnularVoto}
-               aoRevelarVotos={handleRevelarVotos}
-               aoResetarVotos={handleResetarVotos}
-               aoSelecionarHistoria={handleSelecionarHistoria}
-               aoAdicionarHistorias={handleAdicionarHistorias}
-               aoReordenarHistorias={handleReordenarHistorias}
                aoEncerrarSessao={handleAbrirDialogEncerrar}
-               aoBuscarVotosPorHistoria={handleBuscarVotosPorHistoria}
                modoVisualizacao={modoVisualizacao}
                historiaVisualizadaId={historiaVisualizadaId}
                onModoVisualizacaoChange={handleModoVisualizacaoChange}

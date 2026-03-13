@@ -19,7 +19,6 @@ import Link from 'next/link';
 import ConfirmacaoEmailConta from '@/components/pages/confirmacao-email-conta';
 import { useDispatch } from 'react-redux';
 import { logout, setUser } from '@/services/api/configs/store/auth-slice';
-import { limparSalaToken } from '@/services/api/configs/store/sala-auth-slice';
 import { useLazyObterDadosContaQuery } from '@/services/api/pessoas.api';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -44,7 +43,6 @@ const Auth = () => {
          if (action === 'login') {
             // Limpar estado local antes de novo login
             dispatch(logout());
-            dispatch(limparSalaToken());
 
             const payload = {
                email: (data as LoginFormValues).email,

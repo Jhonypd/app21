@@ -11,7 +11,6 @@ import {
    getCsrfTokenFromStorage,
    setCsrfToken,
 } from '@/services/api/configs/store/auth-slice';
-import { limparSalaToken } from './sala-auth-slice';
 
 let logoutEmAndamento: Promise<void> | null = null;
 
@@ -49,15 +48,11 @@ function isApiError(err: unknown): err is ApiError {
    );
 }
 
-interface ResultadoComLimparToken {
-   limpar_token?: boolean;
-}
-
 /**
  * Base query com interceptação de erros e autenticação.
  *
  * Fluxo:
- * - requer_login_sala: true ou limpar_token: true → limpa apenas o token da sala
+ * - requer_login_sala: true → limpa apenas o estado local da sala
  * - requer_login: true → logout completo e redirect para login
  */
 const baseQueryWithReauthAndInterceptor: BaseQueryFn<
@@ -107,19 +102,21 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
    type ErrorData = {
       requer_login?: boolean;
       requer_login_sala?: boolean;
-      Resultado?: { limpar_token?: boolean };
    };
    const errorData = result.error?.data as ErrorData | undefined;
 
    const requerLogin = errorData?.requer_login === true;
    const requerLoginSala = errorData?.requer_login_sala === true;
 
-   // Verificar se é erro da SALA especificamente (limpar_token: true)
-   const limparTokenSala = errorData?.Resultado?.limpar_token === true;
+   if (requerLoginSala && !requerLogin) {
+      // Limpa apenas estado de sala; autenticação global permanece ativa
 
-   if ((requerLoginSala || limparTokenSala) && !requerLogin) {
-      // Apenas limpar token da sala, não fazer logout
-      api.dispatch(limparSalaToken());
+      if (typeof window !== 'undefined') {
+         if (window.location.pathname !== '/salas') {
+            window.location.replace('/salas');
+         }
+      }
+
       return result;
    }
 
@@ -138,7 +135,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
       // Limpar estado local após tentativa de logout no backend
       api.dispatch(logout());
-      api.dispatch(limparSalaToken());
 
       if (typeof window !== 'undefined') {
          const mensagem = 'Sessão expirada';
@@ -158,14 +154,6 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
 
    if (result.error) {
       if (isApiError(result.error)) {
-         const errorResultado = result.error.data?.Resultado as
-            | ResultadoComLimparToken
-            | undefined;
-         const limparToken = errorResultado?.limpar_token;
-         if (limparToken === true) {
-            api.dispatch(limparSalaToken());
-         }
-
          return {
             error: {
                status: result.error.status ?? 400,
@@ -194,13 +182,7 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       };
    }
 
-   const data = result.data as ApiResponse<{
-      limpar_token?: boolean;
-   }>;
-
-   if (data.Resultado?.limpar_token === true) {
-      api.dispatch(limparSalaToken());
-   }
+   const data = result.data as ApiResponse<unknown>;
 
    if (!data.Sucesso) {
       toastError({

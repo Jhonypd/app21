@@ -21,13 +21,10 @@ import { TipoOrdenacao } from '@/components/opcao-ordenacao';
 import { TipoFiltroStatus } from '@/components/opcao-filtro';
 import { CardSala } from '@/components/card-sala';
 import { WizardCriarSessao } from '@/components/wizard-criar-sessao';
-import { useDispatch } from 'react-redux';
-import { iniciarSessao } from '@/services/api/configs/store/sala-auth-slice';
 import { ButtonCustom } from '@/components/button-custom';
 
 const PageSalas = () => {
    const router = useRouter();
-   const dispatch = useDispatch();
    const { usuario } = useAuth();
 
    // Estados de filtro e busca
@@ -199,29 +196,6 @@ const PageSalas = () => {
          const result = await entrarSala(loginPayload).unwrap();
 
          if (result.Sucesso) {
-            // Salvar sessão ativa no Redux (CRÍTICO!)
-            if (result.Resultado?.sessaoId) {
-               // Buscar salaId pela lista de salas usando o código
-               const sala = listaSalas.find((s) => s.codigo === codigo);
-               if (sala) {
-                  dispatch(
-                     iniciarSessao({
-                        salaId: sala.id,
-                        sessaoId: result.Resultado.sessaoId,
-                     }),
-                  );
-               } else {
-                  console.warn(
-                     '[ENTRAR CARD] Sala não encontrada na lista para salvar sessão',
-                  );
-               }
-            } else {
-               console.warn(
-                  '[ENTRAR CARD] sessaoId não recebido na resposta:',
-                  result,
-               );
-            }
-
             // Redirecionar para a sala
             router.push(`/salas/${codigo}`);
             return true;

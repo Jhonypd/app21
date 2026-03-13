@@ -12,8 +12,6 @@ import { useLazyPesquisarPorNomeOuEmailQuery } from '@/services/api/pessoas.api'
 import { toastError, toastSuccess } from './custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
-import { iniciarSessao } from '@/services/api/configs/store/sala-auth-slice';
 import { WizardBase, WizardStep } from './wizard-base';
 import Loading from './loading';
 
@@ -33,7 +31,6 @@ export function WizardCriarSessao({
    tituloSala,
 }: WizardCriarSessaoProps) {
    const router = useRouter();
-   const dispatch = useDispatch();
    const [convidadosSelecionados, setConvidadosSelecionados] = useState<
       Array<{ id: string; nome: string; email: string }>
    >([]);
@@ -139,27 +136,7 @@ export function WizardCriarSessao({
          }
 
          // NOTA: token_sala é setado automaticamente via cookie httpOnly pelo backend
-         // Não é necessário gerenciar no Redux
-
-         // Salvar sessão ativa no Redux
-         if (resultadoEntrar.Resultado?.sessaoId) {
-            console.log('[WIZARD] Salvando sessão no Redux:', {
-               salaId,
-               sessaoId: resultadoEntrar.Resultado.sessaoId,
-            });
-            dispatch(
-               iniciarSessao({
-                  salaId,
-                  sessaoId: resultadoEntrar.Resultado.sessaoId,
-               }),
-            );
-            console.log('[WIZARD] Sessão salva com sucesso!');
-         } else {
-            console.warn(
-               '[WIZARD] sessaoId não recebido na resposta:',
-               resultadoEntrar,
-            );
-         }
+         // Não é necessário gerenciar sessão no Redux
 
          console.log('[WIZARD] Exibindo toast de sucesso...');
          toastSuccess({

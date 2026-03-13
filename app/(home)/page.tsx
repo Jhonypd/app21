@@ -14,15 +14,12 @@ import { useEffect, useState } from 'react';
 import { CardSala } from '@/components/card-sala';
 import { toastError } from '@/components/custom-toast';
 import { getApiErrorMessage } from '@/utils/api-error';
-import { iniciarSessao } from '@/services/api/configs/store/sala-auth-slice';
-import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { WizardCriarSessao } from '@/components/wizard-criar-sessao';
 import Loading from '@/components/loading';
 
 const LandingPage = () => {
    const router = useRouter();
-   const dispatch = useDispatch();
    const { usuario } = useAuth();
 
    // Estados de filtro e busca
@@ -60,29 +57,6 @@ const LandingPage = () => {
          const result = await entrarSala(loginPayload).unwrap();
 
          if (result.Sucesso) {
-            // Salvar sessão ativa no Redux (CRÍTICO!)
-            if (result.Resultado?.sessaoId) {
-               // Buscar salaId pela lista de salas usando o código
-               const sala = listaSalas.find((s) => s.codigo === codigo);
-               if (sala) {
-                  dispatch(
-                     iniciarSessao({
-                        salaId: sala.id,
-                        sessaoId: result.Resultado.sessaoId,
-                     }),
-                  );
-               } else {
-                  console.warn(
-                     '[ENTRAR CARD] Sala não encontrada na lista para salvar sessão',
-                  );
-               }
-            } else {
-               console.warn(
-                  '[ENTRAR CARD] sessaoId não recebido na resposta:',
-                  result,
-               );
-            }
-
             // Redirecionar para a sala
             router.push(`/salas/${codigo}`);
             return true;

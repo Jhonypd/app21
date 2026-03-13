@@ -4,12 +4,10 @@ import { Provider } from 'react-redux';
 import { store } from '@/services/api/configs/store/store';
 import { useEffect } from 'react';
 import { hydrateFromStorage } from '@/services/api/configs/store/auth-slice';
-import { hydrateSalaStateFromStorage } from '@/services/api/configs/store/sala-auth-slice';
 
 function AuthHydration() {
    useEffect(() => {
       store.dispatch(hydrateFromStorage());
-      store.dispatch(hydrateSalaStateFromStorage());
    }, []);
 
    return null;
