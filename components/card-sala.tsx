@@ -37,7 +37,7 @@ interface CardSalaProps {
          participantesRemoverIds?: string[];
       },
    ) => Promise<void>;
-   excluirSala?: (id: string) => Promise<void>;
+   excluirSala?: (id: string) => Promise<boolean>;
    excluirSalaLoading?: boolean;
    podeIniciarSessao?: boolean; // Se o usuário pode iniciar sessão (dono ou admin)
 }
@@ -317,16 +317,15 @@ export function CardSala({
             <DialogConfirmacao
                dialogLoading={excluirSalaLoading}
                dialogAberto={dialogExcluirAberto}
-               setDialogAberto={() =>
-                  setDialogExcluirAberto(
-                     (dialogExcluirAberto) => !dialogExcluirAberto,
-                  )
-               }
+               setDialogAberto={setDialogExcluirAberto}
                titulo="Confirmar exclusão?"
                textoPadrao="Tem certeza que deseja excluir esta sala? Esta ação não pode ser desfeita."
                handleSubmit={async () => {
                   if (excluirSala) {
-                     await excluirSala(sala.id);
+                     const sucesso = await excluirSala(sala.id);
+                     if (sucesso) {
+                        setDialogExcluirAberto(false);
+                     }
                   }
                }}
                tipo="destrutivo"

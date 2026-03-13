@@ -106,7 +106,7 @@ export const SalasApi = apiSlice.injectEndpoints({
             params,
             credentials: 'include',
          }),
-         providesTags: ['salaPlaning'],
+         providesTags: ['listarSalas', 'salaPlaning'],
       }),
 
       obterSalaPorCodigo: builder.query<ApiResponse<SalaPorCodigo>, string>({

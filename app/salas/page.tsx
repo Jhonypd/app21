@@ -156,7 +156,7 @@ const PageSalas = () => {
       }
    };
 
-   const handleExcluirSala = async (id: string) => {
+   const handleExcluirSala = async (id: string): Promise<boolean> => {
       try {
          if (!id) {
             throw new Error('Id da sala é necessário para exclusão.');
@@ -168,12 +168,18 @@ const PageSalas = () => {
             throw new Error(`${sala.Mensagem}`);
          }
 
+         setListaSalas((salasAtuais) =>
+            salasAtuais.filter((salaAtual) => salaAtual.id !== id),
+         );
+
          toastSuccess({ description: `${sala.Mensagem}` });
+         return true;
       } catch (error) {
          const errorMessage = getApiErrorMessage(error);
          toastError({
             description: `${errorMessage.Mensagem}`,
          });
+         return false;
       }
 
       // Lógica para abrir dialog de exclusão

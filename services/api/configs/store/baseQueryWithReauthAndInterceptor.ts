@@ -58,7 +58,7 @@ interface ResultadoComLimparToken {
  *
  * Fluxo:
  * - limpar_token: true (sem requer_login) → limpa apenas o token da sala
- * - 401/403 ou requer_login: true → logout completo e redirect para login
+ * - requer_login: true → logout completo e redirect para login
  */
 const baseQueryWithReauthAndInterceptor: BaseQueryFn<
    string | FetchArgs,
@@ -115,24 +115,14 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
    // Verificar se é erro da SALA especificamente (limpar_token: true)
    const limparTokenSala = errorData?.Resultado?.limpar_token === true;
 
-   // Verificar se é erro de autenticação (401/403)
-   const error = result.error;
-   const status =
-      isApiError(error) && typeof error.status === 'number'
-         ? error.status
-         : undefined;
-   const ehErroAutenticacao = status === 401 || status === 403;
-
    if (limparTokenSala && !requerLogin) {
       // Apenas limpar token da sala, não fazer logout
       api.dispatch(limparSalaToken());
       return result;
    }
 
-   // Fazer logout completo se:
-   // 1. Backend explicitamente pedir (requer_login: true)
-   // 2. OU erro 401/403
-   if (requerLogin || (ehErroAutenticacao && !limparTokenSala)) {
+   // Fazer logout completo apenas quando backend pedir explicitamente.
+   if (requerLogin) {
       if (!logoutEmAndamento) {
          logoutEmAndamento = (async () => {
             // Backend deve limpar cookies (access/refresh/csrf/token_sala)
@@ -149,7 +139,7 @@ const baseQueryWithReauthAndInterceptor: BaseQueryFn<
       api.dispatch(limparSalaToken());
 
       if (typeof window !== 'undefined') {
-         const mensagem = requerLogin ? 'Sessão expirada' : 'Sessão inválida';
+         const mensagem = 'Sessão expirada';
 
          if (!window.location.pathname.startsWith('/auth/login')) {
             toastError({
