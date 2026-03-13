@@ -2,7 +2,6 @@
 
 import React, { useState, ReactNode } from 'react';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
-import { MdOtherHouses } from 'react-icons/md';
 import { ModalBase } from './modal-base';
 import { ButtonCustom } from './button-custom';
 
@@ -22,7 +21,7 @@ interface WizardBaseProps<TData = unknown> {
    titulo: string;
    // descricao?: string;
    steps: WizardStep[];
-   textoBotaoFinal?: string;
+   textoBotaoFinal?: string | ReactNode;
    permitirPularSteps?: boolean;
    dados?: TData;
    // aoMudarDados?: (dados: any) => void; // Callback quando dados mudam
@@ -113,7 +112,11 @@ export function WizardBase<TData = unknown>({
                   onClick={handleProximo}
                   disabled={!podeAvancar()}
                   className="flex items-center gap-2 rounded-xl px-6 py-2 uppercase transition-all disabled:cursor-not-allowed"
-                  icon={<ChevronRight className="h-4 w-4" />}
+                  icon={
+                     stepAtualIndex !== steps.length - 1 && (
+                        <ChevronRight className="h-4 w-4" />
+                     )
+                  }
                   iconPosition="right"
                >
                   {stepAtualIndex === steps.length - 1 ? (
@@ -147,11 +150,7 @@ export function WizardBase<TData = unknown>({
                            )}
                         </div>
                         {stepCompleto(index) && index < stepAtualIndex ? (
-                           typeof step.titulo === 'string' ? (
-                              step.titulo.slice(0, 3).replace(/\s/g, '') + '...'
-                           ) : (
-                              step.titulo
-                           )
+                           step.titulo
                         ) : (
                            <span
                               className={`text-sm whitespace-nowrap ${

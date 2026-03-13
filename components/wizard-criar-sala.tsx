@@ -16,6 +16,14 @@ import { FormField, FormItem, FormControl, FormMessage } from './ui/form';
 import { TextInput } from './inputs/input-text';
 import { PasswordInput } from './inputs/input-password';
 import { DoorClosedLocked } from 'lucide-react';
+import {
+   MdOtherHouses,
+   MdGroups,
+   MdFactCheck,
+   MdLock,
+   MdPublic,
+   MdOutlineAddToPhotos,
+} from 'react-icons/md';
 
 // Schema de validação
 const CriarSalaSchema = z
@@ -171,7 +179,12 @@ export function WizardCriarSala({
    const steps: WizardStep[] = [
       {
          id: 'informacoes',
-         titulo: 'Informações',
+         titulo: (
+            <p className="flex items-center gap-2">
+               <MdOtherHouses className="h-5 w-5" />
+               <span className="hidden sm:block">Informações</span>
+            </p>
+         ),
          descricao: 'Configure os detalhes da sala',
          conteudo: (
             <FormProvider {...form}>
@@ -258,7 +271,12 @@ export function WizardCriarSala({
       },
       {
          id: 'participantes',
-         titulo: 'Participantes',
+         titulo: (
+            <p className="flex items-center gap-2">
+               <MdGroups className="h-5 w-5" />
+               <span className="hidden sm:block">Participantes</span>
+            </p>
+         ),
          descricao: 'Adicione membros permanentes à sala',
          conteudo: (
             <div className="space-y-4">
@@ -280,34 +298,47 @@ export function WizardCriarSala({
       },
       {
          id: 'revisao',
-         titulo: 'Revisão',
+         titulo: (
+            <p className="flex items-center gap-2">
+               <MdFactCheck className="h-5 w-5" />
+               <span className="hidden sm:block">Revisão</span>
+            </p>
+         ),
          descricao: 'Confirme os detalhes da sala',
          conteudo: (
             <div className="space-y-4">
-               <div className="space-y-3 rounded-xl bg-white/5 p-4">
-                  <div>
+               <div className="space-y-2 rounded-xl bg-white/5 p-4">
+                  <div className="flex flex-col items-start gap-2">
                      <p className="text-xs text-gray-400">Título</p>
                      <p className="text-sm font-medium">
                         {form.watch('titulo') || 'Não informado'}
                      </p>
                   </div>
 
-                  <div>
+                  <div className="flex flex-col items-start gap-2">
                      <p className="text-xs text-gray-400">Tipo</p>
-                     <p className="text-sm font-medium">
-                        {form.watch('salaPrivada')
-                           ? '🔒 Privada (com senha)'
-                           : '🌐 Pública'}
+                     <p className="flex w-full items-center gap-2 text-center text-sm font-medium">
+                        {form.watch('salaPrivada') ? (
+                           <>
+                              <MdLock className="h-5 w-5" />
+                              <span>Privada</span>
+                           </>
+                        ) : (
+                           <>
+                              <MdPublic className="h-5 w-5" />
+                              <span>Pública</span>
+                           </>
+                        )}
                      </p>
                   </div>
 
-                  <div>
+                  <div className="flex flex-col items-start gap-2">
                      <p className="text-xs text-gray-400">
                         Participantes Permanentes
                      </p>
                      <p className="text-sm font-medium">
                         {participantesSelecionados.length === 0
-                           ? 'Nenhum participante adicionado'
+                           ? 'Nenhum'
                            : `${participantesSelecionados.length} ${participantesSelecionados.length === 1 ? 'pessoa' : 'pessoas'}`}
                      </p>
                      {participantesSelecionados.length > 0 && (
@@ -324,10 +355,6 @@ export function WizardCriarSala({
                      )}
                   </div>
                </div>
-
-               <p className="text-xs text-gray-400">
-                  💡 Você será adicionado automaticamente como dono da sala.
-               </p>
             </div>
          ),
          obrigatorio: false,
@@ -348,7 +375,12 @@ export function WizardCriarSala({
             aoConfirmar={handleConfirmar}
             titulo="Criar Nova Sala"
             steps={steps}
-            textoBotaoFinal="Criar Sala"
+            textoBotaoFinal={
+               <>
+                  <MdOutlineAddToPhotos />{' '}
+                  <span className="hidden sm:block">Salvar</span>
+               </>
+            }
             permitirPularSteps={false}
          />
       </>
