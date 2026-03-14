@@ -222,21 +222,20 @@ export function ModalAdicionarHistorias({
                   <ButtonCustom
                      className="uppercase"
                      size={'sm'}
-                     text="Limpar"
                      onClick={() => setHistorias([])}
                      disabled={historias.length === 0 || salvando || loading}
-                  />
+                  >
+                     Limpar
+                  </ButtonCustom>
                   <ButtonCustom
                      size={'sm'}
                      onClick={handleSalvar}
                      disabled={historias.length === 0 || salvando || loading}
                      className="uppercase"
-                     icon={
-                        salvando ? (
-                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : undefined
-                     }
                   >
+                     {salvando && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     )}
                      salvar
                   </ButtonCustom>
                </div>
@@ -254,8 +253,8 @@ export function ModalAdicionarHistorias({
                      disabled={modoAdicao || salvando || loading}
                      variant="outline"
                      className="flex flex-1 items-center justify-center gap-2"
-                     icon={<Plus className="h-4 w-4" />}
                   >
+                     <Plus className="h-4 w-4" />
                      Nova História
                   </ButtonCustom>
 
@@ -377,12 +376,13 @@ export function ModalAdicionarHistorias({
                                        variant="ghost"
                                        size="sm"
                                        className="hover:bg-destructive/20 h-9 w-9 p-0 text-red-400"
-                                       icon={<Trash2 className="h-4 w-4" />}
                                        title="Remover história"
                                        onClick={() =>
                                           handleRemover(historia.id)
                                        }
-                                    />
+                                    >
+                                       <Trash2 className="h-4 w-4" />
+                                    </ButtonCustom>
                                  </div>
                               ))}
                            </div>

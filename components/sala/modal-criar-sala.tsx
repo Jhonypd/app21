@@ -102,11 +102,10 @@ export const ModalCriarSala = ({
       onOpenChange={setIsOpen}
     >
       <DialogTrigger asChild>
-        <ButtonCustom
-          text="Nova sala"
-          variant="default"
-          icon={<Plus />}
-        />
+        <ButtonCustom variant="default">
+          <Plus className="h-4 w-4" />
+          <span>Nova sala</span>
+        </ButtonCustom>
       </DialogTrigger>
 
       <DialogContent className="bg-muted border-border max-w-11/12 rounded-xl sm:max-w-[425px]">
@@ -194,18 +193,20 @@ export const ModalCriarSala = ({
 
           <div className="flex w-full justify-end gap-3 pt-4">
             <ButtonCustom
-              text="Cancelar"
               variant="outline"
               type="button"
               onClick={() => setIsOpen(false)}
               disabled={isLoading}
-            />
+            >
+              Cancelar
+            </ButtonCustom>
             <ButtonCustom
-              text={isLoading ? 'Criando...' : 'Criar Sala'}
               variant="default"
               type="submit"
               disabled={!roomName.trim() || isLoading}
-            />
+            >
+              {isLoading ? 'Criando...' : 'Criar Sala'}
+            </ButtonCustom>
           </div>
         </form>
       </DialogContent>

@@ -229,10 +229,9 @@ export function CardSala({
                         onClick={handleEntrarClick}
                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm uppercase transition-all hover:bg-purple-700 active:bg-purple-800"
                         disabled={sala.inativo || sala.status !== 'online'}
-                        icon={<MdOutlineChevronRight className="h-6 w-6" />}
-                        iconPosition="right"
                      >
-                        Entrar
+                        <span>Entrar</span>
+                        <MdOutlineChevronRight className="h-6 w-6" />
                      </ButtonCustom>
 
                      {podeIniciarSessao && abrirWizard && (
@@ -240,8 +239,8 @@ export function CardSala({
                            disabled={sala.inativo || sala.status === 'online'}
                            onClick={() => abrirWizard(sala)}
                            className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 uppercase transition-all hover:bg-green-700 active:scale-95 active:bg-green-800"
-                           icon={<MdOutlinePlayArrow className="h-6 w-6" />}
                         >
+                           <MdOutlinePlayArrow className="h-6 w-6" />
                            <span className="text-xs">Iniciar</span>
                         </ButtonCustom>
                      )}
@@ -259,8 +258,9 @@ export function CardSala({
                         title={
                            carregandoDados ? 'Carregando...' : 'Editar sala'
                         }
-                        icon={<MdEditSquare className="h-6 w-6" />}
-                     ></ButtonCustom>
+                     >
+                        <MdEditSquare className="h-6 w-6" />
+                     </ButtonCustom>
                   )}
                   {/* Botão excluir (dono) */}
                   {sala.meuRole === 0 && excluirSala && (
@@ -273,8 +273,9 @@ export function CardSala({
                         title={
                            carregandoDados ? 'Carregando...' : 'Excluir sala'
                         }
-                        icon={<MdDelete className="h-6 w-6" />}
-                     ></ButtonCustom>
+                     >
+                        <MdDelete className="h-6 w-6" />
+                     </ButtonCustom>
                   )}
                   <ButtonCustom
                      size={'sm'}

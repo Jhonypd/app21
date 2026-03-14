@@ -15,7 +15,7 @@ import CardMediaVotacao from '../sala/card-media-votacao';
 import { ButtonCustom } from '../button-custom';
 import Loading from '../loading';
 import DialogConfirmacao from '../dialog-confirmacao';
-import { SalaCompleta } from '@/services/types';
+import { SalaCompleta, VotosPorHistoriaResponse } from '@/services/types';
 import { ModalAdicionarParticipanteOuVisitante } from './modal-adicionar-participante-visitante';
 import { getApiErrorMessage } from '@/utils/api-error';
 
@@ -50,7 +50,7 @@ interface VotoParaAnular {
 
 const VOTO_MAP: Record<string, number> = {
    '?': 0,
-   '☕': -1,
+   '-1': -1,
    '1': 1,
    '2': 2,
    '3': 3,
@@ -281,12 +281,11 @@ export function SalaPlanning({
       // Impossível votar em modo visualização ou após revelar votos
       if (modoVisualizacao || votosRevelados) return;
 
-      // Clicou no card do voto atual → deseleciona só na UI, sem chamar API
+      // Clicou no card do voto atual → muda só na UI, sem chamar API
       if (votoSelecionado === carta && votoEstaConfirmado) {
          setVotoLocalmenteDeselecionado(true);
          return;
       }
-
       try {
          setLoadingAcao(true);
          const valorNumerico = VOTO_MAP[carta];
@@ -567,13 +566,13 @@ export function SalaPlanning({
                   {/* Adicionar Visitante */}
                   {sessaoId && meuRole <= 1 && (
                      <ButtonCustom
-                        icon={<UserPlus className="h-4 w-4" />}
                         disabled={uiDisabled}
                         onClick={() => {
                            setModalVisitantesAberto(true);
                            resetBuscaPessoas();
                         }}
                      >
+                        <UserPlus className="h-4 w-4" />
                         <span className="text-sm">Adicionar Visitante</span>
                      </ButtonCustom>
                   )}
@@ -584,17 +583,18 @@ export function SalaPlanning({
                      <ButtonCustom
                         onClick={handleRevelarVotos}
                         disabled={!todosVotaram || uiDisabled}
-                        icon={<Eye className="h-5 w-5" />}
-                        text="Revelar Votos"
-                     ></ButtonCustom>
+                     >
+                        <Eye className="h-5 w-5" />
+                        <span className="text-sm">Revelar Votos</span>
+                     </ButtonCustom>
                   )}
 
                   {eProprietario && votosRevelados && !modoVisualizacao && (
                      <ButtonCustom
                         onClick={() => handleResetarVotacao()}
                         disabled={uiDisabled}
-                        icon={<RotateCcw className="h-5 w-5" />}
                      >
+                        <RotateCcw className="h-5 w-5" />
                         <span className="text-sm">Reiniciar Votação</span>
                      </ButtonCustom>
                   )}

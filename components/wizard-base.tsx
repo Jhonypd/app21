@@ -96,9 +96,8 @@ export function WizardBase<TData = unknown>({
                   onClick={handleVoltar}
                   disabled={stepAtualIndex === 0}
                   className="flex items-center gap-2 rounded-xl px-6 py-2 uppercase transition-all disabled:cursor-not-allowed"
-                  icon={<ChevronLeft className="h-4 w-4" />}
-                  iconPosition="left"
                >
+                  <ChevronLeft className="h-4 w-4" />
                   <span className="hidden sm:block">voltar</span>
                </ButtonCustom>
                <ButtonCustom
@@ -112,17 +111,14 @@ export function WizardBase<TData = unknown>({
                   onClick={handleProximo}
                   disabled={!podeAvancar()}
                   className="flex items-center gap-2 rounded-xl px-6 py-2 uppercase transition-all disabled:cursor-not-allowed"
-                  icon={
-                     stepAtualIndex !== steps.length - 1 && (
-                        <ChevronRight className="h-4 w-4" />
-                     )
-                  }
-                  iconPosition="right"
                >
                   {stepAtualIndex === steps.length - 1 ? (
                      textoBotaoFinal
                   ) : (
-                     <span className="hidden sm:block">Próximo</span>
+                     <>
+                        <span className="hidden sm:block">Próximo</span>
+                        <ChevronRight className="h-4 w-4" />
+                     </>
                   )}
                </ButtonCustom>
             </div>

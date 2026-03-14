@@ -1,130 +1,88 @@
 import { ButtonHTMLAttributes, ReactNode, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from './ui/button';
-import { cva, type VariantProps } from 'class-variance-authority';
+import { Button, buttonVariants } from './ui/button';
 import { LoaderIcon } from 'lucide-react';
 
-const buttonVariants = cva(
-   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-   {
-      variants: {
-         variant: {
-            default:
-               'bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft hover:shadow-card transition-all duration-300',
-            destructive:
-               'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-soft',
-            outline:
-               'border border-border bg-background hover:bg-primary/5 hover:border-primary/50 transition-all duration-300',
-            secondary:
-               'bg-gradient-secondary text-secondary-foreground hover:bg-secondary/90 shadow-soft hover:shadow-card transition-all duration-300',
-            ghost: 'hover:bg-accent hover:text-accent-foreground transition-all duration-300',
-            link: 'text-primary underline-offset-4 hover:underline',
-            hero: 'bg-gradient-hero text-primary-foreground hover:scale-105 shadow-glow transition-all duration-300 font-semibold',
-            admin: 'bg-gradient-accent text-accent-foreground hover:bg-accent/90 shadow-soft hover:shadow-card transition-all duration-300',
-            warning:
-               'bg-warning text-warning-foreground hover:bg-warning/90 shadow-soft transition-all duration-300',
-            disabled: 'bg-muted text-muted-foreground cursor-not-allowed',
-         },
-         size: {
-            xs: 'px-2 py-1 text-xs min-h-[24px]',
-            sm: 'px-3 py-1.5 text-sm min-h-[32px]',
-            md: 'px-4 py-2 text-base min-h-[40px]',
-            lg: 'px-6 py-3 text-lg min-h-[48px]',
-            xl: 'px-8 py-4 text-xl min-h-[56px]',
-         },
-      },
-      defaultVariants: {
-         variant: 'default',
-         size: 'md',
-      },
-   },
-);
+type BaseVariant =
+   | 'default'
+   | 'destructive'
+   | 'outline'
+   | 'secondary'
+   | 'ghost'
+   | 'link'
+   | 'hero'
+   | 'admin'
+   | 'warning';
+type CustomVariant = BaseVariant | 'disabled';
+type CustomSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'icon';
 
-type ButtonVariantProps = VariantProps<typeof buttonVariants>;
+const sizeClasses: Record<CustomSize, string> = {
+   xs: 'h-8 rounded-lg px-2.5 text-xs',
+   sm: 'h-9 rounded-md px-3',
+   md: 'h-10 px-4 text-sm',
+   lg: 'h-11 rounded-md px-8 text-base',
+   xl: 'h-14 rounded-2xl px-10 text-lg',
+   icon: 'h-10 w-10 rounded-xl p-0',
+};
+
+const mapSizeToBase = (size: CustomSize): 'default' | 'sm' | 'lg' | 'icon' => {
+   if (size === 'sm') return 'sm';
+   if (size === 'lg' || size === 'xl') return 'lg';
+   if (size === 'icon') return 'icon';
+   return 'default';
+};
 
 export interface CustomButtonProps
-   extends ButtonHTMLAttributes<HTMLButtonElement>,
-      ButtonVariantProps {
-   icon?: ReactNode;
-   text?: string;
+   extends ButtonHTMLAttributes<HTMLButtonElement> {
+   variant?: CustomVariant;
+   size?: CustomSize;
    fullWidth?: boolean;
    loading?: boolean;
-   iconPosition?: 'left' | 'right';
-   rounded?: boolean; // mantive pra não quebrar, mas não apliquei pq vc pediu sem mudar classes
    children?: ReactNode;
 }
 
 export const ButtonCustom = forwardRef<HTMLButtonElement, CustomButtonProps>(
    (
       {
-         icon,
-         text,
          disabled = false,
          loading = false,
          fullWidth = false,
-         iconPosition = 'left',
          children,
          className,
-         variant,
-         size,
+         variant = 'default',
+         size = 'md',
          ...props
       },
       ref,
    ) => {
-      const renderIcon = () => {
-         if (!icon) return null;
-         return (
-            <span className="my-auto flex shrink-0 items-center">{icon}</span>
-         );
-      };
+      const visualVariant: BaseVariant =
+         variant === 'disabled' ? 'default' : variant;
+      const isDisabledStyle = variant === 'disabled';
 
       const renderContent = () => {
-         const content = text || children;
+         if (!children && !loading) return null;
 
-         if (!content && !icon && !loading) return null;
+         if (loading) return <LoaderIcon className="size-4 animate-spin" />;
 
-         if (iconPosition === 'right') {
-            return (
-               <>
-                  {loading ? (
-                     <LoaderIcon className="animate-spin" />
-                  ) : (
-                     <>
-                        {content && (
-                           <span className="w-full truncate">{content}</span>
-                        )}
-                        {renderIcon()}
-                     </>
-                  )}
-               </>
-            );
-         }
-
-         return (
-            <>
-               {loading ? (
-                  <LoaderIcon className="animate-spin" />
-               ) : (
-                  <>
-                     {renderIcon()}
-                     {content && (
-                        <span className="w-full truncate">{content}</span>
-                     )}
-                  </>
-               )}
-            </>
-         );
+         return children;
       };
 
       return (
          <Button
             ref={ref}
             className={cn(
-               buttonVariants({ variant, size }),
+               buttonVariants({
+                  variant: visualVariant,
+                  size: mapSizeToBase(size),
+               }),
+               sizeClasses[size],
+               'focus-visible:ring-ring focus-visible:ring-offset-background relative font-semibold tracking-[0.01em] duration-200 ease-out select-none focus-visible:ring-2 focus-visible:ring-offset-2 active:translate-y-[1px] disabled:opacity-55 disabled:shadow-none disabled:saturate-50',
+               isDisabledStyle &&
+                  'bg-muted text-muted-foreground cursor-not-allowed',
                fullWidth && 'w-full',
                className,
             )}
-            disabled={disabled || loading}
+            disabled={disabled || loading || isDisabledStyle}
             {...props}
          >
             {renderContent()}

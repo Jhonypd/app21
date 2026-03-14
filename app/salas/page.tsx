@@ -231,8 +231,9 @@ const PageSalas = () => {
                      size={'sm'}
                      onClick={() => router.replace('/')}
                      className="flex items-center justify-center rounded-xl bg-white/5 transition-all hover:bg-white/10 active:scale-95"
-                     icon={<ArrowLeft className="h-5 w-5" />}
-                  />
+                  >
+                     <ArrowLeft className="h-5 w-5" />
+                  </ButtonCustom>
 
                   <div className="flex-1">
                      <h1 className="text-xl">Todas as Salas</h1>

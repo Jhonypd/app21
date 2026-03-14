@@ -1,8 +1,9 @@
 import React from 'react';
 import { BannerModoSemHistoria } from './banner-modo-sem-historias';
-import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import { GiCoffeeCup } from 'react-icons/gi';
+import { ButtonCustom } from '../button-custom';
 
 interface CardVotosProps {
    role: number;
@@ -31,7 +32,7 @@ const CARTAS_PLANNING = [
    '55',
    '89',
    '?',
-   '☕',
+   '-1',
 ];
 
 const CardVotos: React.FC<CardVotosProps> = ({
@@ -89,7 +90,7 @@ const CardVotos: React.FC<CardVotosProps> = ({
             >
                {!votoSelecionado &&
                   CARTAS_PLANNING.map((carta) => (
-                     <Button
+                     <ButtonCustom
                         key={carta}
                         onClick={() =>
                            handleSelecionarVoto(carta, participaVotacaoAtual)
@@ -97,12 +98,16 @@ const CardVotos: React.FC<CardVotosProps> = ({
                         disabled={!podeVotar}
                         className="mx-auto aspect-[3/4] h-28 rounded-2xl border-2 text-2xl transition-all active:scale-95"
                      >
-                        {carta}
-                     </Button>
+                        {carta === '-1' ? (
+                           <GiCoffeeCup className="mx-auto h-6 w-6" />
+                        ) : (
+                           carta
+                        )}
+                     </ButtonCustom>
                   ))}
 
                {votoSelecionado && (
-                  <Button
+                  <ButtonCustom
                      onClick={() =>
                         handleSelecionarVoto(
                            votoSelecionado,
@@ -112,15 +117,19 @@ const CardVotos: React.FC<CardVotosProps> = ({
                      disabled={votosRevelados || uiDisabled}
                      className="!mx-auto aspect-[3/4] h-56 rounded-2xl border-2 text-9xl transition-all md:h-96"
                   >
-                     {votoSelecionado}
-                  </Button>
+                     {votoSelecionado === '-1' ? (
+                        <GiCoffeeCup className="mx-auto h-20 w-20 md:h-28 md:w-28" />
+                     ) : (
+                        votoSelecionado
+                     )}
+                  </ButtonCustom>
                )}
             </div>
          )}
 
          {votoSelecionado && !votosRevelados && !modoVisualizacao && (
             <div className="mt-4 rounded-xl border border-green-500/30 bg-green-600/10 px-4 py-3 text-center text-sm text-green-400">
-               ✓ Voto enviado: {votoSelecionado} | Clique no card para mudar
+               Clique no card para mudar
             </div>
          )}
 

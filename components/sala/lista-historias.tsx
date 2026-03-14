@@ -280,21 +280,19 @@ export function ListaHistorias({
                         <ButtonCustom
                            variant="outline"
                            onClick={() => setModalAdicionarAberto(true)}
-                           icon={
-                              <Plus className="text-muted-foreground h-4 w-4" />
-                           }
                            disabled={loading || uiDisabled}
                            title="Adicionar histórias"
-                        />
+                        >
+                           <Plus className="text-muted-foreground h-4 w-4" />
+                        </ButtonCustom>
                      )}
                      <ButtonCustom
                         variant="outline"
                         onClick={() => setModalReordenarAberto(true)}
-                        icon={
-                           <ListChevronsDownUpIcon className="text-muted-foreground" />
-                        }
                         disabled={loading || uiDisabled}
-                     />
+                     >
+                        <ListChevronsDownUpIcon className="text-muted-foreground" />
+                     </ButtonCustom>
                   </div>
                </div>
             ) : (
@@ -324,8 +322,9 @@ export function ListaHistorias({
                      variant="default"
                      size="md"
                      title={!temAnterior ? 'Não há história anterior' : ''}
-                     icon={<ArrowLeft className="mr-2 h-5 w-5" />}
-                  ></ButtonCustom>
+                  >
+                     <ArrowLeft className="h-5 w-5" />
+                  </ButtonCustom>
 
                   {/* Indicador de progresso */}
                   {indiceExibido >= 0 && (
@@ -354,18 +353,20 @@ export function ListaHistorias({
                              ? 'Finalize a votação primeiro'
                              : ''
                      }
-                     icon={<ArrowRight className="mr-2 h-5 w-5" />}
-                  ></ButtonCustom>
+                  >
+                     <ArrowRight className="h-5 w-5" />
+                  </ButtonCustom>
                </div>
                <div className="flex w-full flex-1 items-center justify-center">
                   {modoVisualizacao && (
                      <ButtonCustom
                         variant="outline"
                         size="sm"
-                        text="Voltar para historia atual"
                         className="uppercase"
                         onClick={handleVoltarParaAtual}
-                     />
+                     >
+                        Voltar para historia atual
+                     </ButtonCustom>
                   )}
                </div>
             </div>
@@ -475,12 +476,13 @@ export function ListaHistorias({
                                     variant="ghost"
                                     size="sm"
                                     className="hover:bg-destructive/20 h-9 w-9 p-0 text-red-400"
-                                    icon={<Trash2 className="h-4 w-4" />}
                                     title="Remover história"
                                     onClick={() =>
                                        handleRemoverDaLista(historia.id)
                                     }
-                                 />
+                                 >
+                                    <Trash2 className="h-4 w-4" />
+                                 </ButtonCustom>
                               )}
                            </div>
                         ))}

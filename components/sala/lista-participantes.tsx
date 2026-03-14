@@ -126,9 +126,9 @@ const ListaParticipantes: React.FC<ListaParticipantesProps> = ({
                      <ButtonCustom
                         variant={'outline'}
                         className="uppercase"
-                        icon={<MdOutlinePersonAddAlt className="h-4 w-4" />}
                         onClick={() => setModalAdicionarAberto(true)}
                      >
+                        <MdOutlinePersonAddAlt className="h-4 w-4" />
                         Adicionar
                      </ButtonCustom>
                   )}
