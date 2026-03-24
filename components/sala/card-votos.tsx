@@ -58,19 +58,22 @@ const CardVotos: React.FC<CardVotosProps> = ({
    return (
       <div className="border-border bg-card mx-auto w-full max-w-md rounded-lg border p-6 shadow-sm">
          <header className="mb-4 flex items-center justify-between px-6">
-            <h2 className="text-lg">
+            {modoVisualizacao && (
+               <h2 className="text-lg">Visualizando história anterior</h2>
+            )}
+            {/* <h2 className="text-lg">
                {modoVisualizacao
                   ? 'Visualizando história anterior'
                   : participaVotacaoAtual
                     ? 'Selecione sua pontuação'
                     : 'Você não está votando'}
-            </h2>
+            </h2> */}
 
             <BannerModoSemHistoria mostrar={emModoPratica} />
 
             {!participaSempre && !modoVisualizacao && (
-               <div className="flex flex-col items-center gap-2">
-                  <Label>Votar?</Label>
+               <div className="flex items-center gap-2">
+                  <Label>Participar da votação?</Label>
                   <Switch
                      checked={participaVotacaoAtual}
                      onCheckedChange={onToggleParticipacao}

@@ -11,7 +11,6 @@ import {
 } from 'react-icons/md';
 import { GiUnplugged } from 'react-icons/gi';
 
-import { copiarParaAreaTransferencia } from '@/utils/copiarTexto';
 import type { Salas, SalaParaEdicao } from '@/services/types';
 import { useLazyObterDadosFormAlterarQuery } from '@/services/api/salas-api';
 import { toastError } from './custom-toast';
@@ -22,6 +21,8 @@ import { ModalEntrarSala } from './sala/modal-entrar-sala';
 import { DialogEditarSala } from './sala/dialog-editar-sala';
 import { Card, CardContent } from './ui/card';
 import DialogConfirmacao from './dialog-confirmacao';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import ModalCompartilhar from './sala/modal-compartilhar';
 
 interface CardSalaProps {
    sala: Salas;
@@ -52,11 +53,14 @@ export function CardSala({
    podeIniciarSessao = false,
    excluirSalaLoading = false,
 }: CardSalaProps) {
-   const urlCompartilhamento = `${window.location.origin}/entrar/${sala.codigo}`;
+   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+   const urlCompartilhamento = `${baseUrl}/entrar/${sala.codigo}`;
 
    const [dialogEditarAberto, setDialogEditarAberto] = useState(false);
    const [dialogExcluirAberto, setDialogExcluirAberto] = useState(false);
    const [modalEntrarSalaAberto, setModalEntrarSalaAberto] = useState(false);
+   const [modalCompartilharAberto, setModalCompartilharAberto] =
+      useState(false);
    const [dadosSala, setDadosSala] = useState<SalaParaEdicao | null>(null);
    const [obterSala, { isLoading: carregandoDados }] =
       useLazyObterDadosFormAlterarQuery();
@@ -139,12 +143,12 @@ export function CardSala({
    // Gerar cor aleatória mas consistente baseada no ID
    const gerarCorAvatar = (id: string) => {
       const cores = [
-         'from-purple-500 to-pink-500',
-         'from-blue-500 to-cyan-500',
-         'from-green-500 to-emerald-500',
-         'from-orange-500 to-red-500',
-         'from-indigo-500 to-purple-500',
-         'from-pink-500 to-rose-500',
+         'from-[var(--color-accent)] to-[var(--color-primary)]',
+         'from-[var(--color-primary)] to-[var(--color-chart-4)]',
+         'from-[var(--color-chart-3)] to-[var(--color-chart-4)]',
+         'from-[var(--color-chart-5)] to-[var(--color-accent)]',
+         'from-[var(--color-secondary)] to-[var(--color-primary)]',
+         'from-[var(--color-chart-1)] to-[var(--color-chart-2)]',
       ];
       // Usar primeiro caractere do ID para escolher cor
       const index = id.charCodeAt(0) % cores.length;
@@ -170,7 +174,7 @@ export function CardSala({
                />
             ))}
          <Card
-            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl transition-all active:scale-98"
+            className="group border-border/40 bg-card/90 text-card-foreground relative overflow-hidden rounded-3xl border shadow-[0_25px_60px_rgba(15,23,42,0.45)] backdrop-blur-xl transition-all active:scale-98"
             style={{ animationDelay: `${index * 100}ms` }}
          >
             <CardContent className="flex h-full items-start justify-between gap-4 p-3">
@@ -178,46 +182,47 @@ export function CardSala({
                   <div className="flex items-center gap-4">
                      <div className="relative flex-shrink-0">
                         <div
-                           className={`h-14 w-14 bg-gradient-to-br ${corAvatar} flex items-center justify-center rounded-2xl shadow-lg shadow-purple-500/50`}
+                           className={`h-14 w-14 bg-gradient-to-br ${corAvatar} flex items-center justify-center rounded-2xl text-white`}
+                           style={{
+                              boxShadow: '0 20px 45px rgba(124, 58, 237, 0.35)',
+                           }}
                         >
                            <span className="text-lg uppercase">{avatar}</span>
                         </div>
                         {sala.salaPrivada && (
-                           <MdLockPerson className="h4 absolute bottom-1 left-1 w-4 text-slate-300" />
+                           <MdLockPerson className="h4 text-foreground/70 absolute bottom-1 left-1 w-4" />
                         )}
                         {sala.status === 'online' && (
-                           <div className="absolute -top-1 -right-1 h-4 w-4 animate-pulse rounded-full border-2 border-slate-950 bg-green-500 shadow-lg shadow-green-500/50"></div>
+                           <div className="absolute -top-1 -right-1 h-4 w-4 animate-pulse rounded-full border-2 border-[var(--background)] bg-[var(--color-chart-3)] shadow-[0_0_12px_rgba(22,163,74,0.55)]"></div>
                         )}
                      </div>
 
                      <div className="min-w-0 flex-1 items-start justify-start">
                         <h4 className="truncate text-base">{sala.titulo}</h4>
-                        <div className="flex items-center justify-start gap-2 text-xs">
-                           <span className="flex items-center justify-start gap-1 text-gray-400">
+                        <div className="text-muted-foreground flex items-center justify-start gap-2 text-xs">
+                           <span className="flex items-center justify-start gap-1">
                               <MdGroups className="h-4 w-4" />
                               {sala.membros > 0
                                  ? `${sala.membros} ${sala.membros === 1 ? 'membro' : 'membros'}`
                                  : 'Sem membros'}
                            </span>
-                           <span className="text-gray-600">•</span>
-                           <span className="text-center text-gray-400">
+                           <span className="text-muted-foreground/60">•</span>
+                           <span className="text-center">
                               {sala.status === 'online' ? (
                                  <MdOutlineBroadcastOnPersonal
-                                    className="text-green-500"
+                                    className="text-[var(--color-chart-3)]"
                                     size={16}
                                  />
                               ) : (
                                  <GiUnplugged
-                                    className="text-gray-400"
+                                    className="text-muted-foreground"
                                     size={16}
                                  />
                               )}
                            </span>
-                           <span className="text-gray-400">
-                              {tempoDecorrido}
-                           </span>
+                           <span>{tempoDecorrido}</span>
                         </div>
-                        <p className="mt-1 truncate text-start text-xs text-gray-500">
+                        <p className="text-muted-foreground/80 mt-1 truncate text-start text-xs">
                            por {sala.proprietario.nome}
                         </p>
                      </div>
@@ -227,7 +232,8 @@ export function CardSala({
                   <div className="flex w-full gap-2">
                      <ButtonCustom
                         onClick={handleEntrarClick}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-sm uppercase transition-all hover:bg-purple-700 active:bg-purple-800"
+                        variant="ghost"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm uppercase"
                         disabled={sala.inativo || sala.status !== 'online'}
                      >
                         <span>Entrar</span>
@@ -235,14 +241,25 @@ export function CardSala({
                      </ButtonCustom>
 
                      {podeIniciarSessao && abrirWizard && (
-                        <ButtonCustom
-                           disabled={sala.inativo || sala.status === 'online'}
-                           onClick={() => abrirWizard(sala)}
-                           className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 uppercase transition-all hover:bg-green-700 active:scale-95 active:bg-green-800"
-                        >
-                           <MdOutlinePlayArrow className="h-6 w-6" />
-                           <span className="text-xs">Iniciar</span>
-                        </ButtonCustom>
+                        <Tooltip>
+                           <TooltipTrigger>
+                              <ButtonCustom
+                                 disabled={
+                                    sala.inativo || sala.status === 'online'
+                                 }
+                                 onClick={() => abrirWizard(sala)}
+                                 className="flex items-center justify-center gap-2 rounded-xl bg-[var(--color-chart-3)] px-4 py-3 text-white uppercase transition-all hover:brightness-110 active:scale-95"
+                              >
+                                 <MdOutlinePlayArrow className="h-6 w-6" />
+                                 <span className="hidden text-xs sm:block">
+                                    Iniciar
+                                 </span>
+                              </ButtonCustom>
+                           </TooltipTrigger>
+                           <TooltipContent>
+                              <p>Iniciar sessão</p>
+                           </TooltipContent>
+                        </Tooltip>
                      )}
                   </div>
                </div>
@@ -254,7 +271,7 @@ export function CardSala({
                         size={'sm'}
                         onClick={handleAbrirDialogEditar}
                         disabled={sala.inativo || carregandoDados}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 p-2 transition-all hover:bg-white/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="bg-secondary/40 text-secondary-foreground hover:bg-secondary/60 flex h-9 w-9 items-center justify-center rounded-xl p-2 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                         title={
                            carregandoDados ? 'Carregando...' : 'Editar sala'
                         }
@@ -269,7 +286,7 @@ export function CardSala({
                         variant={'destructive'}
                         onClick={() => setDialogExcluirAberto(true)}
                         disabled={sala.inativo || carregandoDados}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl p-2 transition-all hover:bg-red-500/80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl p-2 transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                         title={
                            carregandoDados ? 'Carregando...' : 'Excluir sala'
                         }
@@ -279,11 +296,9 @@ export function CardSala({
                   )}
                   <ButtonCustom
                      size={'sm'}
-                     onClick={() => {
-                        const shareText = `Entre na minha sala ${sala.codigo} com o link ${urlCompartilhamento}. `;
-                        copiarParaAreaTransferencia(shareText);
-                     }}
-                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 p-2 transition-all hover:bg-white/10 active:scale-95"
+                     onClick={() => setModalCompartilharAberto(true)}
+                     className="bg-secondary/40 text-secondary-foreground hover:bg-secondary/60 flex h-9 w-9 items-center justify-center rounded-xl p-2 transition-all active:scale-95"
+                     title="Compartilhar sala"
                   >
                      <MdShare className="h-4 w-4" />
                   </ButtonCustom>
@@ -330,6 +345,14 @@ export function CardSala({
                   }
                }}
                tipo="destrutivo"
+            />
+
+            <ModalCompartilhar
+               open={modalCompartilharAberto}
+               onOpenChange={setModalCompartilharAberto}
+               tituloSala={sala.titulo}
+               codigoSala={sala.codigo}
+               linkCompartilhamento={urlCompartilhamento}
             />
          </Card>
       </>

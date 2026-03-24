@@ -26,16 +26,8 @@ const HIDDEN_SIDEBAR_PREFIXES = [
 // Componente para o layout sem sidebar
 const NoSidebarLayout = memo(({ children }: { children: ReactNode }) => (
    <div className="container min-h-screen bg-slate-950 pb-24 text-white">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-         <div className="absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full bg-purple-500/20 blur-3xl"></div>
-         <div
-            className="absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full bg-pink-500/20 blur-3xl"
-            style={{ animationDelay: '1s' }}
-         ></div>
-      </div>
-
       <div
-         className={`container flex max-w-screen flex-1 flex-col gap-4 px-4 pt-2 sm:px-6`}
+         className={`container flex max-w-screen flex-1 flex-col gap-4 pt-2 sm:px-6`}
       >
          {children}
       </div>
