@@ -16,12 +16,12 @@ const buttonVariants = cva(
 				outline:
 					"border border-border bg-background hover:bg-primary/5 hover:border-primary/50 transition-all duration-300",
 				secondary:
-					"bg-gradient-secondary text-secondary-foreground hover:bg-secondary/90 shadow-soft hover:shadow-card transition-all duration-300",
+					"bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-soft hover:shadow-card transition-all duration-300",
 				ghost: "hover:bg-accent hover:text-accent-foreground transition-all duration-300",
 				link: "text-primary underline-offset-4 hover:underline",
-				hero: "bg-gradient-hero text-primary-foreground hover:scale-105 shadow-glow transition-all duration-300 font-semibold",
+				hero: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow transition-all duration-300 font-semibold",
 				admin:
-					"bg-gradient-accent text-accent-foreground hover:bg-accent/90 shadow-soft hover:shadow-card transition-all duration-300",
+					"bg-accent text-accent-foreground hover:bg-accent/90 shadow-soft hover:shadow-card transition-all duration-300",
 				warning:
 					"bg-warning text-warning-foreground hover:bg-warning/90 shadow-soft transition-all duration-300",
 			},
